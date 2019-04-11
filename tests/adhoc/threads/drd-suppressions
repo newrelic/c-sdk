@@ -1,6 +1,0 @@
-{
-   <boost::format issue>
-   drd:ConflictingAccess
-   ...
-   fun:_ZN5boost12basic_format*
-}

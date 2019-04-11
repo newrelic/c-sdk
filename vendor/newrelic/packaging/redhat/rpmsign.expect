@@ -1,5 +1,0 @@
-#!/usr/bin/expect -f
-spawn rpm --addsign [lindex $argv 0]
-expect "phrase:"
-send "\r"
-interact

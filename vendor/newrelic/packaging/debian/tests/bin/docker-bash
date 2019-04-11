@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -e
-set -x
-source `dirname "$0"`/docker.sh
-
-sudo $DOCKER run -a stdin -a stdout -a stderr -i -t "$1" /bin/bash
