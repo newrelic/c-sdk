@@ -1,0 +1,5 @@
+vendor
+composer.lock
+stress_app
+c-agent.log
+c_sdk.log

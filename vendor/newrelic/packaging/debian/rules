@@ -1,0 +1,113 @@
+#!/usr/bin/make -f
+
+SRCDIR = linux
+NRARCH := $(shell uname -m | sed -e 's/i[3456]86/x86/' -e 's/x86_64/x64/')
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE=1
+
+.PHONY: build
+
+build:
+	echo "no build phase"
+
+binary-arch: nr-agent nr-daemon
+
+nr-agent:
+	dh_testroot -pnewrelic-php5
+	dh_prep -pnewrelic-php5
+	dh_installdirs -pnewrelic-php5
+	dh_auto_install -pnewrelic-php5
+	install -d -m 0755 debian/newrelic-php5/usr/lib/newrelic-php5/agent/$(NRARCH)
+	install -d -m 0755 debian/newrelic-php5/usr/lib/newrelic-php5/scripts
+	install -m 0755 $(SRCDIR)/agent/$(NRARCH)/*.so             debian/newrelic-php5/usr/lib/newrelic-php5/agent/$(NRARCH)/
+	install -m 0755 $(SRCDIR)/scripts/newrelic-iutil.$(NRARCH) debian/newrelic-php5/usr/lib/newrelic-php5/scripts/
+	dh_install -pnewrelic-php5
+	dh_installchangelogs -pnewrelic-php5
+	dh_installman -pnewrelic-php5
+	dh_installdebconf -pnewrelic-php5
+	dh_link -pnewrelic-php5
+	dh_compress -pnewrelic-php5 --exclude=LICENSE
+	dh_fixperms -pnewrelic-php5
+	dh_makeshlibs -pnewrelic-php5
+	dh_shlibdeps -pnewrelic-php5
+	dh_installdeb -pnewrelic-php5
+	dh_gencontrol -pnewrelic-php5
+	dh_md5sums -pnewrelic-php5
+	dh_builddeb -pnewrelic-php5 -- -Zbzip2
+
+nr-daemon:
+	dh_testroot -pnewrelic-daemon
+	dh_prep -pnewrelic-daemon
+	dh_installdirs -pnewrelic-daemon
+	dh_auto_install -pnewrelic-daemon
+	install -d -m 0755 debian/newrelic-daemon/etc/newrelic
+	install -d -m 0755 debian/newrelic-daemon/usr/bin
+	install -m 0644 $(SRCDIR)/scripts/init.debian               debian/newrelic-daemon.init
+	install -m 0644 $(SRCDIR)/scripts/newrelic.sysconfig        debian/newrelic-daemon.default
+	install -m 0644 $(SRCDIR)/scripts/newrelic-daemon.logrotate debian/newrelic-daemon.logrotate
+	install -m 0444 $(SRCDIR)/scripts/newrelic.cfg.template     debian/newrelic-daemon/etc/newrelic/newrelic.cfg.template
+	install -m 0755 $(SRCDIR)/daemon/newrelic-daemon.$(NRARCH)  debian/newrelic-daemon/usr/bin/newrelic-daemon
+	dh_install -pnewrelic-daemon
+	dh_installchangelogs -pnewrelic-daemon
+	dh_installman -pnewrelic-daemon
+	dh_installinit -pnewrelic-daemon -n
+	dh_installlogcheck -pnewrelic-daemon
+	dh_installlogrotate -pnewrelic-daemon
+	dh_link -pnewrelic-daemon
+	dh_compress -pnewrelic-daemon --exclude=LICENSE
+	dh_fixperms -pnewrelic-daemon
+	dh_makeshlibs -pnewrelic-daemon
+	dh_shlibdeps -pnewrelic-daemon
+	dh_installdeb -pnewrelic-daemon
+	dh_gencontrol -pnewrelic-daemon
+	dh_md5sums -pnewrelic-daemon
+	dh_builddeb -pnewrelic-daemon -- -Zbzip2
+
+binary-indep:
+	dh_testroot -pnewrelic-php5-common
+	dh_prep -pnewrelic-php5-common
+	dh_installdirs -pnewrelic-php5-common
+	dh_auto_install -pnewrelic-php5-common
+	install -d -m 0755 debian/newrelic-php5-common/usr/bin
+	install -d -m 0755 debian/newrelic-php5-common/usr/lib/newrelic-php5/agent
+	install -d -m 0755 debian/newrelic-php5-common/usr/lib/newrelic-php5/scripts/install
+	install -m 0755 $(SRCDIR)/newrelic-install                debian/newrelic-php5-common/usr/lib/newrelic-php5/newrelic-install.sh
+	install -m 0755 ../agent/scripts/install/configure.py     debian/newrelic-php5-common/usr/lib/newrelic-php5/scripts/install/configure
+	install -m 0444 $(SRCDIR)/scripts/newrelic.ini.template   debian/newrelic-php5-common/usr/lib/newrelic-php5/scripts/
+	install	-m 0644 $(SRCDIR)/scripts/newrelic-php5.logrotate debian/newrelic-php5.logrotate
+	echo '#!/bin/sh' > debian/newrelic-php5-common/usr/bin/newrelic-install
+	echo '# AUTO GENERATED - DO NOT EDIT'
+	echo '# Source: packaging/debian/rules'
+	echo "NR_INSTALL_LOCATION='/usr/lib/newrelic-php5'"           >> debian/newrelic-php5-common/usr/bin/newrelic-install
+	echo "export NR_INSTALL_LOCATION"                             >> debian/newrelic-php5-common/usr/bin/newrelic-install
+	echo 'exec $${NR_INSTALL_LOCATION}/newrelic-install.sh "$$@"' >> debian/newrelic-php5-common/usr/bin/newrelic-install
+	chmod 755 debian/newrelic-php5-common/usr/bin/newrelic-install
+	dh_install -pnewrelic-php5-common
+	dh_installdocs -pnewrelic-php5-common $(SRCDIR)/LICENSE.txt $(SRCDIR)/README.txt
+	dh_installman -pnewrelic-php5-common
+	dh_installlogcheck -pnewrelic-php5-common
+	dh_installlogrotate -pnewrelic-php5-common --name=newrelic-php5
+	dh_link -pnewrelic-php5-common
+	dh_compress -pnewrelic-php5-common --exclude=LICENSE
+	dh_fixperms -pnewrelic-php5-common
+	dh_installdeb -pnewrelic-php5-common
+	dh_gencontrol -pnewrelic-php5-common
+	dh_md5sums -pnewrelic-php5-common
+	dh_builddeb -pnewrelic-php5-common -- -Zbzip2
+
+binary: binary-arch binary-indep
+
+clean:
+	dh_testdir -pnewrelic-php5-common
+	dh_auto_clean -pnewrelic-php5-common
+	dh_clean -pnewrelic-php5-common
+	dh_testdir -pnewrelic-php5
+	dh_auto_clean -pnewrelic-php5
+	dh_clean -pnewrelic-php5
+	dh_testdir -pnewrelic-daemon
+	dh_auto_clean -pnewrelic-daemon
+	dh_clean -pnewrelic-daemon
+
+%:
+	dh $@

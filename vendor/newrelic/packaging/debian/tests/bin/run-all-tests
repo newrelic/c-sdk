@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+set -x
+source `dirname "$0"`/docker.sh
+
+# Create an output directory.
+rm -rf `dirname "$0"`/../output
+mkdir `dirname "$0"`/../output
+
+for distro in $DISTROS; do
+  run_test "$distro"
+done

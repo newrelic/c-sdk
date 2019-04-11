@@ -1,0 +1,29 @@
+Template: newrelic-php5/5.2-deprecation
+Type: note
+Description: New Relic support for PHP 5.2 is deprecated
+ Support for PHP 5.2 in the New Relic PHP agent is deprecated. New Relic highly
+ encourages upgrading to a supported version of PHP - 5.6 or higher. If you
+ would like to continue running the New Relic PHP agent with PHP 5.2, we
+ recommend using version 6.9 of the agent, however please note that we can only
+ offer limited support in this case.
+
+Template: newrelic-php5/license-key
+Type: string
+Description: New Relic license key
+ In order for the New Relic agent to function correctly it requires a license
+ key. Please enter that key now. If you do not have your license key handy you
+ can add it to your INI file(s) later. Please be aware that the license key you
+ specify here will be installed in the default INI files, and will be the key
+ used for any virtual host or directory / application that does not override
+ the key on a per-host or per-directory basis. This is only relevant if you run
+ a multi-tenant site. Please contact https://support.newrelic.com/ if you run
+ such a site and have any questions.
+
+Template: newrelic-php5/application-name
+Type: string
+Default: PHP Application
+Description: Application name
+ The New Relic agent also requires a unique application name so that you can
+ see each application separately within New Relic. For more information on
+ choosing an appropriate application name, please refer to the documentation at
+ https://docs.newrelic.com/docs/site/naming-your-application.

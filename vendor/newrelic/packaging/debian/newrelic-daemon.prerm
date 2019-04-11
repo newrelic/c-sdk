@@ -1,0 +1,18 @@
+#!/bin/sh
+# prerm script for newrelic-daemon
+#
+# see: dh_installdeb(1)
+
+if [ -x /etc/init.d/newrelic-daemon ]; then
+  # We cant actually use the script due to previous bugs which killed too much
+  pidlist=`ps -ef | grep '/newrelic-daemon ' | sed -e '/grep/d' | awk '{if ($3 == 1) {print $2;}}'`
+  if [ -n "${pidlist}" ]; then
+    for pid in $pidlist; do
+      kill -15 $pid > /dev/null 2>&1
+    done
+  fi
+fi
+
+#DEBHELPER#
+
+exit 0

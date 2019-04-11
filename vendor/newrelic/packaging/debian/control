@@ -1,0 +1,37 @@
+Source: newrelic-php5
+Priority: optional
+Maintainer: New Relic <support@newrelic.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+Section: non-free
+Homepage: http://www.newrelic.com/
+
+Package: newrelic-php5-common
+Architecture: all
+Conflicts: php5-common (<< 5.3.0)
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Replaces: newrelic-php5 (<< 3.0.0.0-1)
+Description: Scripts and samples for the New Relic PHP agent
+ This package contains the main installation script, license file and sample
+ INI file for the New Relic PHP agent. It is a pre-requisite for the actual
+ agent package newrelic-php5.
+
+Package: newrelic-daemon
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base, procps
+Pre-Depends: newrelic-php5-common (= ${binary:Version})
+Replaces: newrelic-php5 (<< 3.0.0.0-1)
+Description: The New Relic proxy daemon
+ This package contains the New Relic Daemon, which acts as a communications
+ proxy between the agents and the New Relic data collectors. It is required
+ in order for the agent to send any data to New Relic.
+
+Package: newrelic-php5
+Architecture: any
+Conflicts: php5-common (<< 5.3.0)
+Depends: ${shlibs:Depends}, ${misc:Depends}, coreutils, debconf, python
+Pre-Depends: newrelic-php5-common (= ${binary:Version}), newrelic-daemon (= ${binary:Version})
+Description: The New Relic agent for PHP
+ The actual New Relic PHP agent. This depends on the newrelic-php5-common
+ package for its installation script and support files.
+

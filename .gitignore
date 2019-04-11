@@ -1,0 +1,62 @@
+FILES
+.deps
+*.d
+*.out
+*.o
+junk
+make.log
+Makefile_*.deps
+*.T
+releases
+.DS_Store
+
+#
+# Byproducts from building Doxygen documentation
+#
+html/
+
+#
+# Byproducts from building cmocka
+#
+vendor/cmocka/build
+
+#
+# All unit-test executables, but not .c files, in tests/
+#
+tests/test_*
+!tests/test_*.c
+
+#
+# Byproducts from make all
+#
+libnewrelic.a
+libnewrelic.o
+newrelic-daemon
+
+#
+# Byproducts from a life of vim
+#
+gotags
+tags
+*.sw?
+
+#
+# Release byproducts
+#
+*.tar
+*.tar.bz2
+*.tar.gz
+*.tar.lz
+*.tar.xz
+*.tar.Z
+
+# Integration Runner Logs
+integration-tests.log
+tests/integration/*/*.log
+
+#
+# Byproducts of jetbrains
+#
+.idea/
+
+newrelic-daemon

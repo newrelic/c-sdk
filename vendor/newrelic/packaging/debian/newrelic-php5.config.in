@@ -1,0 +1,29 @@
+#!/bin/sh
+
+. /usr/share/debconf/confmodule
+
+# Insert the contents of newrelic-php5.config here.
+#COMMON#
+
+# Warn the user if they have PHP 5.2 in their PATH.
+if which php 2>&1 1>/dev/null; then
+  PHP_VERSION=`php -n -r 'echo PHP_VERSION;' | cut -d . -f -2`
+  if [ "$PHP_VERSION" = "5.2" ]; then
+    db_input high newrelic-php5/5.2-deprecation || true
+  fi
+fi
+
+# Collect the application name and license key if the user has the default
+# packages installed and we can do a completely newrelic-install-free
+# installation.
+if is_phpquery_available; then
+  db_input high newrelic-php5/license-key || true
+  db_input high newrelic-php5/application-name || true
+elif is_php5_packaged; then
+  if needs_config; then
+    db_input high newrelic-php5/license-key || true
+    db_input high newrelic-php5/application-name || true
+  fi
+fi
+
+db_go

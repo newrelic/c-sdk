@@ -1,0 +1,28 @@
+<?php
+
+/*DESCRIPTION
+The agent should not report errors for exceptions that bubble to the top level
+and are handled by a closure if it's set to ignore them.
+*/
+
+/*INI
+newrelic.error_collector.ignore_user_exception_handler = 1
+*/
+
+/*EXPECT
+In exception handler
+*/
+
+/*EXPECT_TRACED_ERRORS
+null
+*/
+
+set_exception_handler(function ($ex) {
+  echo "In exception handler\n";
+});
+
+function throw_it() {
+  throw new RuntimeException('Hi!');
+}
+
+throw_it();

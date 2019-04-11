@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+set -x
+source `dirname "$0"`/docker.sh
+
+(sudo $DOCKER ps -a | grep Exit | awk '{print $1}' | sudo xargs $DOCKER rm) || true
+
+for i in `sudo $DOCKER images | grep '<none>' | awk '{print $3}'`; do
+  sudo $DOCKER rmi $i
+done

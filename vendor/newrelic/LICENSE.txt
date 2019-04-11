@@ -1,0 +1,138 @@
+This product includes source derived from libpq (https://www.postgresql.org/),
+distributed under the license:
+
+        https://www.postgresql.org/about/licence/
+
+----------------------------------------------------------------
+
+This product includes source derived from curl (http://curl.haxx.se/),
+distributed under the license:
+
+        https://github.com/curl/curl/blob/master/COPYING
+
+----------------------------------------------------------------
+
+This product includes source derived from the Go programming language
+(https://github.com/golang/go), distributed under the license:
+
+        https://github.com/golang/go/blob/master/LICENSE
+
+----------------------------------------------------------------
+
+This product includes the Go supplementary network libraries from
+https://godoc.org/golang.org/x/net, distributed under this license:
+
+        https://github.com/golang/net/blob/master/LICENSE
+
+----------------------------------------------------------------
+
+This product includes FlatBuffers from https://google.github.io/flatbuffers/,
+distributed under this license:
+
+        https://github.com/google/flatbuffers/blob/master/LICENSE.txt
+
+----------------------------------------------------------------
+
+This product includes source derived from the BSD C library functions
+(http://www.freebsd.org), distributed under this license:
+
+        http://www.freebsd.org/copyright/license.html
+
+----------------------------------------------------------------
+
+This product includes Laravel Support by In-Touch Insight
+(http://www.intouchinsight.com/), distributed under this license:
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+----------------------------------------------------------------
+
+This product includes Solar Designer's implementation of the MD5 Message-Digest
+Algorithm from
+http://openwall.info/wiki/people/solar/software/public-domain-source-code/md5,
+distributed under this license:
+
+        http://openwall.info/wiki/people/solar/software/public-domain-source-code/md5
+
+----------------------------------------------------------------
+
+This product includes Perl Compatible Regular Expressions from
+http://www.pcre.org, distributed under this license:
+
+        http://www.pcre.org/licence.txt
+
+----------------------------------------------------------------
+
+This product includes source derived from PHP (http://www.php.net), distributed
+under this license:
+
+        http://www.php.net/license/
+
+----------------------------------------------------------------
+
+This product includes Thread Safe Resource Manager
+(https://github.com/infusion/PHP/blob/master/TSRM), distributed under this
+license:
+
+        https://github.com/infusion/PHP/blob/master/TSRM/LICENSE
+
+----------------------------------------------------------------
+
+This product includes the C JSON parser from
+https://github.com/DaveGamble/cJSON, distributed under this license:
+
+        https://github.com/DaveGamble/cJSON/blob/master/LICENSE
+
+----------------------------------------------------------------
+
+This product includes min-max-heap (https://github.com/ilbanshee/min-max-heap),
+distributed under this license:
+
+        https://github.com/ilbanshee/min-max-heap/blob/6bd6fb31bd1e4d5b78fe18175968153c152c7f8b/LICENSE
+
+----------------------------------------------------------------
+
+This product includes source derived from libbsd
+(https://libbsd.freedesktop.org/wiki/), distributed under these licenses:
+
+        https://gitlab.freedesktop.org/libbsd/libbsd/blob/0.9.1/include/bsd/sys/cdefs.h#L1-25
+        https://gitlab.freedesktop.org/libbsd/libbsd/blob/0.9.1/include/bsd/sys/tree.h#L5-28
+
+----------------------------------------------------------------
+
+This product includes source derived from Portable OpenSSH
+(https://github.com/openssh/openssh-portable), authored by Otto Moerbeek,
+distributed under this license:
+
+        https://github.com/openssh/openssh-portable/blob/285310b897969a63ef224d39e7cc2b7316d86940/openbsd-compat/reallocarray.c#L2-L16
+
+----------------------------------------------------------------
+
+All other components of this product are: Copyright (c) 2010-2016 New Relic, Inc. All rights reserved.
+
+Certain inventions disclosed in this file may be claimed within patents owned or patent applications
+filed by New Relic, Inc. or third parties. Subject to the terms of this notice, New Relic grants you
+a nonexclusive, nontransferable license, without the right to sublicense, to (a) install and execute
+one copy of these files on any number of workstations owned or controlled by you and (b) distribute
+verbatim copies of these files to third parties. As a condition to the foregoing grant, you must
+provide this notice along with each copy you distribute and you must not remove, alter, or obscure
+this notice.
+
+All other use, reproduction, modification, distribution, or other exploitation of these
+files is strictly prohibited, except as may be set forth in a separate written license agreement
+between you and New Relic. The terms of any such license agreement will control over this notice. The
+license stated above will be automatically terminated and revoked if you exceed its scope or violate
+any of the terms of this notice.
+
+This License does not grant permission to use the trade names, trademarks, service marks, or product
+names of New Relic, except as required for reasonable and customary use in describing the origin of
+this file and reproducing the content of this notice. You may not mark or brand this file with any
+trade name, trademarks, service marks, or product names other than the original brand (if any) provided
+by New Relic.
+
+Unless otherwise expressly agreed by New Relic in a separate written license agreement, these files
+are provided AS IS, WITHOUT WARRANTY OF ANY KIND, including without any implied warranties of
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, or NON-INFRINGEMENT. As a condition to your
+use of these files, you are solely responsible for such use. New Relic will have no liability to you
+for direct, indirect, consequential, incidental, special, or punitive damages or for lost profits or
+data.

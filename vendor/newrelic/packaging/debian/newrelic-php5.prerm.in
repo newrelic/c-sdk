@@ -1,0 +1,79 @@
+#!/bin/sh
+# prerm script for newrelic-php5
+#
+# see: dh_installdeb(1)
+
+# Insert the contents of newrelic-php5.config here.
+#COMMON#
+
+# Clean up after ourselves if we're in the new world.
+if is_phpquery_available; then
+  phpdismod -v ALL newrelic
+
+  for version in $(/usr/sbin/phpquery -V); do
+    uninstall_agent_from_new_package "$version"
+  done
+else
+  # The system PHP has no cli or php-config but if it exists we will have created
+  # files during postinst so we must remove them now.
+  arch=`uname -m 2> /dev/null`
+  mydir=/usr/lib/newrelic-php5
+  case $arch in
+    i[3456789]86 | i86pc)
+      arch=x86
+      ;;
+    x86_64 | amd64)
+      arch=x64
+      ;;
+    *)
+      arch= ;;
+  esac
+
+  pdir=
+  if [ -d /usr/lib/php5 ]; then
+    pdir=/usr/lib/php5
+  elif [ -d /usr/lib64/php5 ]; then
+    pdir=/usr/lib64/php5
+    if [ "${arch}" = "x86" ]; then
+      pdir=
+    fi
+  fi
+
+  if [ -n "${arch}" -a -n "${pdir}" ]; then
+    if [ "$1" = 'upgrade' ]; then
+      # For upgrades, we should only remove versions that are actively
+      # supported.
+      for api in $PHP_API_VERSIONS; do
+        if [ -d "${pdir}/${api}" ]; then
+          rm -f "${pdir}/${api}/newrelic.so" > /dev/null 2>&1
+        fi
+        if [ -d "${pdir}/${api}+lfs" ]; then
+          rm -f "${pdir}/${api}+lfs/newrelic.so" > /dev/null 2>&1
+        fi
+      done
+    else
+      # For removals, get rid of everything we might have ever touched and salt
+      # the earth.
+      for api in $PHP_API_VERSIONS $DEPRECATED_PHP_API_VERSIONS $UNSUPPORTED_PHP_API_VERSIONS; do
+        if [ -d "${pdir}/${api}" ]; then
+          rm -f "${pdir}/${api}/newrelic.so" > /dev/null 2>&1
+        fi
+        if [ -d "${pdir}/${api}+lfs" ]; then
+          rm -f "${pdir}/${api}+lfs/newrelic.so" > /dev/null 2>&1
+        fi
+      done
+    fi
+  fi
+
+  if [ -n "${mydir}" -a -d "${mydir}" -a -d /etc/php5/conf.d -a -f /etc/php5/conf.d/newrelic.ini ]; then
+    if cmp ${mydir}/scripts/newrelic.ini.template /etc/php5/conf.d/newrelic.ini > /dev/null 2>&1; then
+      rm -f /etc/php5/conf.d/newrelic.ini > /dev/null 2>&1
+    fi
+  fi
+
+  NR_INSTALL_SILENT=yes /usr/bin/newrelic-install uninstall > /dev/null 2>&1 || true
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,14 @@
+#!/bin/sh
+# postrm script for newrelic-daemon
+#
+# see: dh_installdeb(1)
+
+if [ "$1" = "upgrade" ]; then
+  :
+else
+  rm -f /var/log/newrelic/newrelic-daemon.log* > /dev/null 2>&1
+fi
+
+#DEBHELPER#
+
+exit 0

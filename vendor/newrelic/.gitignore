@@ -1,0 +1,130 @@
+FILES
+*.out
+junk
+make.log
+.*.swp
+Makefile_*.deps
+*.T
+releases
+.DS_Store
+axiom/.deps
+
+#
+# aspell byproducts
+#
+*.bak
+
+#
+# This php_test_tools directory is git clone'd as part of running the hudson tests
+#
+php_test_tools/
+php_integration_tests/
+
+#
+# Tags files, for the those who use vim.
+gotags
+tags
+
+# Byproducts from running tests
+#
+*.tmp
+integration-tests.log
+php_agent.log
+*.valgrind.xml
+*.helgrind.xml
+
+#
+# build system generated files to capture changes to environment variables
+#
+nr_git_sha.h
+
+#
+# The .gdbinit file may be useful to others,
+# but it is typically very developer centric.
+# So for now, ignore it.
+#
+.gdbinit
+.gdb_history
+
+junk*
+
+#
+# output of gcc -E (prepreprocessor only)
+#
+*.E
+#
+# one-off shell scripts start with a single character.
+#
+?.sh
+
+#
+# Directory holding results from running various gcov processing tools
+#
+gcov_aggregate
+test_*.gcov_stash
+
+#
+# by products of running gcovr
+#
+cobertura.txt
+cobertura.xml
+coverage-report*
+
+#
+# by products of compiling for and running gcov
+#
+*.gcda
+*.gcno
+*.gcov
+
+#
+# core dump files
+#
+*.core
+core
+
+#
+# Default byproduct from gdb with "set logging on"
+#
+gdb.txt
+
+dynamic_deps
+
+#
+# xml data in a form suitable for junit
+#
+axiom_tests.xml
+
+#
+# Vagrant metadata
+#
+.vagrant
+
+#
+# byproducts of running Valgrind tests
+#
+*.valgrind.out.temp
+
+#
+# byproducts of running `make scanbuild`
+#
+scanbuild.reports/
+scanbuild.work/
+
+#
+# byproducts of running Facebook's 'infer'.
+#
+infer-out/
+
+#
+# byproducts of go tool
+#
+bin/
+pkg/
+
+#
+# byproducts of jetbrains
+#
+.idea/*
+
+agent/configure.ac

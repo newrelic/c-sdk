@@ -1,0 +1,28 @@
+#!/bin/sh
+# postrm script for newrelic-php5
+#
+# see: dh_installdeb(1)
+
+# Insert the contents of newrelic-php5.config here.
+#COMMON#
+
+if [ "$1" = "upgrade" ]; then
+  :
+elif [ "$1" = "purge" ]; then
+  if is_phpquery_available; then
+    # Xenial packages use /etc/php/mods-available instead of the version
+    # specific directory, so make sure we remove our configuration file from
+    # that if it exists.
+    rm -f /etc/php/mods-available/newrelic.ini
+
+    for version in $(/usr/sbin/phpquery -V); do
+      purge_agent_from_new_package "$version"
+    done
+  fi
+else
+  rm -f /var/log/newrelic/php_agent.log* > /dev/null 2>&1
+fi
+
+#DEBHELPER#
+
+exit 0

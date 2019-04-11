@@ -1,0 +1,9 @@
+#
+# Byproducts from building and running the test_app
+#
+test_app
+
+test_app_trigger
+c_sdk.log
+
+*.o

@@ -1,0 +1,62 @@
+#!/bin/sh
+# postinst script for newrelic-daemon
+#
+# see: dh_installdeb(1)
+
+# Common to both initial and upgrade installs
+if [ ! -d /var/log/newrelic ]; then
+  install -d -m 0755 -o root -g root /var/log/newrelic > /dev/null 2>&1
+fi
+if [ ! -d /etc/newrelic ]; then
+  install -d -m 0755 -o root -g root /etc/newrelic > /dev/null 2>&1
+else
+  chmod 0755 /etc/newrelic > /dev/null 2>&1
+fi
+if [ -f /etc/newrelic/newrelic.cfg.preupgrade ]; then
+  if [ ! -f /etc/newrelic/newrelic.cfg ]; then
+    mv -f /etc/newrelic/newrelic.cfg.preupgrade /etc/newrelic/newrelic.cfg > /dev/null 2>&1
+  fi
+fi
+if [ -f /etc/newrelic/newrelic.cfg ]; then
+  if grep '^[ 	]*license' /etc/newrelic/newrelic.cfg > /dev/null 2>&1; then
+    if ! grep 'OBSOLESCENCE NOTICE' /etc/newrelic/newrelic.cfg > /dev/null 2>&1; then
+      sed -e '/^[ 	]*license/ a\
+# OBSOLESCENCE NOTICE\
+# The license keyword is now ignored in this file. Instead it is now\
+# set by the agent (for example in your INI file for the PHP agent). As a\
+# temporary measure to ensure the agent functions correctly the license above\
+# has been saved in the file /etc/newrelic/upgrade_please.key. If no license\
+# is specified in the agent it will use the license from that file. This is a\
+# TEMPORARY measure and you are strongly encouraged to upgrade your agent\
+# configuration file and remove /etc/newrelic/upgrade_please.key in order to\
+# eliminate any confusion about where the license used comes from. Please also\
+# remove the license keyword above and this notice.\
+\
+' /etc/newrelic/newrelic.cfg > /etc/newrelic/newrelic.cfg.tmp 2>/dev/null
+      cp -f /etc/newrelic/newrelic.cfg.tmp /etc/newrelic/newrelic.cfg > /dev/null 2>&1
+      rm -f /etc/newrelic/newrelic.cfg.tmp > /dev/null 2>&1
+      nrkey=`sed -n -e 's/^[ 	]*license_key[ 	]*=[ 	]*//p' -e 's/[ 	]*$//' /etc/newrelic/newrelic.cfg 2> /dev/null`
+      if [ -n "${nrkey}" ]; then
+        echo "${nrkey}" > /etc/newrelic/upgrade_please.key 2> /dev/null
+        chmod 644 /etc/newrelic/upgrade_please.key 2> /dev/null
+      fi
+    fi
+  fi
+fi
+if [ ! -f /var/log/newrelic/newrelic-daemon.log ]; then
+  touch /var/log/newrelic/newrelic-daemon.log 2> /dev/null
+  chmod 0666 /var/log/newrelic/newrelic-daemon.log > /dev/null 2>&1
+fi
+
+/usr/sbin/update-rc.d newrelic-daemon defaults 90 10 > /dev/null 2>&1
+if [ -f /etc/newrelic/newrelic.cfg ]; then
+  /usr/sbin/update-rc.d newrelic-daemon enable > /dev/null 2>&1
+  NR_SILENT=yes SILENT=yes /etc/init.d/newrelic-daemon start > /dev/null 2>&1
+else
+  /usr/sbin/update-rc.d newrelic-daemon disable > /dev/null 2>&1
+  NR_SILENT=yes SILENT=yes /etc/init.d/newrelic-daemon stop > /dev/null 2>&1
+fi
+
+#DEBHELPER#
+
+exit 0

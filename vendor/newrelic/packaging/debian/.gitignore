@@ -1,0 +1,17 @@
+newrelic-php5.config
+newrelic-php5.postinst
+newrelic-php5.prerm
+newrelic-php5.postrm
+
+changelog
+newrelic-daemon.init
+newrelic-daemon.logrotate
+newrelic-daemon.substvars
+newrelic-daemon/
+newrelic-php5-common.substvars
+newrelic-php5.logrotate
+newrelic-php5.postrm.debhelper
+newrelic-php5.substvars
+newrelic-php5/
+
+files

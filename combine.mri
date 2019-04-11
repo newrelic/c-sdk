@@ -1,0 +1,12 @@
+; This is an MRI script to combine src/libnewrelic.a with
+; vendor/newrelic/axiom/libaxiom.a. Doing it this way ensures that conflicting 
+; files within the archive are appropriately renamed.
+;
+; This requires GNU ar: documentation on this DSL can be found at
+; https://sourceware.org/binutils/docs/binutils/ar-scripts.html
+
+create libnewrelic.a
+addlib vendor/newrelic/axiom/libaxiom.a
+addlib src/libnewrelic.a
+save
+end

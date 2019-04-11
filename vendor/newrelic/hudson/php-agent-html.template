@@ -1,0 +1,107 @@
+<style>
+body, table, td, th, p {
+  font-family:Verdana,Helvetica,sans serif;
+  font-size:11px;
+  color:black;
+}
+dev.change_set { font-family: Courier New; }
+h1 { color:black; }
+h2 { color:black; }
+h3 { color:black; }
+td.bg1 { color:white; background-color:#0000C0; font-size:120% }
+td.bg2 { color:white; background-color:#4040FF; font-size:110% }
+td.bg3 { color:white; background-color:#8080FF; }
+td.test_passed { color:blue; }
+td.test_failed { color:red; }
+td.console { font-family:Courier New; }
+</style>
+<body>
+
+<%
+
+import hudson.Functions
+import hudson.matrix.Axis
+import hudson.matrix.MatrixProject
+import hudson.matrix.MatrixRun
+import hudson.model.Result
+
+import org.apache.commons.lang.StringEscapeUtils
+
+imgSuccess = Functions.getResourcePath() + "/images/24x24/blue.gif"
+imgFailure = Functions.getResourcePath() + "/images/24x24/red.png"
+imgOther = Functions.getResourcePath() + "/images/24x24/yellow.png"
+
+%>
+
+<table>
+  <tr><td>Build URL:</td><td><a href="${rooturl}${build.url}changes">${rooturl}${build.url}changes</a></td></tr>
+  <tr><td>Project:</td><td>${project.name}</td></tr>
+  <tr><td>Date of build:</td><td>${it.timestampString}</td></tr>
+  <tr><td>Build duration:</td><td>${build.durationString}</td></tr>
+</table>
+<br/>
+
+<!-- CHANGE SET -->
+<%
+  def changeSet = build.changeSet
+  if (changeSet != null && !changeSet.isEmptySet()) {
+%>
+    <div class="change_set">
+      <p>Changes:</p>
+<%  changeSet.each() { cs -> %>
+      [<%= cs.author %>] ${cs.msgAnnotated}<br/>
+<%  } %>
+    </div>
+<br/>
+<% } else { %>
+  <p>No changes</p>
+<% } %>
+
+<!-- CONSOLE OUTPUT -->
+<%
+if (build.result == Result.FAILURE) {
+%>
+  <table>
+    <tr>
+      <th>&nbsp;</th>
+      <th align="left">Label</th>
+      <th align="left">Build Result</th>
+    </tr>
+<%
+  for (hudson.matrix.MatrixRun run : build.getExactRuns()) {
+    labelAxis = project.getAxes()[0]
+    combo = run.getParent().getCombination()
+    runUrl = run.getUrl()
+    img = imgOther
+
+    if (run.getResult() == Result.SUCCESS) {
+      img = imgSuccess
+    } else if (run.getResult() == Result.FAILURE) {
+      img = imgFailure
+    }
+%>
+      <tr>
+        <td><img src="${rooturl}${img}"/></td>
+        <td><%= combo.get(labelAxis) %></td>
+        <td><a href="${rooturl}${runUrl}console"><%= run.getResult() %></a></td>
+      <tr>
+
+<%  if (run.getResult() == Result.FAILURE) { %>
+      <tr>
+        <td>&nbsp;</td>
+        <td class="console" colspan="2">
+<%        run.getLog(20).each() { line -> %>
+            <%= StringEscapeUtils.escapeHtml(line) %><br/>
+<%        } %>
+        </td>
+      </tr>
+<%
+    }
+  }
+%>
+  </table>
+<%
+}
+%>
+
+</body>
