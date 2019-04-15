@@ -1,8 +1,8 @@
 var searchData=
 [
   ['libnewrelic_2eh',['libnewrelic.h',['../libnewrelic_8h.html',1,'']]],
-  ['library',['library',['../struct__newrelic__external__segment__params__t.html#a049d253b3532163f7adeedec64308ccb',1,'_newrelic_external_segment_params_t']]],
-  ['license_5fkey',['license_key',['../struct__newrelic__app__config__t.html#aac3c5f9a0e5da64836a806c47b954b71',1,'_newrelic_app_config_t']]],
-  ['log_5ffilename',['log_filename',['../struct__newrelic__app__config__t.html#aeecbfa8b32219be3dd3e4fad3bcbc762',1,'_newrelic_app_config_t']]],
-  ['log_5flevel',['log_level',['../struct__newrelic__app__config__t.html#a105b18ac78d02bd37cece8b44a7340a0',1,'_newrelic_app_config_t']]]
+  ['library',['library',['../structnewrelic__external__segment__params__t.html#a128aedbfca7e8eebd3a38d0366d94f33',1,'newrelic_external_segment_params_t']]],
+  ['license_5fkey',['license_key',['../structnewrelic__app__config__t.html#a84a45cf18786e4773a6264abfd4a330c',1,'newrelic_app_config_t']]],
+  ['log_5ffilename',['log_filename',['../structnewrelic__app__config__t.html#a7723894306f47dab64bbea6ba50bfa8d',1,'newrelic_app_config_t']]],
+  ['log_5flevel',['log_level',['../structnewrelic__app__config__t.html#aa8cdeedde66ede25d4f3083e6e2c24b2',1,'newrelic_app_config_t']]]
 ];

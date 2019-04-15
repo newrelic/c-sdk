@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.5"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: File List</title>
+<title>New Relic C SDK: New Relic C SDK</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -39,9 +39,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
+      <li class="current"><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li class="current"><a href="files.html"><span>Files</span></a></li>
+      <li><a href="files.html"><span>Files</span></a></li>
       <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
@@ -61,13 +61,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li class="current"><a href="files.html"><span>File&#160;List</span></a></li>
-      <li><a href="globals.html"><span>Globals</span></a></li>
-    </ul>
-  </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -82,18 +75,46 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
   <div class="headertitle">
-<div class="title">File List</div>  </div>
+<div class="title">New Relic C SDK </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all documented files with brief descriptions:</div><div class="directory">
-<div class="levels">[detail level <span onclick="javascript:toggleLevel(1);">1</span><span onclick="javascript:toggleLevel(2);">2</span>]</div><table class="directory">
-<tr id="row_0_" class="even"><td class="entry"><img id="arr_0_" src="ftv2mlastnode.png" alt="\" width="16" height="22" onclick="toggleFolder('0_')"/><img id="img_0_" src="ftv2folderopen.png" alt="-" width="24" height="22" onclick="toggleFolder('0_')"/><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html" target="_self">include</a></td><td class="desc"></td></tr>
-<tr id="row_0_0_"><td class="entry"><img src="ftv2blank.png" alt="&#160;" width="16" height="22" /><img src="ftv2lastnode.png" alt="\" width="16" height="22" /><a href="libnewrelic_8h_source.html"><img src="ftv2doc.png" alt="*" width="24" height="22" /></a><a class="el" href="libnewrelic_8h.html" target="_self">libnewrelic.h</a></td><td class="desc">This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications </td></tr>
-</table>
-</div><!-- directory -->
-</div><!-- contents -->
+<div class="textblock"><p>This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications.</p>
+<h2>Support</h2>
+<p>Do you have questions or are you experiencing unexpected behaviors with this Open Source Software? Please engage with us on the <a href="https://discuss.newrelic.com/">New Relic Explorers Hub</a>.</p>
+<p>If you’re confident your issue is a bug, please follow our <a href="needs_a_link.com">bug reporting guidelines</a> and open a GitHub Issue.</p>
+<h2>Requirements</h2>
+<p>The C SDK works on 64-bit Linux operating systems with:</p>
+<ul>
+<li>gcc 4.8 or higher</li>
+<li>glibc 2.17 or higher</li>
+<li>Kernel version 2.6.26 or higher</li>
+<li>libpcre 8.20 or higher</li>
+<li>libpthread</li>
+</ul>
+<p>Running unit tests requires cmake 2.8 or higher.</p>
+<p>Compiling the New Relic daemon requires Go 1.4 or higher.</p>
+<h2>Building the C SDK</h2>
+<p>If your system meets the requirements, building the C SDK and daemon should be as simple as:</p>
+<p>```sh make ```</p>
+<p>This will create two files in this directory:</p>
+<ul>
+<li><code>libnewrelic.a</code>: the static C SDK library, ready to link against.</li>
+<li><code>newrelic-daemon</code>: the daemon binary, ready to run.</li>
+</ul>
+<p>You can start the daemon in the foreground with:</p>
+<p>```sh ./newrelic-daemon -f &ndash;logfile stdout &ndash;loglevel debug ```</p>
+<p>Then you can invoke your instrumented application. Your application, which makes C SDK API calls, reports data to the daemon over a socket; in turn, the daemon reports the data to New Relic.</p>
+<h2>Using the SDK</h2>
+<p>Documentation is available at <a href="docs.newrelic.com">docs.newrelic.com</a>. API usage information can be found in <a class="el" href="libnewrelic_8h.html" title="This is the New Relic C SDK! If your application does not use other New Relic APM agent languages...">libnewrelic.h</a>. Other header files are internal to the agent, and their stability is not guaranteed. Working examples are available in the <a href="../examples/">examples</a> directory.</p>
+<h2>Tests</h2>
+<p>To compile and run the unit tests:</p>
+<p>```sh make run_tests ```</p>
+<p>Or, just to compile them:</p>
+<p>```sh make tests ``` </p>
+</div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
