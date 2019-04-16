@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: New Relic C SDK</title>
+<title>New Relic C SDK: Examples</title>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
@@ -42,10 +42,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
   <div id="navrow1" class="tabs">
     <ul class="tablist">
-      <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
-      <li><a href="examples.html"><span>Examples</span></a></li>
+      <li class="current"><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -79,43 +79,27 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
-<div class="PageDoc"><div class="header">
+<div class="header">
   <div class="headertitle">
-<div class="title">New Relic C SDK </div>  </div>
+<div class="title">Examples</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications.</p>
-<h2>Support</h2>
-<p>Do you have questions or are you experiencing unexpected behaviors with this Open Source Software? Please engage with us on the <a href="https://discuss.newrelic.com/">New Relic Explorers Hub</a>.</p>
-<p>If you’re confident your issue is a bug, please follow our <a href="needs_a_link.com">bug reporting guidelines</a> and open a GitHub Issue.</p>
-<h2>Requirements</h2>
-<p>The C SDK works on 64-bit Linux operating systems with:</p>
-<ul>
-<li>gcc 4.8 or higher</li>
-<li>glibc 2.17 or higher</li>
-<li>Kernel version 2.6.26 or higher</li>
-<li>libpcre 8.20 or higher</li>
-<li>libpthread</li>
+<div class="textblock">Here is a list of all examples:</div><ul>
+<li><a class="el" href="ex_custom_8c-example.html">ex_custom.c</a></li>
+
+<li><a class="el" href="ex_datastore_8c-example.html">ex_datastore.c</a></li>
+
+<li><a class="el" href="ex_external_8c-example.html">ex_external.c</a></li>
+
+<li><a class="el" href="ex_notice_error_8c-example.html">ex_notice_error.c</a></li>
+
+<li><a class="el" href="ex_segment_8c-example.html">ex_segment.c</a></li>
+
+<li><a class="el" href="ex_simple_8c-example.html">ex_simple.c</a></li>
+
+<li><a class="el" href="ex_timing_8c-example.html">ex_timing.c</a></li>
+
 </ul>
-<p>Running unit tests requires cmake 2.8 or higher.</p>
-<p>Compiling the New Relic daemon requires Go 1.4 or higher.</p>
-<h2>Building the C SDK</h2>
-<p>If your system meets the requirements, building the C SDK and daemon should be as simple as:</p>
-<div class="fragment"><div class="line">make</div></div><!-- fragment --><p>This will create two files in this directory:</p>
-<ul>
-<li><code>libnewrelic.a</code>: the static C SDK library, ready to link against.</li>
-<li><code>newrelic-daemon</code>: the daemon binary, ready to run.</li>
-</ul>
-<p>You can start the daemon in the foreground with:</p>
-<div class="fragment"><div class="line">./newrelic-daemon -f --logfile stdout --loglevel debug</div></div><!-- fragment --><p>Then you can invoke your instrumented application. Your application, which makes C SDK API calls, reports data to the daemon over a socket; in turn, the daemon reports the data to New Relic.</p>
-<h2>Using the SDK</h2>
-<p>Documentation is available at <a href="docs.newrelic.com">docs.newrelic.com</a> and at github.com.</p>
-<p>API usage information can be found in <a class="el" href="libnewrelic_8h.html" title="This is the New Relic C SDK! If your application does not use other New Relic APM agent languages,...">libnewrelic.h</a>, available in the <a href="https://github.com/newrelic/c-sdk/tree/master/include">include directory</a>. Other header files are internal to the agent, and their stability is not guaranteed.</p>
-<p>Working examples are available in the <a href="https://github.com/newrelic/c-sdk/tree/master/examples">examples directory</a> of the C SDK github repository.</p>
-<h2>Tests</h2>
-<p>To compile and run the unit tests:</p>
-<div class="fragment"><div class="line">make run_tests</div></div><!-- fragment --><p>Or, just to compile them:</p>
-<div class="fragment"><div class="line">make tests</div></div><!-- fragment --> </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->

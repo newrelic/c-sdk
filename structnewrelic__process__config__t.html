@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: New Relic C SDK</title>
+<title>New Relic C SDK: newrelic_process_config_t Struct Reference</title>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
@@ -42,8 +42,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
   <div id="navrow1" class="tabs">
     <ul class="tablist">
-      <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
@@ -64,7 +64,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-</div><!-- top -->
+  <div id="navrow2" class="tabs2">
+    <ul class="tablist">
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
+      <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
+    </ul>
+  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -79,43 +85,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
-<div class="PageDoc"><div class="header">
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">New Relic C SDK </div>  </div>
+<div class="title">newrelic_process_config_t Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications.</p>
-<h2>Support</h2>
-<p>Do you have questions or are you experiencing unexpected behaviors with this Open Source Software? Please engage with us on the <a href="https://discuss.newrelic.com/">New Relic Explorers Hub</a>.</p>
-<p>If you’re confident your issue is a bug, please follow our <a href="needs_a_link.com">bug reporting guidelines</a> and open a GitHub Issue.</p>
-<h2>Requirements</h2>
-<p>The C SDK works on 64-bit Linux operating systems with:</p>
-<ul>
-<li>gcc 4.8 or higher</li>
-<li>glibc 2.17 or higher</li>
-<li>Kernel version 2.6.26 or higher</li>
-<li>libpcre 8.20 or higher</li>
-<li>libpthread</li>
+
+<p>Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary.  
+ <a href="structnewrelic__process__config__t.html#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:ac16ca584c60013fefd6eda6c0aee0c72"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__process__config__t.html#ac16ca584c60013fefd6eda6c0aee0c72">daemon_socket</a> [512]</td></tr>
+<tr class="memdesc:ac16ca584c60013fefd6eda6c0aee0c72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the communication mechanism by setting daemon_socket to a socket name.  <a href="#ac16ca584c60013fefd6eda6c0aee0c72">More...</a><br /></td></tr>
+<tr class="separator:ac16ca584c60013fefd6eda6c0aee0c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
+<a id="ac16ca584c60013fefd6eda6c0aee0c72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac16ca584c60013fefd6eda6c0aee0c72">&#9670;&nbsp;</a></span>daemon_socket</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char newrelic_process_config_t::daemon_socket[512]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Specify the communication mechanism by setting daemon_socket to a socket name. </p>
+<p>Domain Sockets: If you want to use UNIX domain sockets as the underlying communication mechanism, the name assigned to daemon_socket must begin with a "/", e.g., "/domain_socket".</p>
+<p>TCP Socket: If you want to use a normal TCP socket, set daemon_socket to an integer value in the range 1-65534. This instructs the daemon to listen on a normal TCP socket on the port specified.</p>
+<p>Abstract Socket: If you want to use an abstract socket, the name assigned to daemon_socket must begin with a "@", e.g., "@abstract_socket". </p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li><a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a></li>
 </ul>
-<p>Running unit tests requires cmake 2.8 or higher.</p>
-<p>Compiling the New Relic daemon requires Go 1.4 or higher.</p>
-<h2>Building the C SDK</h2>
-<p>If your system meets the requirements, building the C SDK and daemon should be as simple as:</p>
-<div class="fragment"><div class="line">make</div></div><!-- fragment --><p>This will create two files in this directory:</p>
-<ul>
-<li><code>libnewrelic.a</code>: the static C SDK library, ready to link against.</li>
-<li><code>newrelic-daemon</code>: the daemon binary, ready to run.</li>
-</ul>
-<p>You can start the daemon in the foreground with:</p>
-<div class="fragment"><div class="line">./newrelic-daemon -f --logfile stdout --loglevel debug</div></div><!-- fragment --><p>Then you can invoke your instrumented application. Your application, which makes C SDK API calls, reports data to the daemon over a socket; in turn, the daemon reports the data to New Relic.</p>
-<h2>Using the SDK</h2>
-<p>Documentation is available at <a href="docs.newrelic.com">docs.newrelic.com</a> and at github.com.</p>
-<p>API usage information can be found in <a class="el" href="libnewrelic_8h.html" title="This is the New Relic C SDK! If your application does not use other New Relic APM agent languages,...">libnewrelic.h</a>, available in the <a href="https://github.com/newrelic/c-sdk/tree/master/include">include directory</a>. Other header files are internal to the agent, and their stability is not guaranteed.</p>
-<p>Working examples are available in the <a href="https://github.com/newrelic/c-sdk/tree/master/examples">examples directory</a> of the C SDK github repository.</p>
-<h2>Tests</h2>
-<p>To compile and run the unit tests:</p>
-<div class="fragment"><div class="line">make run_tests</div></div><!-- fragment --><p>Or, just to compile them:</p>
-<div class="fragment"><div class="line">make tests</div></div><!-- fragment --> </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->

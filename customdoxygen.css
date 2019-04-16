@@ -1,30 +1,35 @@
-/* The standard CSS for doxygen 1.8.16 */
+/* The standard CSS for doxygen 1.8.15 */
+
+
+h1, .h1, h2, .h2, h3, .h3{
+	font-weight: 200 !important;
+}
 
 body, table, div, p, dl {
-	font: 400 14px/22px Roboto,sans-serif;
+	font: 400 15px/20px 'Open Sans',Roboto,sans-serif;
+	line-height: 1.5em;
+}
+
+div.title {
+	font-size: 120%;
 }
 
 p.reference, p.definition {
-	font: 400 14px/22px Roboto,sans-serif;
+	font: 400 15px/20px 'Open Sans',Roboto,sans-serif;
+	line-height: 1.5em;
 }
 
 /* @group Heading Levels */
 
-h1.groupheader {
-	font-size: 150%;
-}
 
-.title {
-	font: 400 14px/28px Roboto,sans-serif;
-	font-size: 150%;
-	font-weight: bold;
-	margin: 10px 2px;
+h1.groupheader {
+	font-size: 120%;
 }
 
 h2.groupheader {
 	border-bottom: 1px solid #879ECB;
 	color: #354C7B;
-	font-size: 150%;
+	font-size: 120%;
 	font-weight: normal;
 	margin-top: 1.75em;
 	padding-top: 8px;
@@ -53,13 +58,11 @@ dt {
 	font-weight: bold;
 }
 
-ul.multicol {
+div.multicol {
 	-moz-column-gap: 1em;
 	-webkit-column-gap: 1em;
-	column-gap: 1em;
 	-moz-column-count: 3;
 	-webkit-column-count: 3;
-	column-count: 3;
 }
 
 p.startli, p.startdd {
@@ -80,15 +83,6 @@ p.enddd {
 
 p.endtd {
 	margin-bottom: 2px;
-}
-
-p.interli {
-}
-
-p.interdd {
-}
-
-p.intertd {
 }
 
 /* @end */
@@ -145,12 +139,12 @@ a.qindex {
 a.qindexHL {
 	font-weight: bold;
 	background-color: #9CAFD4;
-	color: #FFFFFF;
+	color: #ffffff;
 	border: 1px double #869DCA;
 }
 
 .contents a.qindexHL:visited {
-        color: #FFFFFF;
+        color: #ffffff;
 }
 
 a.el {
@@ -178,14 +172,6 @@ ul {
   overflow: hidden; /*Fixed: list item bullets overlap floating elements*/
 }
 
-#side-nav ul {
-  overflow: visible; /* reset ul rule for scroll bar in GENERATE_TREEVIEW window */
-}
-
-#main-nav ul {
-  overflow: visible; /* reset ul rule for the navigation bar drop down lists */
-}
-
 .fragment {
   text-align: left;
   direction: ltr;
@@ -200,44 +186,26 @@ pre.fragment {
         margin: 4px 8px 4px 2px;
         overflow: auto;
         word-wrap: break-word;
-        font-size:  9pt;
         line-height: 125%;
         font-family: monospace, fixed;
         font-size: 105%;
 }
 
 div.fragment {
-  padding: 0 0 1px 0; /*Fixed: last line underline overlap border*/
-  margin: 4px 8px 4px 2px;
+  padding: 4px; /*Fixed: last line underline overlap border*/
+  margin: 8px 16px 8px 4px;
 	background-color: #FBFCFD;
 	border: 1px solid #C4CFE5;
 }
 
 div.line {
 	font-family: monospace, fixed;
-        font-size: 13px;
-	min-height: 13px;
-	line-height: 1.0;
-	text-wrap: unrestricted;
+	font-size: 105%;
 	white-space: -moz-pre-wrap; /* Moz */
 	white-space: -pre-wrap;     /* Opera 4-6 */
 	white-space: -o-pre-wrap;   /* Opera 7 */
 	white-space: pre-wrap;      /* CSS3  */
 	word-wrap: break-word;      /* IE 5.5+ */
-	text-indent: -53px;
-	padding-left: 53px;
-	padding-bottom: 0px;
-	margin: 0px;
-	-webkit-transition-property: background-color, box-shadow;
-	-webkit-transition-duration: 0.5s;
-	-moz-transition-property: background-color, box-shadow;
-	-moz-transition-duration: 0.5s;
-	-ms-transition-property: background-color, box-shadow;
-	-ms-transition-duration: 0.5s;
-	-o-transition-property: background-color, box-shadow;
-	-o-transition-duration: 0.5s;
-	transition-property: background-color, box-shadow;
-	transition-duration: 0.5s;
 }
 
 div.line:after {
@@ -278,7 +246,7 @@ span.lineno a:hover {
 div.ah, span.ah {
 	background-color: black;
 	font-weight: bold;
-	color: #FFFFFF;
+	color: #ffffff;
 	margin-bottom: 3px;
 	margin-top: 3px;
 	padding: 0.2em;
@@ -304,12 +272,13 @@ div.classindex span.ai {
 
 div.groupHeader {
 	margin-left: 16px;
-	margin-top: 12px;
+	margin-top: 20px;
+	margin-bottom: 8px;
+	font-size: 120%;
 	font-weight: bold;
 }
 
 div.groupText {
-	margin-left: 16px;
 	font-style: italic;
 }
 
@@ -354,7 +323,7 @@ img.formulaDsp {
 	
 }
 
-img.formulaInl, img.inline {
+img.formulaInl {
 	vertical-align: middle;
 }
 
@@ -441,24 +410,6 @@ blockquote.DocNodeRTL {
 
 /* @end */
 
-/*
-.search {
-	color: #003399;
-	font-weight: bold;
-}
-
-form.search {
-	margin-bottom: 0px;
-	margin-top: 0px;
-}
-
-input.search {
-	font-size: 75%;
-	color: #000080;
-	font-weight: normal;
-	background-color: #e8eef2;
-}
-*/
 
 td.tiny {
 	font-size: 75%;
@@ -552,6 +503,7 @@ table.memberdecls {
 /* Styles for detailed member documentation */
 
 .memtitle {
+	font-size: 130%;
 	padding: 8px;
 	border-top: 1px solid #A8B8D9;
 	border-left: 1px solid #A8B8D9;
@@ -598,13 +550,13 @@ table.memberdecls {
 	padding: 0;
 	margin-bottom: 10px;
 	margin-right: 5px;
-        -webkit-transition: box-shadow 0.5s linear;
-        -moz-transition: box-shadow 0.5s linear;
-        -ms-transition: box-shadow 0.5s linear;
-        -o-transition: box-shadow 0.5s linear;
-        transition: box-shadow 0.5s linear;
-        display: table !important;
-        width: 100%;
+	-webkit-transition: box-shadow 0.5s linear;
+	-moz-transition: box-shadow 0.5s linear;
+	-ms-transition: box-shadow 0.5s linear;
+	-o-transition: box-shadow 0.5s linear;
+	transition: box-shadow 0.5s linear;
+	display: table !important;
+	width: 100%;
 }
 
 .memitem.glow {
@@ -703,17 +655,18 @@ dl.reflist dd {
         padding-left: 0px;
 }       
 
-.params .paramname, .retval .paramname, .tparams .paramname, .exception .paramname {
+.params .paramname, .retval .paramname {
         font-weight: bold;
         vertical-align: top;
+		padding-right: 20px;
 }
         
-.params .paramtype, .tparams .paramtype {
+.params .paramtype {
         font-style: italic;
         vertical-align: top;
 }       
         
-.params .paramdir, .tparams .paramdir {
+.params .paramdir {
         font-family: "courier new",courier,monospace;
         vertical-align: top;
 }
@@ -836,10 +789,9 @@ div.directory {
 }
 
 .icon {
-    font-family: Arial, Helvetica;
     font-weight: bold;
     font-size: 12px;
-    height: 14px;
+    height: 20px;
     width: 16px;
     display: inline-block;
     background-color: #728DC1;
@@ -890,7 +842,8 @@ div.directory {
 }
 
 table.directory {
-    font: 400 14px Roboto,sans-serif;
+    font: 400 15px 'Open Sans',Roboto,sans-serif;
+	line-height: 1.5em;
 }
 
 /* @end */
@@ -1042,8 +995,6 @@ table.fieldtable {
 	text-decoration: none;
 	outline: none;
 	color: #283A5D;
-	font-family: 'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
-	text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
 	text-decoration: none;        
 }
 
@@ -1106,11 +1057,12 @@ div.ingroups a
 
 div.header
 {
-        background-image:url('nav_h.png');
-        background-repeat:repeat-x;
+    background-image:url('nav_h.png');
+	background-repeat:repeat-x;
 	background-color: #F9FAFC;
 	margin:  0px;
 	border-bottom: 1px solid #C4CFE5;
+	width: 101%;
 }
 
 div.headertitle
@@ -1123,12 +1075,14 @@ div.headertitle
   direction: rtl;
 }
 
-dl {
+dl
+{
         padding: 0 0 0 0;
 }
 
-/* dl.note, dl.warning, dl.attention, dl.pre, dl.post, dl.invariant, dl.deprecated, dl.todo, dl.test, dl.bug, dl.examples */
-dl.section {
+/* dl.note, dl.warning, dl.attention, dl.pre, dl.post, dl.invariant, dl.deprecated, dl.todo, dl.test, dl.bug */
+dl.section
+{
 	margin-left: 0px;
 	padding-left: 0px;
 }
@@ -1507,7 +1461,7 @@ tr.heading h2 {
 #powerTip div {
         margin: 0px;
         padding: 0px;
-        font: 12px/16px Roboto,sans-serif;
+        font: 12px/16px 'Open Sans',Roboto,sans-serif;
 }
 
 #powerTip:before, #powerTip:after {
@@ -1552,7 +1506,7 @@ tr.heading h2 {
 }
 
 #powerTip.n:after, #powerTip.ne:after, #powerTip.nw:after {
-	border-top-color: #FFFFFF;
+	border-top-color: #ffffff;
 	border-width: 10px;
 	margin: 0px -10px;
 }
@@ -1580,7 +1534,7 @@ tr.heading h2 {
 }
 
 #powerTip.s:after, #powerTip.se:after, #powerTip.sw:after {
-	border-bottom-color: #FFFFFF;
+	border-bottom-color: #ffffff;
 	border-width: 10px;
 	margin: 0px -10px;
 }
@@ -1607,7 +1561,7 @@ tr.heading h2 {
 	left: 100%;
 }
 #powerTip.e:after {
-	border-left-color: #FFFFFF;
+	border-left-color: #ffffff;
 	border-width: 10px;
 	top: 50%;
 	margin-top: -10px;
@@ -1623,7 +1577,7 @@ tr.heading h2 {
 	right: 100%;
 }
 #powerTip.w:after {
-	border-right-color: #FFFFFF;
+	border-right-color: #ffffff;
 	border-width: 10px;
 	top: 50%;
 	margin-top: -10px;
@@ -1758,9 +1712,64 @@ tt, code, kbd, samp
   display: inline-block;
   direction:ltr; 
 }
-/* @end */
 
-u {
-	text-decoration: underline;
+/* tabs.css brought here because the default Lucida is not my favorite */
+
+.tabs, .tabs2, .tabs3 {
+	background-image: url('tab_b.png');
+	width: 101%;
+	z-index: 101;
 }
 
+.tabs2 {
+	font-size: 10px;
+}
+.tabs3 {
+	font-size: 9px;
+}
+
+.tablist {
+	margin: 0;
+	padding: 0;
+	display: table;
+}
+
+.tablist li {
+	float: left;
+	display: table-cell;
+	background-image: url('tab_b.png');
+	line-height: 36px;
+	list-style: none;
+}
+
+.tablist a {
+	display: block;
+	padding: 0 20px;
+	font-weight: bold;
+	background-image:url('tab_s.png');
+	background-repeat:no-repeat;
+	background-position:right;
+	color: #283A5D;
+	text-decoration: none;
+	outline: none;
+}
+
+.tabs3 .tablist a {
+	padding: 0 10px;
+}
+
+.tablist a:hover {
+	background-image: url('tab_h.png');
+	background-repeat:repeat-x;
+	color: #fff;
+	text-decoration: none;
+}
+
+.tablist li.current a {
+	background-image: url('tab_a.png');
+	background-repeat:repeat-x;
+	color: #fff;
+}
+
+
+/* @end */
