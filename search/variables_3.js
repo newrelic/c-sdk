@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['enabled',['enabled',['../structnewrelic__transaction__tracer__config__t.html#a52be4a65e97fd299f79a29512bd22db0',1,'newrelic_transaction_tracer_config_t']]]
+  ['enabled',['enabled',['../struct__newrelic__transaction__tracer__config__t.html#a9550005cea19311882fa8845b5e838d7',1,'_newrelic_transaction_tracer_config_t']]]
 ];

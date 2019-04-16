@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['query',['query',['../structnewrelic__datastore__segment__params__t.html#af94341ea802d7aade712d23fa599359b',1,'newrelic_datastore_segment_params_t']]]
+  ['query',['query',['../struct__newrelic__datastore__segment__params__t.html#aca1e816f53e52957918f5665da0ec248',1,'_newrelic_datastore_segment_params_t']]]
 ];
