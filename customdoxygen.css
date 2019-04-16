@@ -1057,11 +1057,12 @@ div.ingroups a
 
 div.header
 {
-        background-image:url('nav_h.png');
-        background-repeat:repeat-x;
+    background-image:url('nav_h.png');
+	background-repeat:repeat-x;
 	background-color: #F9FAFC;
 	margin:  0px;
 	border-bottom: 1px solid #C4CFE5;
+	width: 101%;
 }
 
 div.headertitle
@@ -1711,4 +1712,64 @@ tt, code, kbd, samp
   display: inline-block;
   direction:ltr; 
 }
+
+/* tabs.css brought here because the default Lucida is not my favorite */
+
+.tabs, .tabs2, .tabs3 {
+	background-image: url('tab_b.png');
+	width: 101%;
+	z-index: 101;
+}
+
+.tabs2 {
+	font-size: 10px;
+}
+.tabs3 {
+	font-size: 9px;
+}
+
+.tablist {
+	margin: 0;
+	padding: 0;
+	display: table;
+}
+
+.tablist li {
+	float: left;
+	display: table-cell;
+	background-image: url('tab_b.png');
+	line-height: 36px;
+	list-style: none;
+}
+
+.tablist a {
+	display: block;
+	padding: 0 20px;
+	font-weight: bold;
+	background-image:url('tab_s.png');
+	background-repeat:no-repeat;
+	background-position:right;
+	color: #283A5D;
+	text-decoration: none;
+	outline: none;
+}
+
+.tabs3 .tablist a {
+	padding: 0 10px;
+}
+
+.tablist a:hover {
+	background-image: url('tab_h.png');
+	background-repeat:repeat-x;
+	color: #fff;
+	text-decoration: none;
+}
+
+.tablist li.current a {
+	background-image: url('tab_a.png');
+	background-repeat:repeat-x;
+	color: #fff;
+}
+
+
 /* @end */
