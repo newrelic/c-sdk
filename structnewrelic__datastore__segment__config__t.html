@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: Data Structure Index</title>
+<title>New Relic C SDK: newrelic_datastore_segment_config_t Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -68,11 +68,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
       <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li class="current"><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
+      <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
       <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
     </ul>
   </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -87,27 +86,67 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">Data Structure Index</div>  </div>
+<div class="title">newrelic_datastore_segment_config_t Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="qindex"><a class="qindex" href="#letter_n">n</a></div>
-<table class="classindex">
-<tr><td rowspan="2" valign="bottom"><a name="letter_n"></a><table border="0" cellspacing="0" cellpadding="0"><tr><td><div class="ah">&#160;&#160;n&#160;&#160;</div></td></tr></table>
-</td>
-<td valign="top"><a class="el" href="structnewrelic__datastore__segment__config__t.html">newrelic_datastore_segment_config_t</a>&#160;&#160;&#160;</td>
-<td valign="top"><a class="el" href="structnewrelic__external__segment__params__t.html">newrelic_external_segment_params_t</a>&#160;&#160;&#160;</td>
-<td valign="top"><a class="el" href="structnewrelic__transaction__tracer__config__t.html">newrelic_transaction_tracer_config_t</a>&#160;&#160;&#160;</td>
-</tr>
-<tr><td valign="top"><a class="el" href="structnewrelic__datastore__segment__params__t.html">newrelic_datastore_segment_params_t</a>&#160;&#160;&#160;</td>
-<td valign="top"><a class="el" href="structnewrelic__process__config__t.html">newrelic_process_config_t</a>&#160;&#160;&#160;</td>
-<td></td></tr>
-<tr><td valign="top"><a class="el" href="structnewrelic__app__config__t.html">newrelic_app_config_t</a>&#160;&#160;&#160;</td>
-<td></td><td></td><td></td></tr>
-<tr><td></td><td></td><td></td><td></td></tr>
+
+<p>Configuration used to configure how datastore segments are recorded in a transaction.  
+ <a href="structnewrelic__datastore__segment__config__t.html#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:a50686f3b262b03e216e0b08b63872c4e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__datastore__segment__config__t.html#a50686f3b262b03e216e0b08b63872c4e">instance_reporting</a></td></tr>
+<tr class="memdesc:a50686f3b262b03e216e0b08b63872c4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration which controls whether datastore instance names are reported to New Relic.  <a href="#a50686f3b262b03e216e0b08b63872c4e">More...</a><br /></td></tr>
+<tr class="separator:a50686f3b262b03e216e0b08b63872c4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff92a47e722c5eda1c15cc6c9112321a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__datastore__segment__config__t.html#aff92a47e722c5eda1c15cc6c9112321a">database_name_reporting</a></td></tr>
+<tr class="memdesc:aff92a47e722c5eda1c15cc6c9112321a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration which controls whether datastore database names are reported to New Relic.  <a href="#aff92a47e722c5eda1c15cc6c9112321a">More...</a><br /></td></tr>
+<tr class="separator:aff92a47e722c5eda1c15cc6c9112321a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<div class="qindex"><a class="qindex" href="#letter_n">n</a></div>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Configuration used to configure how datastore segments are recorded in a transaction. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
+<a id="aff92a47e722c5eda1c15cc6c9112321a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff92a47e722c5eda1c15cc6c9112321a">&#9670;&nbsp;</a></span>database_name_reporting</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool newrelic_datastore_segment_config_t::database_name_reporting</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Configuration which controls whether datastore database names are reported to New Relic. </p>
+<p>If set to true for a transaction, database names are reported to New Relic. More specifically, the database_name field in a <a class="el" href="structnewrelic__datastore__segment__params__t.html" title="Segment configuration used to instrument calls to databases and object stores.">newrelic_datastore_segment_params_t</a> passed to newrelic_datastore_start_segment() is reported when the corresponding transaction is reported. </p>
+
+</div>
+</div>
+<a id="a50686f3b262b03e216e0b08b63872c4e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50686f3b262b03e216e0b08b63872c4e">&#9670;&nbsp;</a></span>instance_reporting</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool newrelic_datastore_segment_config_t::instance_reporting</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Configuration which controls whether datastore instance names are reported to New Relic. </p>
+<p>If set to true for a transaction, instance names are reported to New Relic. More specifically, the host and port_path_or_id fields in a <a class="el" href="structnewrelic__datastore__segment__params__t.html" title="Segment configuration used to instrument calls to databases and object stores.">newrelic_datastore_segment_params_t</a> passed to newrelic_datastore_start_segment() is reported when the corresponding transaction is reported. </p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li><a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a></li>
+</ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['app_5fname',['app_name',['../struct__newrelic__app__config__t.html#a0543f501cfec009c483be0c6d5d511f7',1,'_newrelic_app_config_t']]]
+  ['collection',['collection',['../structnewrelic__datastore__segment__params__t.html#a690d37d664132dc3cdcaa05cc0e990ae',1,'newrelic_datastore_segment_params_t']]]
 ];
