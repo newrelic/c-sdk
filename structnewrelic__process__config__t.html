@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: Data Structures</title>
+<title>New Relic C SDK: newrelic_process_config_t Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -67,12 +67,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   </div>
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
-      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
       <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
     </ul>
   </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -87,21 +86,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">Data Structures</div>  </div>
+<div class="title">newrelic_process_config_t Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">Here are the data structures with brief descriptions:</div><div class="directory">
-<table class="directory">
-<tr id="row_0_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__app__config__t.html" target="_self">newrelic_app_config_t</a></td><td class="desc">Configuration used to describe application name, license key, as well as optional transaction tracer and datastore configuration </td></tr>
-<tr id="row_1_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__datastore__segment__config__t.html" target="_self">newrelic_datastore_segment_config_t</a></td><td class="desc">Configuration used to configure how datastore segments are recorded in a transaction </td></tr>
-<tr id="row_2_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__datastore__segment__params__t.html" target="_self">newrelic_datastore_segment_params_t</a></td><td class="desc">Segment configuration used to instrument calls to databases and object stores </td></tr>
-<tr id="row_3_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__external__segment__params__t.html" target="_self">newrelic_external_segment_params_t</a></td><td class="desc">Segment configuration used to instrument external calls </td></tr>
-<tr id="row_4_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__process__config__t.html" target="_self">newrelic_process_config_t</a></td><td class="desc">Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary </td></tr>
-<tr id="row_5_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__transaction__tracer__config__t.html" target="_self">newrelic_transaction_tracer_config_t</a></td><td class="desc">Configuration used to configure transaction tracing </td></tr>
+
+<p>Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary.  
+ <a href="structnewrelic__process__config__t.html#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:ac16ca584c60013fefd6eda6c0aee0c72"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__process__config__t.html#ac16ca584c60013fefd6eda6c0aee0c72">daemon_socket</a> [512]</td></tr>
+<tr class="memdesc:ac16ca584c60013fefd6eda6c0aee0c72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the communication mechanism by setting daemon_socket to a socket name.  <a href="#ac16ca584c60013fefd6eda6c0aee0c72">More...</a><br /></td></tr>
+<tr class="separator:ac16ca584c60013fefd6eda6c0aee0c72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-</div><!-- directory -->
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
+<a id="ac16ca584c60013fefd6eda6c0aee0c72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac16ca584c60013fefd6eda6c0aee0c72">&#9670;&nbsp;</a></span>daemon_socket</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char newrelic_process_config_t::daemon_socket[512]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Specify the communication mechanism by setting daemon_socket to a socket name. </p>
+<p>Domain Sockets: If you want to use UNIX domain sockets as the underlying communication mechanism, the name assigned to daemon_socket must begin with a "/", e.g., "/domain_socket".</p>
+<p>TCP Socket: If you want to use a normal TCP socket, set daemon_socket to an integer value in the range 1-65534. This instructs the daemon to listen on a normal TCP socket on the port specified.</p>
+<p>Abstract Socket: If you want to use an abstract socket, the name assigned to daemon_socket must begin with a "@", e.g., "@abstract_socket". </p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li><a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a></li>
+</ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
