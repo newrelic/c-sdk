@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: File List</title>
+<title>New Relic C SDK: _newrelic_process_config_t Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -45,7 +45,6 @@ $(function() {
 });
 /* @license-end */</script>
 <div id="main-nav"></div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -60,17 +59,41 @@ $(function() {
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">File List</div>  </div>
+<div class="title">_newrelic_process_config_t Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all files with brief descriptions:</div><div class="directory">
-<div class="levels">[detail level <span onclick="javascript:toggleLevel(1);">1</span><span onclick="javascript:toggleLevel(2);">2</span>]</div><table class="directory">
-<tr id="row_0_" class="even"><td class="entry"><span style="width:0px;display:inline-block;">&#160;</span><span id="arr_0_" class="arrow" onclick="toggleFolder('0_')">&#9660;</span><span id="img_0_" class="iconfopen" onclick="toggleFolder('0_')">&#160;</span><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html" target="_self">include</a></td><td class="desc"></td></tr>
-<tr id="row_0_0_"><td class="entry"><span style="width:32px;display:inline-block;">&#160;</span><a href="libnewrelic_8h_source.html"><span class="icondoc"></span></a><a class="el" href="libnewrelic_8h.html" target="_self">libnewrelic.h</a></td><td class="desc">Generic library to communicate with New Relic. See accompanying GUIDE.md and LICENSE for more information </td></tr>
+
+<p><code>#include &lt;<a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:ac0f4aab7327c9ca8609e87c7d85ff7a8"><td class="memItemLeft" align="right" valign="top">char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct__newrelic__process__config__t.html#ac0f4aab7327c9ca8609e87c7d85ff7a8">daemon_socket</a> [512]</td></tr>
+<tr class="separator:ac0f4aab7327c9ca8609e87c7d85ff7a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-</div><!-- directory -->
+<h2 class="groupheader">Field Documentation</h2>
+<a id="ac0f4aab7327c9ca8609e87c7d85ff7a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac0f4aab7327c9ca8609e87c7d85ff7a8">&#9670;&nbsp;</a></span>daemon_socket</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char _newrelic_process_config_t::daemon_socket[512]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Optional. Specifies the underlying communication mechanism for the agent daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If you want to use UNIX domain sockets then this value must begin with a "/". Setting this to an integer value in the range 1-65534 will instruct the daemon to listen on a normal TCP socket on the port specified. On Linux, an abstract socket can be created by prefixing the socket name with '@'. </p>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li>include/<a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a></li>
+</ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
