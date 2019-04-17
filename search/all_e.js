@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['uri',['uri',['../structnewrelic__external__segment__params__t.html#a1ae58132ec3aac7bd9c90e2977a35e74',1,'newrelic_external_segment_params_t']]]
+  ['threshold',['threshold',['../struct__newrelic__transaction__tracer__config__t.html#aee21c882b0e47f74211e630146abd444',1,'_newrelic_transaction_tracer_config_t']]],
+  ['threshold_5fus',['threshold_us',['../struct__newrelic__transaction__tracer__config__t.html#af3cc4e3d01380723116cab6f1cb210b7',1,'_newrelic_transaction_tracer_config_t']]],
+  ['transaction_5ftracer',['transaction_tracer',['../struct__newrelic__app__config__t.html#ae13262eeb71bd95211a5bad4e1fc764f',1,'_newrelic_app_config_t']]]
 ];
