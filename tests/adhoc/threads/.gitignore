@@ -1,0 +1,7 @@
+#
+# Byproducts from building and running threads
+#
+threads
+c_sdk.log
+*.o
+vgcore.*

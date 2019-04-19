@@ -1,0 +1,14 @@
+{
+   <C++ std::thread false positive>
+   Helgrind:Race
+   fun:memset
+   ...
+   fun:_ZNSt6thread15_M_start_thread*
+}
+
+{
+   <boost::format false positive>
+   Helgrind:Race
+   ...
+   fun:_ZN5boost12basic_format*
+}
