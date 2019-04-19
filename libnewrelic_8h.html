@@ -1153,6 +1153,7 @@ Functions</h2></td></tr>
 
 <p>Ignore the current transaction. </p>
 <p>Given a transaction, this function instructs the C SDK to not send data to New Relic for that transaction.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Even when <a class="el" href="libnewrelic_8h.html#a7b41f8690c3b2b7e024a16fa4bb59320" title="Ignore the current transaction.">newrelic_ignore_transaction()</a> is called, one must still call <a class="el" href="libnewrelic_8h.html#acbd88933d620c21b7b19f12b6f042da8" title="End a transaction.">newrelic_end_transaction()</a> to free the memory used by the transaction and avoid a memory leak.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>A transaction.</td></tr>
@@ -1758,7 +1759,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 02:07:46 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 19 2019 00:30:01 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

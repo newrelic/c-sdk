@@ -85,9 +85,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications.</p>
-<h2>Support Statement</h2>
-<p>Do you have questions or are you experiencing unexpected behaviors with this Open Source Software? Please engage with us on the <a href="https://discuss.newrelic.com/t/about-the-open-source-agents-sdks-category/58764">New Relic Explorers Hub</a>.</p>
-<p>If you’re confident your issue is a bug, please follow our <a href="needs_a_link.com">bug reporting guidelines</a> and open a GitHub Issue.</p>
+<h2>Need Help?</h2>
+<p>Here are recommendations for learning more:</p>
+<ul>
+<li>Documentation is available at <a href="https://docs.newrelic.com/docs/c-sdk-table-contents">docs.newrelic.com</a> and <a href="https://github.com/newrelic/c-sdk/blob/master/GUIDE.md?">GUIDE.md</a>.</li>
+<li>API usage information can be found in <a class="el" href="libnewrelic_8h.html" title="This is the New Relic C SDK! If your application does not use other New Relic APM agent languages,...">libnewrelic.h</a>, available in the <a href="https://github.com/newrelic/c-sdk/tree/master/include">include directory</a>. Other header files are internal to the agent, and their stability is not guaranteed.</li>
+<li>Working examples are available in the <a href="https://github.com/newrelic/c-sdk/tree/master/examples">examples directory</a>.</li>
+</ul>
+<p>Do you have questions or are you experiencing unexpected behaviors with this Open Source Software?</p>
+<ul>
+<li>Please engage with us on the <a href="https://discuss.newrelic.com/t/about-the-open-source-agents-sdks-category/58764">New Relic Explorers Hub</a>.</li>
+<li>If you’re confident your issue is a bug, please follow our <a href="https://github.com/newrelic/c-sdk/blob/master/CONTRIBUTING.md#filing-issues--bug-reports">bug reporting guidelines</a> and open a GitHub Issue.</li>
+</ul>
 <h2>Contributing</h2>
 <p>We'd love to get your contributions to improve the C SDK! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. If you'd like to execute our corporate CLA, or if you have any questions, please drop us an email at <a href="#" onclick="location.href='mai'+'lto:'+'ope'+'n-'+'sou'+'rc'+'e@n'+'ew'+'rel'+'ic'+'.co'+'m'; return false;">open-<span style="display: none;">.nosp@m.</span>sour<span style="display: none;">.nosp@m.</span>ce@ne<span style="display: none;">.nosp@m.</span>wrel<span style="display: none;">.nosp@m.</span>ic.co<span style="display: none;">.nosp@m.</span>m</a>.</p>
 <h2>Requirements</h2>
@@ -110,10 +119,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 <p>You can start the daemon in the foreground with:</p>
 <div class="fragment"><div class="line">./newrelic-daemon -f --logfile stdout --loglevel debug</div></div><!-- fragment --><p>Then you can invoke your instrumented application. Your application, which makes C SDK API calls, reports data to the daemon over a socket; in turn, the daemon reports the data to New Relic.</p>
-<h2>Using the SDK</h2>
-<p>Documentation is available at <a href="https://docs.newrelic.com/docs/c-sdk-table-contents">docs.newrelic.com</a> and <a href="https://github.com/newrelic/c-sdk/tree/master/GUIDE.md?">GUIDE.md</a>.</p>
-<p>API usage information can be found in <a class="el" href="libnewrelic_8h.html" title="This is the New Relic C SDK! If your application does not use other New Relic APM agent languages,...">libnewrelic.h</a>, available in the <a href="https://github.com/newrelic/c-sdk/tree/master/include">include directory</a>. Other header files are internal to the agent, and their stability is not guaranteed.</p>
-<p>Working examples are available in the <a href="https://github.com/newrelic/c-sdk/tree/master/examples">examples directory</a>.</p>
 <h2>Tests</h2>
 <p>To compile and run the unit tests:</p>
 <div class="fragment"><div class="line">make run_tests</div></div><!-- fragment --><p>Or, just to compile them:</p>
@@ -124,7 +129,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 17 2019 02:07:46 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 19 2019 00:30:01 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>
