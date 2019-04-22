@@ -156,8 +156,6 @@ this may impact how you schedule your transition away from the Agent SDK.
 - At times, when the daemon removed an application after a 10-minute timeout, the agent
   daemon exited in failure. This has been fixed.
 
-### End of Life Notices ###
-
 ### Upgrade Notices ###
 
 * The function `bool newrelic_end_transaction(newrelic_txn_t** transaction)` has changed
@@ -176,7 +174,3 @@ this may impact how you schedule your transition away from the Agent SDK.
 ### Bug Fixes ###
 
 - Initial Release, no bug fixes
-
-### Notes ###
-
-### Internal Changes ###
