@@ -11,7 +11,7 @@ all: test_app test_app_trigger
 
 .PHONY: clean
 clean:
-	rm -r *.o test_app test_app_trigger
+	rm -f *.o test_app test_app_trigger
 
 test_app: test_app.o common.o
 	$(CC) $(LDFLAGS) -o $@ $< $(LIBS)
