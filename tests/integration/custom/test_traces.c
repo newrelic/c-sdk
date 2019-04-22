@@ -5,7 +5,7 @@ correctly.
 
 /*CONFIG
   cfg->transaction_tracer.threshold = NEWRELIC_THRESHOLD_IS_OVER_DURATION;
-  cfg->transaction_tracer.duration_us = 1;
+  cfg->transaction_tracer.duration_us = 0;
 */
 
 /*EXPECT_METRICS
