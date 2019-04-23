@@ -1,0 +1,5 @@
+language: c
+dist: xenial
+
+script:
+  - make tests && make run_tests
