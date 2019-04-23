@@ -6,30 +6,20 @@ monitoring capabilities and features to instrument a wide range of applications.
 
 ## Need Help?
 
-Here are recommendations for learning more:
+Recommendations for learning more:
 
-* Documentation is available at 
-[docs.newrelic.com](https://docs.newrelic.com/docs/c-sdk-table-contents)
-and [GUIDE.md](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md?).
+* See the Docs site's 
+[landing page](https://docs.newrelic.com/docs/c-sdk-table-contents)
+for C SDK documentation.
 
-* API usage information can be found in libnewrelic.h, available in the 
-[include directory](https://github.com/newrelic/c-sdk/tree/master/include). 
-Other header files are internal to the agent, and their stability 
-is not guaranteed. 
+* See New Relic's Documentation available at 
+[C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html).
 
-* Working examples are available in the 
-[examples directory](https://github.com/newrelic/c-sdk/tree/master/examples).
+* Browse 
+[New Relic's Explorers Hub](https://discuss.newrelic.com/c/build-on-new-relic/Open-Source-Agents-SDKs)
+for community discussions about the C SDK.
 
-
-Do you have questions or are you experiencing unexpected behaviors with this 
-Open Source Software? 
-
-* Please engage with us on the 
-[New Relic Explorers Hub](https://discuss.newrelic.com/t/about-the-open-source-agents-sdks-category/58764).
-
-* If you’re confident your issue is a bug, please follow our 
-[bug reporting guidelines](https://github.com/newrelic/c-sdk/blob/master/CONTRIBUTING.md#filing-issues--bug-reports) 
-and open a GitHub Issue.
+* Use your preferred search engine to find other New Relic resources.
 
 ## Contributing
 
