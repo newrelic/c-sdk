@@ -2,4 +2,6 @@ language: c
 dist: xenial
 
 script:
+  - >
+    clang-format $(find . -name \*.c -o -name \*.cpp -o -name \*.h) > /dev/null
   - make tests && make run_tests
