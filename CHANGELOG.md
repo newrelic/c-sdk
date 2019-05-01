@@ -10,6 +10,14 @@
 
 ### Upgrade Notices ###
 
+- The `newrelic_process_config_t` struct was erroneously left in
+  `libnewrelic.h` when the functionality that used it was refactored into
+  `newrelic_init()`. The struct has been removed.
+
+  Although this technically constitutes a backward compatibility break, we have
+  decided to do this in a minor release as there was no actual way to use the
+  struct with the API in version 1.0.
+
 ## 1.0.0 ##
 
 This is the first release of the New Relic C SDK! If your application does not use 

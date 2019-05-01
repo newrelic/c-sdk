@@ -289,31 +289,6 @@ typedef struct _newrelic_datastore_segment_config_t {
 } newrelic_datastore_segment_config_t;
 
 /**
- * @brief Optional configuration for the underlying communication mechanism
- * between an instrumented application and the daemon. The default is to use
- * a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works
- * for your system, creating this configuration is not necessary. */
-typedef struct _newrelic_process_config_t {
-  /**
-   * @brief Specify the communication mechanism by setting daemon_socket to a
-   * socket name.
-   *
-   * Domain Sockets: If you want to use UNIX domain sockets as the underlying
-   * communication mechanism, the name assigned to daemon_socket
-   * must begin with a "/", e.g., "/domain_socket".
-   *
-   * TCP Socket: If you want to use a normal TCP socket, set daemon_socket
-   * to an integer value in the range 1-65534. This instructs the daemon
-   * to listen on a normal TCP socket on the port specified.
-   *
-   * Abstract Socket: If you want to use an abstract socket, the name
-   * assigned to daemon_socket must begin with a "@",
-   * e.g., "@abstract_socket".
-   */
-  char daemon_socket[512];
-} newrelic_process_config_t;
-
-/**
  * @brief Configuration used to describe application name, license key, as
  * well as optional transaction tracer and datastore configuration.
  *
@@ -535,7 +510,8 @@ bool newrelic_configure_log(const char* filename, newrelic_loglevel_t level);
  *                            starts with a literal '@', then this is treated
  *                            as the name of an abstract domain socket instead
  *                            of a filesystem path. If this is NULL, then the
- *                            default behaviour described above will be used.
+ *                            default will be used, which is to look for a UNIX
+ *                            domain socket at /tmp/.newrelic.sock.
  * @param [in] time_limit_ms  The amount of time, in milliseconds, that the C
  *                            SDK will wait for a response from the daemon
  *                            before considering initialization to have failed.
