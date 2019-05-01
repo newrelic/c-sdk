@@ -4,6 +4,8 @@ This is the New Relic C SDK! If your application does not use other New Relic
 APM agent languages, you can use the C SDK to take advantage of New Relic's
 monitoring capabilities and features to instrument a wide range of applications.
 
+[![Build Status](https://travis-ci.org/newrelic/c-sdk.svg?branch=master)](https://travis-ci.org/newrelic/c-sdk)
+
 ## Need Help?
 
 Recommendations for learning more:
