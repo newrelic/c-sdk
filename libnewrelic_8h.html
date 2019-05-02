@@ -113,9 +113,6 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__datastore__segment__config__t.html">newrelic_datastore_segment_config_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used to configure how datastore segments are recorded in a transaction.  <a href="structnewrelic__datastore__segment__config__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__process__config__t.html">newrelic_process_config_t</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional configuration for the underlying communication mechanism between an instrumented application and the daemon. The default is to use a UNIX-domain socket located at /tmp/.newrelic.sock. If this default works for your system, creating this configuration is not necessary.  <a href="structnewrelic__process__config__t.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__app__config__t.html">newrelic_app_config_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used to describe application name, license key, as well as optional transaction tracer and datastore configuration.  <a href="structnewrelic__app__config__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,21 +178,17 @@ Typedefs</h2></td></tr>
 <tr class="memitem:aa4b1af4bf6b04b79ba104c5dec60b454"><td class="memItemLeft" align="right" valign="top">typedef struct _nr_app_and_info_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#aa4b1af4bf6b04b79ba104c5dec60b454">newrelic_app_t</a></td></tr>
 <tr class="memdesc:aa4b1af4bf6b04b79ba104c5dec60b454"><td class="mdescLeft">&#160;</td><td class="mdescRight">A New Relic application. Once an application configuration is created with <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a>, call <a class="el" href="libnewrelic_8h.html#a61dd90439ae3cc5060021f6ab4701132" title="Create an application.">newrelic_create_app()</a> to create an application to report data to the daemon; the daemon, in turn, reports data to New Relic.  <a href="#aa4b1af4bf6b04b79ba104c5dec60b454">More...</a><br /></td></tr>
 <tr class="separator:aa4b1af4bf6b04b79ba104c5dec60b454"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add4646ef16f4f0c9b75934cf96909655"><td class="memItemLeft" align="right" valign="top"><a id="add4646ef16f4f0c9b75934cf96909655"></a>
-typedef struct _newrelic_txn_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a></td></tr>
-<tr class="memdesc:add4646ef16f4f0c9b75934cf96909655"><td class="mdescLeft">&#160;</td><td class="mdescRight">A New Relic transaction. A transaction is started using <a class="el" href="libnewrelic_8h.html#adbf7c1fa57482f6e0a7f291e0b5ec80f" title="Start a web based transaction.">newrelic_start_web_transaction()</a> or <a class="el" href="libnewrelic_8h.html#a88648cc287f8d7e371139dc3809b7afb" title="Start a non-web based transaction.">newrelic_start_non_web_transaction()</a>. A started, or active, transaction is stopped using <a class="el" href="libnewrelic_8h.html#acbd88933d620c21b7b19f12b6f042da8" title="End a transaction.">newrelic_end_transaction()</a>. One may modify a transaction by adding custom attributes or recording errors only after it has been started. <br /></td></tr>
+<tr class="memitem:add4646ef16f4f0c9b75934cf96909655"><td class="memItemLeft" align="right" valign="top">typedef struct _newrelic_txn_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a></td></tr>
+<tr class="memdesc:add4646ef16f4f0c9b75934cf96909655"><td class="mdescLeft">&#160;</td><td class="mdescRight">A New Relic transaction.  <a href="#add4646ef16f4f0c9b75934cf96909655">More...</a><br /></td></tr>
 <tr class="separator:add4646ef16f4f0c9b75934cf96909655"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9eca1d31d95b1ac44d0a888bd64d9542"><td class="memItemLeft" align="right" valign="top"><a id="a9eca1d31d95b1ac44d0a888bd64d9542"></a>
-typedef uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a9eca1d31d95b1ac44d0a888bd64d9542">newrelic_time_us_t</a></td></tr>
-<tr class="memdesc:a9eca1d31d95b1ac44d0a888bd64d9542"><td class="mdescLeft">&#160;</td><td class="mdescRight">A time, measured in microseconds. C SDK configuration and API calls with time-related parameters expect this type. For an example configuration, see <a class="el" href="structnewrelic__transaction__tracer__config__t.html" title="Configuration used to configure transaction tracing.">newrelic_transaction_tracer_config_t</a>. <br /></td></tr>
+<tr class="memitem:a9eca1d31d95b1ac44d0a888bd64d9542"><td class="memItemLeft" align="right" valign="top">typedef uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a9eca1d31d95b1ac44d0a888bd64d9542">newrelic_time_us_t</a></td></tr>
+<tr class="memdesc:a9eca1d31d95b1ac44d0a888bd64d9542"><td class="mdescLeft">&#160;</td><td class="mdescRight">A time, measured in microseconds.  <a href="#a9eca1d31d95b1ac44d0a888bd64d9542">More...</a><br /></td></tr>
 <tr class="separator:a9eca1d31d95b1ac44d0a888bd64d9542"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dd5e6b43e83f9efb9171decf7556b91"><td class="memItemLeft" align="right" valign="top"><a id="a0dd5e6b43e83f9efb9171decf7556b91"></a>
-typedef struct _newrelic_segment_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a></td></tr>
-<tr class="memdesc:a0dd5e6b43e83f9efb9171decf7556b91"><td class="mdescLeft">&#160;</td><td class="mdescRight">A segment within a transaction. Within an active transaction, instrument additional segments for greater granularity. Instrument external calls with <a class="el" href="libnewrelic_8h.html#a1a952729317689136ec9fada175d6bf1" title="Start recording an external segment within a transaction.">newrelic_start_external_segment()</a>. Instrument datastore calls with <a class="el" href="libnewrelic_8h.html#a99d6f825c8fde10d0205ce4a3b578926" title="Record the start of a datastore segment in a transaction.">newrelic_start_datastore_segment()</a>. Instrument arbitrary function calls or other code with <a class="el" href="libnewrelic_8h.html#ace35f91b87b2a9c3ff6ade662a506ca2" title="Record the start of a custom segment in a transaction.">newrelic_start_segment()</a>. All segments must be ended with <a class="el" href="libnewrelic_8h.html#ad76a1b26d72bdb380156a64645a2a117" title="Record the completion of a segment in a transaction.">newrelic_end_segment()</a>. Examples of instrumenting segments are available in the examples directory. <br /></td></tr>
+<tr class="memitem:a0dd5e6b43e83f9efb9171decf7556b91"><td class="memItemLeft" align="right" valign="top">typedef struct _newrelic_segment_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a></td></tr>
+<tr class="memdesc:a0dd5e6b43e83f9efb9171decf7556b91"><td class="mdescLeft">&#160;</td><td class="mdescRight">A segment within a transaction.  <a href="#a0dd5e6b43e83f9efb9171decf7556b91">More...</a><br /></td></tr>
 <tr class="separator:a0dd5e6b43e83f9efb9171decf7556b91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afee77313254a81334c225794753f56f9"><td class="memItemLeft" align="right" valign="top"><a id="afee77313254a81334c225794753f56f9"></a>
-typedef struct _newrelic_custom_event_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#afee77313254a81334c225794753f56f9">newrelic_custom_event_t</a></td></tr>
-<tr class="memdesc:afee77313254a81334c225794753f56f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">A Custom Event. The C SDK provides a Custom Events API that allows one to send custom events to New Relic Insights. To send an event, start a transaction and use the <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a> and <a class="el" href="libnewrelic_8h.html#a4af935da4651e398e3773c148e8db814" title="Records the custom event.">newrelic_record_custom_event()</a> functions. Examples of sending custom events are available in the examples directory. <br /></td></tr>
+<tr class="memitem:afee77313254a81334c225794753f56f9"><td class="memItemLeft" align="right" valign="top">typedef struct _newrelic_custom_event_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#afee77313254a81334c225794753f56f9">newrelic_custom_event_t</a></td></tr>
+<tr class="memdesc:afee77313254a81334c225794753f56f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">A Custom Event.  <a href="#afee77313254a81334c225794753f56f9">More...</a><br /></td></tr>
 <tr class="separator:afee77313254a81334c225794753f56f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -205,7 +198,7 @@ Enumerations</h2></td></tr>
 <a class="el" href="libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619aa179b20d36868851d1b29b22e4c01624">NEWRELIC_LOG_INFO</a>, 
 <a class="el" href="libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619a904a67414971f81a6f9efc13d5b6977e">NEWRELIC_LOG_DEBUG</a>
  }</td></tr>
-<tr class="memdesc:af01e9a01f02a47a22714224bb8357619"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log levels. An enumeration of the possible log levels for an SDK configuration, or <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a>. The highest priority loglevel is NEWRELIC_LOG_ERROR. The level NEWRELIC_LOG_DEBUG offers the greatest verbosity.  <a href="libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619">More...</a><br /></td></tr>
+<tr class="memdesc:af01e9a01f02a47a22714224bb8357619"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log levels.  <a href="libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619">More...</a><br /></td></tr>
 <tr class="separator:af01e9a01f02a47a22714224bb8357619"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc4633517354b6ee5c04e7b3585b3140"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#adc4633517354b6ee5c04e7b3585b3140">newrelic_tt_recordsql_t</a> { <a class="el" href="libnewrelic_8h.html#adc4633517354b6ee5c04e7b3585b3140a3ad3f3f914f745ace66af39a5fe025d8">NEWRELIC_SQL_OFF</a>, 
 <a class="el" href="libnewrelic_8h.html#adc4633517354b6ee5c04e7b3585b3140acdbc5693404f3319183d89b143857c10">NEWRELIC_SQL_RAW</a>, 
@@ -339,6 +332,76 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="afee77313254a81334c225794753f56f9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afee77313254a81334c225794753f56f9">&#9670;&nbsp;</a></span>newrelic_custom_event_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct _newrelic_custom_event_t <a class="el" href="libnewrelic_8h.html#afee77313254a81334c225794753f56f9">newrelic_custom_event_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A Custom Event. </p>
+<p>The C SDK provides a Custom Events API that allows one to send custom events to New Relic Insights. To send an event, start a transaction and use the <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a> and <a class="el" href="libnewrelic_8h.html#a4af935da4651e398e3773c148e8db814" title="Records the custom event.">newrelic_record_custom_event()</a> functions. Examples of sending custom events are available in the examples directory. </p>
+
+</div>
+</div>
+<a id="a0dd5e6b43e83f9efb9171decf7556b91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0dd5e6b43e83f9efb9171decf7556b91">&#9670;&nbsp;</a></span>newrelic_segment_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct _newrelic_segment_t <a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A segment within a transaction. </p>
+<p>Within an active transaction, instrument additional segments for greater granularity.</p>
+<p>-For external calls: <a class="el" href="libnewrelic_8h.html#a1a952729317689136ec9fada175d6bf1" title="Start recording an external segment within a transaction.">newrelic_start_external_segment()</a>. -For datastore calls: <a class="el" href="libnewrelic_8h.html#a99d6f825c8fde10d0205ce4a3b578926" title="Record the start of a datastore segment in a transaction.">newrelic_start_datastore_segment()</a>. -For arbitrary code: <a class="el" href="libnewrelic_8h.html#ace35f91b87b2a9c3ff6ade662a506ca2" title="Record the start of a custom segment in a transaction.">newrelic_start_segment()</a>.</p>
+<p>All segments must be ended with <a class="el" href="libnewrelic_8h.html#ad76a1b26d72bdb380156a64645a2a117" title="Record the completion of a segment in a transaction.">newrelic_end_segment()</a>. Examples of instrumenting segments are available in the examples directory. </p>
+
+</div>
+</div>
+<a id="a9eca1d31d95b1ac44d0a888bd64d9542"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9eca1d31d95b1ac44d0a888bd64d9542">&#9670;&nbsp;</a></span>newrelic_time_us_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef uint64_t <a class="el" href="libnewrelic_8h.html#a9eca1d31d95b1ac44d0a888bd64d9542">newrelic_time_us_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A time, measured in microseconds. </p>
+<p>C SDK configuration and API calls with time-related parameters expect this type. For an example configuration, see <a class="el" href="structnewrelic__transaction__tracer__config__t.html" title="Configuration used to configure transaction tracing.">newrelic_transaction_tracer_config_t</a>. </p>
+
+</div>
+</div>
+<a id="add4646ef16f4f0c9b75934cf96909655"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add4646ef16f4f0c9b75934cf96909655">&#9670;&nbsp;</a></span>newrelic_txn_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct _newrelic_txn_t <a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>A New Relic transaction. </p>
+<p>A transaction is started using <a class="el" href="libnewrelic_8h.html#adbf7c1fa57482f6e0a7f291e0b5ec80f" title="Start a web based transaction.">newrelic_start_web_transaction()</a> or <a class="el" href="libnewrelic_8h.html#a88648cc287f8d7e371139dc3809b7afb" title="Start a non-web based transaction.">newrelic_start_non_web_transaction()</a>. A started, or active, transaction is stopped using <a class="el" href="libnewrelic_8h.html#acbd88933d620c21b7b19f12b6f042da8" title="End a transaction.">newrelic_end_transaction()</a>. One may modify a transaction by adding custom attributes or recording errors only after it has been started. </p>
+
+</div>
+</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="af01e9a01f02a47a22714224bb8357619"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af01e9a01f02a47a22714224bb8357619">&#9670;&nbsp;</a></span>newrelic_loglevel_t</h2>
@@ -352,7 +415,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Log levels. An enumeration of the possible log levels for an SDK configuration, or <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a>. The highest priority loglevel is NEWRELIC_LOG_ERROR. The level NEWRELIC_LOG_DEBUG offers the greatest verbosity. </p>
+<p>Log levels. </p>
+<p>An enumeration of the possible log levels for an SDK configuration, or <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a>. The highest priority loglevel is NEWRELIC_LOG_ERROR. The level NEWRELIC_LOG_DEBUG offers the greatest verbosity.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a> </dd></dl>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="af01e9a01f02a47a22714224bb8357619ab882c950a757e52dfaab9ba359f97a7a"></a>NEWRELIC_LOG_ERROR&#160;</td><td class="fielddoc"><p>The highest-priority loglevel; only errors are logged. </p>
@@ -410,7 +474,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="adc4633517354b6ee5c04e7b3585b3140acdbc5693404f3319183d89b143857c10"></a>NEWRELIC_SQL_RAW&#160;</td><td class="fielddoc"><p>For the SQL-like datastores which are supported by the C SDK, when the record_sql field of the <a class="el" href="structnewrelic__transaction__tracer__config__t.html" title="Configuration used to configure transaction tracing.">newrelic_transaction_tracer_config_t</a> is set to NEWRELIC_SQL_RAW the query param of the <a class="el" href="structnewrelic__datastore__segment__config__t.html" title="Configuration used to configure how datastore segments are recorded in a transaction.">newrelic_datastore_segment_config_t</a> is reported as-is to New Relic.</p>
 <dl class="section warning"><dt>Warning</dt><dd>This setting is not recommended. </dd></dl>
 </td></tr>
-<tr><td class="fieldname"><a id="adc4633517354b6ee5c04e7b3585b3140a27572e656df9266fdf8aea6c2e46a4bd"></a>NEWRELIC_SQL_OBFUSCATED&#160;</td><td class="fielddoc"><p>For the SQL-like datastores which are supported by the C SDK, when the record_sql field of the <a class="el" href="structnewrelic__transaction__tracer__config__t.html" title="Configuration used to configure transaction tracing.">newrelic_transaction_tracer_config_t</a> is set to NEWRELIC_SQL_RAW the query param of the <a class="el" href="structnewrelic__datastore__segment__config__t.html" title="Configuration used to configure how datastore segments are recorded in a transaction.">newrelic_datastore_segment_config_t</a> is reported to New Relic with alphanumeric characters set to '?' </p>
+<tr><td class="fieldname"><a id="adc4633517354b6ee5c04e7b3585b3140a27572e656df9266fdf8aea6c2e46a4bd"></a>NEWRELIC_SQL_OBFUSCATED&#160;</td><td class="fielddoc"><p>For the SQL-like datastores which are supported by the C SDK, when the record_sql field of the <a class="el" href="structnewrelic__transaction__tracer__config__t.html" title="Configuration used to configure transaction tracing.">newrelic_transaction_tracer_config_t</a> is set to NEWRELIC_SQL_RAW the query param of the <a class="el" href="structnewrelic__datastore__segment__config__t.html" title="Configuration used to configure how datastore segments are recorded in a transaction.">newrelic_datastore_segment_config_t</a> is reported to New Relic with alphanumeric characters set to '?'. </p>
 </td></tr>
 </table>
 
@@ -634,7 +698,7 @@ Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">filename</td><td>The path to the file to write logs to. If this is the literal string "stdout" or "stderr", then logs will be written to standard output or standard error, respectively. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">level</td><td>The lowest level of log message that will be output. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">level</td><td>The lowest level of log message that will be output.</td></tr>
   </table>
   </dd>
 </dl>
@@ -793,13 +857,7 @@ Functions</h2></td></tr>
 <p>Given a custom event, this function adds a double attribute to the event.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event, </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event created by <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>the string key for the key/value pair </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>the double value of the key/value pair</td></tr>
   </table>
@@ -851,7 +909,7 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a> </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>the string key for the key/value pair </td></tr>
@@ -901,13 +959,7 @@ Functions</h2></td></tr>
 <p>Given a custom event, this function adds a long attribute to the event.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event, </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event created by <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>the string key for the key/value pair </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>the long value of the key/value pair</td></tr>
   </table>
@@ -955,13 +1007,7 @@ Functions</h2></td></tr>
 <p>Given a custom event, this function adds a char* (string) attribute to the event.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event, </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>A valid custom event created by <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>the string key for the key/value pair </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>the string value of the key/value pair</td></tr>
   </table>
@@ -1055,11 +1101,10 @@ Functions</h2></td></tr>
 <p>This function is here in case there's an allocated newrelic_custom_event_t that ends up not being recorded as a custom event, but still needs to be freed</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>The address of a valid custom event, </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>The address of a valid custom event created by <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>. </dd></dl>
 
 </div>
 </div>
@@ -1156,7 +1201,7 @@ Functions</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>Even when <a class="el" href="libnewrelic_8h.html#a7b41f8690c3b2b7e024a16fa4bb59320" title="Ignore the current transaction.">newrelic_ignore_transaction()</a> is called, one must still call <a class="el" href="libnewrelic_8h.html#acbd88933d620c21b7b19f12b6f042da8" title="End a transaction.">newrelic_end_transaction()</a> to free the memory used by the transaction and avoid a memory leak.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>A transaction.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction.</td></tr>
   </table>
   </dd>
 </dl>
@@ -1196,8 +1241,8 @@ Functions</h2></td></tr>
 <p>Subsequent calls to this function after a successful call to <a class="el" href="libnewrelic_8h.html#a03f07e64a51b5f0cd51caa4f28c8b6c1" title="Initialise the C SDK with non-default settings.">newrelic_init()</a> or <a class="el" href="libnewrelic_8h.html#a61dd90439ae3cc5060021f6ab4701132" title="Create an application.">newrelic_create_app()</a> will fail.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">daemon_socket</td><td>The path to the daemon socket. On Linux, if this starts with a literal '@', then this is treated as the name of an abstract domain socket instead of a filesystem path. If this is NULL, then the default behaviour described above will be used. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">time_limit_ms</td><td>The amount of time, in milliseconds, that the C SDK will wait for a response from the daemon before considering initialization to have failed. If this is 0, then a default value will be used. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">daemon_socket</td><td>The path to the daemon socket. On Linux, if this starts with a literal '@', then this is treated as the name of an abstract domain socket instead of a filesystem path. If this is NULL, then the default will be used, which is to look for a UNIX domain socket at /tmp/.newrelic.sock. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">time_limit_ms</td><td>The amount of time, in milliseconds, that the C SDK will wait for a response from the daemon before considering initialization to have failed. If this is 0, then a default value will be used.</td></tr>
   </table>
   </dd>
 </dl>
@@ -1291,12 +1336,11 @@ Functions</h2></td></tr>
 <p>Given an active transaction, this function adds the custom event to the transaction and timestamps it, ensuring the event will be sent to New Relic.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>pointer to a started transaction </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>The address of a valid custom event, </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">event</td><td>The address of a valid custom event created by <a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a" title="Creates a custom event.">newrelic_create_custom_event()</a>.</dd></dl>
 <p>newrelic_create_custom_event </p>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a16">ex_custom.c</a>.</dd>
 </dl>
@@ -1382,11 +1426,11 @@ Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">segment</td><td>The segment to reparent. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">parent</td><td>The new parent segment. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">parent</td><td>The new parent segment.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>True if the segment was successfully reparented; false otherwise.</dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the segment was successfully reparented; false otherwise.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>Do not attempt to use a segment that has had <a class="el" href="libnewrelic_8h.html#ad76a1b26d72bdb380156a64645a2a117" title="Record the completion of a segment in a transaction.">newrelic_end_segment()</a> called on it as a segment or parent: this will result in a use-after-free scenario, and likely a crash. </dd></dl>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_segment_8c-example.html#a12">ex_segment.c</a>.</dd>
 </dl>
@@ -1417,7 +1461,7 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>True if the segment was successfully reparented; false otherwise.</dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the segment was successfully reparented; false otherwise.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>Do not attempt to use a segment that has had <a class="el" href="libnewrelic_8h.html#ad76a1b26d72bdb380156a64645a2a117" title="Record the completion of a segment in a transaction.">newrelic_end_segment()</a> called on it as a segment or parent: this will result in a use-after-free scenario, and likely a crash. </dd></dl>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_segment_8c-example.html#a14">ex_segment.c</a>.</dd>
 </dl>
@@ -1463,11 +1507,11 @@ Functions</h2></td></tr>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">segment</td><td>The segment to manually time. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">start_time</td><td>The start time for the segment, in microseconds since the start of the transaction. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">duration</td><td>The duration of the segment in microseconds. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">duration</td><td>The duration of the segment in microseconds.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>True if the segment timing was changed; false otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the segment timing was changed; false otherwise. </dd></dl>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_segment_8c-example.html#a13">ex_segment.c</a>, and <a class="el" href="ex_timing_8c-example.html#a11">ex_timing.c</a>.</dd>
 </dl>
 
@@ -1517,7 +1561,7 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>True if the segment timing was changed; false otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the segment timing was changed; false otherwise. </dd></dl>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_segment_8c-example.html#a9">ex_segment.c</a>, and <a class="el" href="ex_timing_8c-example.html#a9">ex_timing.c</a>.</dd>
 </dl>
 
@@ -1595,7 +1639,7 @@ Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">params</td><td>The parameters describing the external request. All parameters are copied, and no references to the pointers provided are kept after this function returns. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">params</td><td>The parameters describing the external request. All parameters are copied, and no references to the pointers provided are kept after this function returns.</td></tr>
   </table>
   </dd>
 </dl>
@@ -1751,7 +1795,7 @@ Functions</h2></td></tr>
 
 <p>Get the SDK version. </p>
 <dl class="section return"><dt>Returns</dt><dd>A NULL-terminated string containing the C SDK version number. If the version number is unavailable, the string "NEWRELIC_VERSION" will be returned.</dd></dl>
-<p>This string is owned by the SDK, and must not be freed or modified. </p>
+<dl class="section warning"><dt>Warning</dt><dd>This string is owned by the SDK, and must not be freed or modified. </dd></dl>
 
 </div>
 </div>
@@ -1759,7 +1803,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 23 2019 16:58:49 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu May 2 2019 21:23:50 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

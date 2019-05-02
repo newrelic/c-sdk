@@ -32,7 +32,6 @@ var searchData=
   ['newrelic_5flog_5fwarning',['NEWRELIC_LOG_WARNING',['../libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619a9e59320b072b1035ce19a1f14909ba88',1,'libnewrelic.h']]],
   ['newrelic_5floglevel_5ft',['newrelic_loglevel_t',['../libnewrelic_8h.html#af01e9a01f02a47a22714224bb8357619',1,'libnewrelic.h']]],
   ['newrelic_5fnotice_5ferror',['newrelic_notice_error',['../libnewrelic_8h.html#a02a9a959015a0ca68ce11c750f690475',1,'libnewrelic.h']]],
-  ['newrelic_5fprocess_5fconfig_5ft',['newrelic_process_config_t',['../structnewrelic__process__config__t.html',1,'']]],
   ['newrelic_5frecord_5fcustom_5fevent',['newrelic_record_custom_event',['../libnewrelic_8h.html#a4af935da4651e398e3773c148e8db814',1,'libnewrelic.h']]],
   ['newrelic_5frecord_5fcustom_5fmetric',['newrelic_record_custom_metric',['../libnewrelic_8h.html#aee71182588ace508cc816044d2024ff3',1,'libnewrelic.h']]],
   ['newrelic_5fsegment_5ft',['newrelic_segment_t',['../libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91',1,'libnewrelic.h']]],
