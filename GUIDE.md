@@ -208,7 +208,7 @@ active transactions.
         .uri       = "https://httpbin.org/delay/1",
     };
 
-    newrelic_external_segment_t* segment =
+    newrelic_segment_t* segment =
        newrelic_start_external_segment(txn, &params);
 
     // The external call to be timed goes here
@@ -293,7 +293,7 @@ active transactions.
         .query =
             "SELECT * FROM table_name WHERE foo_bar = 'Foo Bar' "};
 
-    newrelic_datastore_segment_t* segment =
+    newrelic_segment_t* segment =
         newrelic_start_datastore_segment(txn, &params);
 
     // The datastore call to be timed goes here
