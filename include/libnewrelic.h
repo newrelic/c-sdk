@@ -518,9 +518,6 @@ bool newrelic_configure_log(const char* filename, newrelic_loglevel_t level);
  *                            If this is 0, then a default value will be used.
  *
  * @return true on success; false otherwise.
- *
- * @see newrelic_process_config_t for more information on specifying the
- * daemon_socket.
  */
 bool newrelic_init(const char* daemon_socket, int time_limit_ms);
 
