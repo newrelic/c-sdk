@@ -34,6 +34,11 @@ libnewrelic.o
 newrelic-daemon
 
 #
+# Byproducts from make libnewrelic.so
+#
+libnewrelic.so
+
+#
 # Byproducts from a life of vim
 #
 gotags
