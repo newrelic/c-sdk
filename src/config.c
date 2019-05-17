@@ -52,6 +52,10 @@ newrelic_app_config_t* newrelic_create_app_config(const char* app_name,
   config->datastore_tracer.instance_reporting = true;
   config->datastore_tracer.database_name_reporting = true;
 
+  /* Set up the default distributed tracer and span event configuration */
+  config->distributed_tracing.enabled = false;
+  config->span_events.enabled = true;
+
   return config;
 }
 
@@ -90,7 +94,7 @@ nrtxnopt_t* newrelic_get_default_options(void) {
   opt->allow_raw_exception_messages = true;
   opt->custom_parameters_enabled = true;
   opt->distributed_tracing_enabled = false;
-  opt->span_events_enabled = false;
+  opt->span_events_enabled = true;
 
   return opt;
 }
@@ -117,6 +121,9 @@ nrtxnopt_t* newrelic_get_transaction_options(
           * NR_TIME_DIVISOR_US;
     opt->ss_threshold = config->transaction_tracer.stack_trace_threshold_us
                         * NR_TIME_DIVISOR_US;
+
+    opt->distributed_tracing_enabled = config->distributed_tracing.enabled;
+    opt->span_events_enabled = config->span_events.enabled;
 
     if (NEWRELIC_THRESHOLD_IS_APDEX_FAILING
         == config->transaction_tracer.threshold) {

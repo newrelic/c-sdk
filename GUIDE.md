@@ -7,6 +7,7 @@ This is the New Relic C SDK! If your application does not use other New Relic AP
 1. [Getting Started](#getting-started)
 1. [Features](#features)
     1. [Configuration](#configuration)
+    1. [Distributed Tracing](#distributed-tracing)
     1. [Segment Instrumentation](#segment-instrumentation)
         1. [External Segments](#external-segments)
         1. [Custom Segments](#custom-segments)
@@ -161,11 +162,22 @@ The `datastore_tracer` field configures how datastore segments are recorded
 in a transaction, whether or not the C SDK reports database host names,
 database ports, and database names. By default, the configuration returned
 by `newrelic_create_app_config()` configures datastore segments with `instance_reporting`
-and `database_name_reporting` both enabled. All the fields of
+and `database_name_reporting` both set to true. All the fields of
 `newrelic_datastore_segment_config_t` are detailed in `libnewrelic.h`.
 <div align="right">
     <b><a href="#table-of-contents">↥ back to the table of contents</a></b>
 </div>
+
+### Distributed Tracing
+
+Distributed tracing allows you to track the activity resulting from 
+requests to and from different applications or services. [You can 
+read more about distributed tracing here](https://docs.newrelic.com/docs/apm/distributed-tracing/getting-started/introduction-distributed-tracing).
+
+**This feature is turned off by default. To turn it on you must 
+set `config->distributed_tracing.enabled` to true.** Span events 
+are turned on by default, to disable them you must set 
+`config->span_events.enabled` to false.
 
 ### Segment Instrumentation
 

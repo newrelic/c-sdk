@@ -38,6 +38,8 @@ newrelic_app_t* newrelic_create_app(const newrelic_app_config_t* given_config,
                                       given_config->license_key);
 
   config->transaction_tracer = given_config->transaction_tracer;
+  config->distributed_tracing.enabled = given_config->distributed_tracing.enabled;
+  config->span_events.enabled = given_config->span_events.enabled;
 
   app_info = (nr_app_info_t*)nr_zalloc(sizeof(nr_app_info_t));
 

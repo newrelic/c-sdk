@@ -31,6 +31,8 @@ static void test_get_default_options(void** state NRUNUSED) {
 
   correct->instance_reporting_enabled = true;
   correct->database_name_reporting_enabled = true;
+  correct->distributed_tracing_enabled = false;
+  correct->span_events_enabled = true;
 
   correct->custom_events_enabled = true;
   /* Assert that the true portion of the default options were set accordingly.

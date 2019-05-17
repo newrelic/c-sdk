@@ -55,6 +55,9 @@ static void test_config_justright_license_key(void** state NRUNUSED) {
   assert_true(NEWRELIC_THRESHOLD_IS_APDEX_FAILING
               == config->transaction_tracer.threshold);
 
+  assert_false(config->distributed_tracing.enabled);
+  assert_true(config->span_events.enabled);
+
   newrelic_destroy_app_config(&config);
 }
 
