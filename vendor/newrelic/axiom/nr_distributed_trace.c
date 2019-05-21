@@ -181,7 +181,6 @@ void nr_distributed_trace_destroy(nr_distributed_trace_t** ptr) {
   trace = *ptr;
   nr_free(trace->account_id);
   nr_free(trace->app_id);
-  nr_free(trace->guid);
   nr_free(trace->txn_id);
   nr_free(trace->trace_id);
   nr_free(trace->trusted_key);
@@ -220,14 +219,6 @@ const char* nr_distributed_trace_get_app_id(const nr_distributed_trace_t* dt) {
   }
 
   return dt->app_id;
-}
-
-const char* nr_distributed_trace_get_guid(const nr_distributed_trace_t* dt) {
-  if (NULL == dt) {
-    return NULL;
-  }
-
-  return dt->guid;
 }
 
 const char* nr_distributed_trace_get_txn_id(const nr_distributed_trace_t* dt) {
@@ -346,18 +337,6 @@ const char* nr_distributed_trace_object_get_trusted_key(const nrobj_t* object) {
   return nro_get_hash_string(obj_payload_data, "tk", NULL);
 }
 
-void nr_distributed_trace_set_guid(nr_distributed_trace_t* dt,
-                                   const char* guid) {
-  if (NULL == dt) {
-    return;
-  }
-
-  nr_free(dt->guid);
-  if (guid) {
-    dt->guid = nr_strdup(guid);
-  }
-}
-
 void nr_distributed_trace_set_txn_id(nr_distributed_trace_t* dt,
                                      const char* txn_id) {
   if (NULL == dt) {
@@ -459,7 +438,7 @@ void nr_distributed_trace_inbound_set_transport_type(nr_distributed_trace_t* dt,
 }
 
 nr_distributed_trace_payload_t* nr_distributed_trace_payload_create(
-    nr_distributed_trace_t* metadata,
+    const nr_distributed_trace_t* metadata,
     const char* parent_id) {
   nr_distributed_trace_payload_t* p;
   p = (nr_distributed_trace_payload_t*)nr_zalloc(
@@ -535,7 +514,7 @@ char* nr_distributed_trace_payload_as_text(
     return NULL;
   }
 
-  if (NULL == payload->metadata->guid && NULL == payload->metadata->txn_id) {
+  if (NULL == payload->parent_id && NULL == payload->metadata->txn_id) {
     return NULL;
   }
 
@@ -552,7 +531,7 @@ char* nr_distributed_trace_payload_as_text(
   add_field_if_set(data, "ac", payload->metadata->account_id);
   add_field_if_set(data, "ap", payload->metadata->app_id);
 
-  add_field_if_set(data, "id", payload->metadata->guid);
+  add_field_if_set(data, "id", payload->parent_id);
   add_field_if_set(data, "tr", payload->metadata->trace_id);
   add_field_if_set(data, "tx", payload->metadata->txn_id);
   nro_set_hash_double(data, "pr", payload->metadata->priority);

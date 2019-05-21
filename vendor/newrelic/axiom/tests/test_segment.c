@@ -75,7 +75,7 @@ static void test_segment_new_txn_with_segment_root(void) {
   tlib_pass_if_ptr_equal(
       "A new transaction's current parent must be initialized to its segment "
       "root",
-      txn->segment_root, nr_txn_get_current_segment(txn));
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
 
   tlib_pass_if_true(
       "A new transaction's segment root must have its start time initialized",
@@ -133,7 +133,7 @@ static void test_segment_start(void) {
   tlib_pass_if_ptr_equal(
       "The most-recently started segment must be the transaction's current "
       "segment",
-      nr_txn_get_current_segment(txn), s);
+      nr_txn_get_current_segment(txn, NULL), s);
 
   tlib_pass_if_not_null(
       "Starting a segment on a valid txn must allocate space for children",
@@ -155,13 +155,13 @@ static void test_segment_start(void) {
       s->parent, txn->segment_root);
 
   /* Start and end a second segment, t */
-  prev_parent = nr_txn_get_current_segment(txn);
+  prev_parent = nr_txn_get_current_segment(txn, NULL);
   t = nr_segment_start(txn, NULL, NULL);
   tlib_pass_if_not_null("Starting a segment on a valid txn must succeed", t);
   tlib_pass_if_ptr_equal(
       "The most recently started segment must be the transaction's current "
       "segment",
-      nr_txn_get_current_segment(txn), t);
+      nr_txn_get_current_segment(txn, NULL), t);
 
   tlib_pass_if_ptr_equal(
       "A segment started with an implicit parent must have the previously "
@@ -174,16 +174,16 @@ static void test_segment_start(void) {
   tlib_pass_if_ptr_equal(
       "The most recently started segment has ended; the current segment must "
       "be its parent",
-      nr_txn_get_current_segment(txn), s);
+      nr_txn_get_current_segment(txn, NULL), s);
 
   /* Start a third segment.  Its sibling should be the second segment, t */
-  prev_parent = nr_txn_get_current_segment(txn);
+  prev_parent = nr_txn_get_current_segment(txn, NULL);
   u = nr_segment_start(txn, NULL, NULL);
   tlib_pass_if_not_null("Starting a segment on a valid txn must succeed", u);
   tlib_pass_if_ptr_equal(
       "The most recently started segment must be the transaction's current "
       "segment",
-      nr_txn_get_current_segment(txn), u);
+      nr_txn_get_current_segment(txn, NULL), u);
 
   tlib_pass_if_ptr_equal(
       "A segment started with an implicit parent must have the previously "
@@ -212,10 +212,12 @@ static void test_segment_start(void) {
 }
 
 static void test_segment_start_async(void) {
-  nr_segment_t* s;
   nr_segment_t* mother;
   nr_segment_t* first_born;
   nr_segment_t* third_born;
+  nr_segment_t* first_stepchild;
+  nr_segment_t* first_grandchild;
+  nr_segment_t* great_grandchild;
 
   /* Use the helper function to leverage nr_txn_begin(), install a segment_root
    * in the transaction and set a start time */
@@ -230,60 +232,154 @@ static void test_segment_start_async(void) {
   /*
    * Test : Bad parameters.
    */
-  s = nr_segment_start(NULL, mother, "async_context");
-  tlib_pass_if_null("Starting a segment on a NULL txn must not succeed", s);
+  tlib_pass_if_null("Starting a segment on a NULL txn must not succeed",
+                    nr_segment_start(NULL, mother, "async_context"));
 
   /*
    * Test : Async operation. Starting a segment with an explicit parent,
-   * supplied as a parameter to nr_segment_start() has the expected impact
-   * on parent and sibling relationships.
+   *        supplied as a parameter to nr_segment_start() has the expected
+   *        impact on parent and sibling relationships.
    */
-  s = nr_segment_start(txn, mother, "async_context");
+  first_stepchild = nr_segment_start(txn, mother, "async_context");
   tlib_pass_if_not_null(
       "Starting a segment on a valid txn and an explicit parent must succeed",
-      s);
+      first_stepchild);
 
   tlib_pass_if_ptr_equal(
       "The most recently started, explicitly-parented segment must not alter "
-      "the transaction's current segment",
-      nr_txn_get_current_segment(txn), first_born);
+      "the NULL context's current segment",
+      nr_txn_get_current_segment(txn, NULL), first_born);
 
   tlib_pass_if_not_null(
       "Starting a segment on a valid txn must allocate space for children",
-      &s->children);
+      &first_stepchild->children);
   tlib_pass_if_uint64_t_equal("A started segment has default type CUSTOM",
-                              s->type, NR_SEGMENT_CUSTOM);
-  tlib_pass_if_ptr_equal("A started segment must save its transaction", s->txn,
-                         txn);
+                              first_stepchild->type, NR_SEGMENT_CUSTOM);
+  tlib_pass_if_ptr_equal("A started segment must save its transaction",
+                         first_stepchild->txn, txn);
   tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
-                              s->start_time, 0);
+                              first_stepchild->start_time, 0);
   tlib_pass_if_not_null("A started segment has a hash for user attributes",
-                        s->user_attributes);
+                        first_stepchild->user_attributes);
   tlib_pass_if_int_equal(
-      "A started segment has an initialized async context", s->async_context,
-      nr_string_find(s->txn->trace_strings, "async_context"));
+      "A started segment has an initialized async context",
+      first_stepchild->async_context,
+      nr_string_find(first_stepchild->txn->trace_strings, "async_context"));
 
   tlib_pass_if_ptr_equal(
       "A segment started with an explicit parent must have the explicit "
       "parent",
-      s->parent, mother);
+      first_stepchild->parent, mother);
 
   tlib_pass_if_ptr_equal(
       "A segment started with an explicit parent must have the explicit "
       "previous siblings",
-      nr_segment_children_get_prev(&(mother->children), s), first_born);
+      nr_segment_children_get_prev(&(mother->children), first_stepchild),
+      first_born);
+
+  /*
+   * Test : Async operation. Starting a segment with no parent and a new
+   *        context supplied as a parameter to nr_segment_start() has the
+   *        expected impact on parent and sibling relationships.
+   */
+  first_grandchild = nr_segment_start(txn, NULL, "another_async");
+  tlib_pass_if_not_null(
+      "Starting a segment on a valid txn and an implicit parent must succeed",
+      first_grandchild);
+
+  tlib_pass_if_ptr_equal(
+      "The most recently started, implicitly-parented segment must not alter "
+      "the NULL context's current segment",
+      nr_txn_get_current_segment(txn, NULL), first_born);
+
+  tlib_pass_if_ptr_equal(
+      "The most recently started, implicitly-parented segment must set the "
+      "current segment for the new context",
+      nr_txn_get_current_segment(txn, "another_async"), first_grandchild);
+
+  tlib_pass_if_not_null(
+      "Starting a segment on a valid txn must allocate space for children",
+      &first_grandchild->children);
+  tlib_pass_if_uint64_t_equal("A started segment has default type CUSTOM",
+                              first_grandchild->type, NR_SEGMENT_CUSTOM);
+  tlib_pass_if_ptr_equal("A started segment must save its transaction",
+                         first_grandchild->txn, txn);
+  tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
+                              first_grandchild->start_time, 0);
+  tlib_pass_if_not_null("A started segment has a hash for user attributes",
+                        first_grandchild->user_attributes);
+  tlib_pass_if_int_equal(
+      "A started segment has an initialized async context",
+      first_grandchild->async_context,
+      nr_string_find(first_grandchild->txn->trace_strings, "another_async"));
+
+  tlib_pass_if_ptr_equal(
+      "A segment started with an implicit parent must have the implied parent "
+      "on the main context",
+      first_grandchild->parent, first_born);
+
+  tlib_pass_if_ptr_equal(
+      "A segment started with an implicit parent must be a child of that "
+      "parent",
+      nr_vector_get(&first_born->children, 0), first_grandchild);
+
+  /*
+   * Test : Async operation. Starting a segment with no parent on the same
+   *        context as first_grandchild should make it a child of that segment.
+   */
+  great_grandchild = nr_segment_start(txn, NULL, "another_async");
+  tlib_pass_if_not_null(
+      "Starting a segment on a valid txn and an implicit parent must succeed",
+      great_grandchild);
+
+  tlib_pass_if_ptr_equal(
+      "The most recently started, implicitly-parented segment must not alter "
+      "the NULL context's current segment",
+      nr_txn_get_current_segment(txn, NULL), first_born);
+
+  tlib_pass_if_ptr_equal(
+      "The most recently started, implicitly-parented segment must set the "
+      "current segment for the new context",
+      nr_txn_get_current_segment(txn, "another_async"), great_grandchild);
+
+  tlib_pass_if_not_null(
+      "Starting a segment on a valid txn must allocate space for children",
+      &great_grandchild->children);
+  tlib_pass_if_uint64_t_equal("A started segment has default type CUSTOM",
+                              great_grandchild->type, NR_SEGMENT_CUSTOM);
+  tlib_pass_if_ptr_equal("A started segment must save its transaction",
+                         great_grandchild->txn, txn);
+  tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
+                              great_grandchild->start_time, 0);
+  tlib_pass_if_not_null("A started segment has a hash for user attributes",
+                        great_grandchild->user_attributes);
+  tlib_pass_if_int_equal(
+      "A started segment has an initialized async context",
+      great_grandchild->async_context,
+      nr_string_find(great_grandchild->txn->trace_strings, "another_async"));
+
+  tlib_pass_if_ptr_equal(
+      "A segment started with an implicit parent must have the implied parent "
+      "on the same async context",
+      great_grandchild->parent, first_grandchild);
+
+  tlib_pass_if_ptr_equal(
+      "A segment started with an implicit parent must be a child of that "
+      "parent",
+      nr_vector_get(&first_grandchild->children, 0), great_grandchild);
 
   /*
    * Test : Async operation. Starting a segment with an explicit parent,
-   * supplied as a parameter to nr_segment_start() has the expected impact
-   * on subsequent sibling relationships.
+   *        supplied as a parameter to nr_segment_start() has the expected
+   *        impact on subsequent sibling relationships.
    */
   nr_segment_end(first_born);
   third_born = nr_segment_start(txn, NULL, NULL);
   tlib_pass_if_ptr_equal(
       "A segment started with an explicit parent must have the explicit "
       "next siblings",
-      nr_segment_children_get_next(&(mother->children), s), third_born);
+      nr_segment_children_get_next(&(mother->children), first_stepchild),
+      third_born);
 
   /* Clean up */
   nr_txn_destroy(&txn);
@@ -567,13 +663,16 @@ static void test_set_timing(void) {
 }
 
 static void test_end_segment(void) {
-  nrtxn_t txnv = {.segment_count = 0};
+  nrtxn_t txnv = {.segment_count = 0, .parent_stacks = nr_hashmap_create(NULL)};
   nr_segment_t s = {.start_time = 1234, .stop_time = 0, .txn = &txnv};
   nr_segment_t t = {.start_time = 1234, .stop_time = 5678, .txn = &txnv};
   nr_segment_t u = {.txn = 0};
 
-  /* Mock up the parent stack used by the txn */
-  nr_stack_init(&txnv.parent_stack, 32);
+  /* Mock up the parent stacks used by the txn */
+  nr_stack_t parent_stack;
+
+  nr_stack_init(&parent_stack, 32);
+  nr_hashmap_index_set(txnv.parent_stacks, 0, (void*)&parent_stack);
 
   /*
    * Test : Bad parameters.
@@ -623,7 +722,137 @@ static void test_end_segment(void) {
       2 == txnv.segment_count, "Expected true");
 
   /* Clean up */
-  nr_stack_destroy_fields(&txnv.parent_stack);
+  nr_hashmap_destroy(&txnv.parent_stacks);
+  nr_stack_destroy_fields(&parent_stack);
+}
+
+static void test_end_segment_async(void) {
+  nr_segment_t* aa;
+  nr_segment_t* ab;
+  nr_segment_t* ba;
+  nr_segment_t* bb;
+  nrtxn_t* txn = new_txn(0);
+
+  txn->status.recording = 1;
+
+  /*
+   * Test : Ending a segment on an async context should only affect that stack.
+   */
+  aa = nr_segment_start(txn, NULL, "a");
+
+  tlib_pass_if_ptr_equal(
+      "Segment aa should have the transaction's segment root as its parent",
+      txn->segment_root, aa->parent);
+
+  tlib_pass_if_size_t_equal(
+      "Context a should have exactly one element in its parent stack", 1,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)aa->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context a should have aa as the only element in its parent stack", aa,
+      nr_txn_get_current_segment(txn, "a"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  ab = nr_segment_start(txn, NULL, "a");
+
+  tlib_pass_if_ptr_equal("Segment ab should have aa as its parent", aa,
+                         ab->parent);
+
+  tlib_pass_if_size_t_equal(
+      "Context a should have exactly two elements in its parent stack", 2,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)aa->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context a should have ab as the current element in its parent stack", ab,
+      nr_txn_get_current_segment(txn, "a"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  nr_segment_end(ab);
+
+  tlib_pass_if_size_t_equal(
+      "Context a should have exactly one element in its parent stack", 1,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)aa->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context a should have aa as the only element in its parent stack", aa,
+      nr_txn_get_current_segment(txn, "a"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  /*
+   * Test : As above, but when the parent segment is ended first, only the child
+   *        should remain in the stack.
+   */
+  ba = nr_segment_start(txn, NULL, "b");
+
+  tlib_pass_if_ptr_equal(
+      "Segment ba should have the transaction's segment root as its parent",
+      txn->segment_root, ba->parent);
+
+  tlib_pass_if_size_t_equal(
+      "Context b should have exactly one element in its parent stack", 1,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)ba->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context b should have ba as the only element in its parent stack", ba,
+      nr_txn_get_current_segment(txn, "b"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  bb = nr_segment_start(txn, NULL, "b");
+
+  tlib_pass_if_ptr_equal("Segment bb should have ba as its parent", ba,
+                         bb->parent);
+
+  tlib_pass_if_size_t_equal(
+      "Context b should have exactly two elements in its parent stack", 2,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)bb->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context b should have bb as the current element in its parent stack", bb,
+      nr_txn_get_current_segment(txn, "b"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  nr_segment_end(ba);
+
+  tlib_pass_if_size_t_equal(
+      "Context b should have exactly one element in its parent stack", 1,
+      nr_vector_size((nr_stack_t*)nr_hashmap_index_get(
+          txn->parent_stacks, (uint64_t)bb->async_context)));
+
+  tlib_pass_if_ptr_equal(
+      "Context b should have bb as the only element in its parent stack", bb,
+      nr_txn_get_current_segment(txn, "b"));
+
+  tlib_pass_if_ptr_equal(
+      "The main context should have the transaction's segment root as its "
+      "current segment",
+      txn->segment_root, nr_txn_get_current_segment(txn, NULL));
+
+  nr_txn_destroy(&txn);
 }
 
 static void test_segment_iterate_nulls(void) {
@@ -1505,6 +1734,60 @@ static void test_segment_no_recording(void) {
   nr_segment_destroy(seg);
 }
 
+static void test_segment_span_comparator(void) {
+  nr_segment_t root = {.parent = NULL};
+  nr_segment_t external = {.parent = &root, .id = "id"};
+  nr_segment_t custom_long
+      = {.parent = &root, .start_time = 0, .stop_time = 1000};
+  nr_segment_t custom_short
+      = {.parent = &root, .start_time = 0, .stop_time = 10};
+
+  tlib_pass_if_int_equal("The root segment always has priority",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&root, (void*)&external, NULL),
+                         1);
+
+  tlib_pass_if_int_equal("The root segment always has priority",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&external, (void*)&root, NULL),
+                         -1);
+
+  tlib_pass_if_int_equal("external have priority over non-root segments",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&external, (void*)&custom_long, NULL),
+                         1);
+
+  tlib_pass_if_int_equal("external have priority over non-root segments",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&custom_long, (void*)&external, NULL),
+                         -1);
+
+  tlib_pass_if_int_equal("duration fallback",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&custom_long, (void*)&custom_short, NULL),
+                         1);
+
+  tlib_pass_if_int_equal("duration fallback",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&custom_short, (void*)&custom_long, NULL),
+                         -1);
+
+  tlib_pass_if_int_equal("equal segments",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&external, (void*)&external, NULL),
+                         0);
+
+  tlib_pass_if_int_equal("equal segments",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&custom_long, (void*)&custom_long, NULL),
+                         0);
+
+  tlib_pass_if_int_equal("equal segments",
+                         nr_segment_wrapped_span_priority_comparator(
+                             (void*)&custom_short, (void*)&custom_short, NULL),
+                         0);
+}
+
 tlib_parallel_info_t parallel_info = {.suggested_nthreads = 2, .state_size = 0};
 
 void test_main(void* p NRUNUSED) {
@@ -1520,6 +1803,7 @@ void test_main(void* p NRUNUSED) {
   test_set_parent_different_txn();
   test_set_timing();
   test_end_segment();
+  test_end_segment_async();
   test_segment_iterate_bachelor();
   test_segment_iterate_nulls();
   test_segment_iterate();
@@ -1535,4 +1819,5 @@ void test_main(void* p NRUNUSED) {
   test_segment_heap_to_set();
   test_segment_set_parent_cycle();
   test_segment_no_recording();
+  test_segment_span_comparator();
 }

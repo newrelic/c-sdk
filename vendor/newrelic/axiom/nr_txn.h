@@ -23,6 +23,7 @@
 #include "nr_distributed_trace.h"
 #include "util_apdex.h"
 #include "util_buffer.h"
+#include "util_hashmap.h"
 #include "util_json.h"
 #include "util_metrics.h"
 #include "util_sampling.h"
@@ -78,6 +79,9 @@ typedef struct _nrtxnopt_t {
   int distributed_tracing_enabled; /* Whether distributed tracing functionality
                                       is enabled */
   int span_events_enabled;         /* Whether span events are enabled */
+  size_t
+      max_span_events; /* The maximum number of span events per transaction.
+                          When set to 0, NR_MAX_SPAN_EVENTS is used. */
 } nrtxnopt_t;
 
 typedef enum _nrtxnstatus_cross_process_t {
@@ -185,8 +189,9 @@ typedef struct _nrtxn_t {
   nrtxncat_t cat;       /* Incoming CAT fields */
   nr_random_t* rnd;     /* Random number generator, owned by the application. */
 
-  nr_stack_t parent_stack; /* A stack to track the current parent in the tree of
-                              segments */
+  nr_hashmap_t* parent_stacks; /* A hashmap of stacks to track the current
+                                  parent in a tree of segments, keyed by async
+                                  context */
   size_t segment_count; /* A count of segments for this transaction, maintained
                            throughout the life of this transaction */
   nr_segment_t* segment_root; /* The root pointer to the tree of segments */
@@ -812,12 +817,19 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
  * Purpose : Create a distributed tracing payload for the given transaction.
  *
  * Params  : 1. The transaction.
+ *           2. The segment to create the payload on.
  *
  * Returns : A newly allocated, null terminated payload string, which the caller
  *           must destroy with nr_free() when no longer needed, or NULL on
  *           error.
+ *
+ * Note    : The segment parameter must not be NULL: callers may wish to use
+ *           nr_txn_get_current_segment() to get the current segment on the
+ *           context they are interested in if a segment isn't explicitly
+ *           available.
  */
-extern char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn);
+extern char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn,
+                                                     nr_segment_t* segment);
 
 /*
  * Purpose : Determine whether span events should be created. This is true if
@@ -831,9 +843,11 @@ extern char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn);
 extern bool nr_txn_should_create_span_events(const nrtxn_t* txn);
 
 /*
- * Purpose : Get a pointer to the currently-executing segment.
+ * Purpose : Get a pointer to the currently-executing segment for a given
+ *           async context.
  *
- * Params  : The current transaction.
+ * Params  : 1. The transaction.
+ *           2. The async context, or NULL for the main context.
  *
  * Note    : In some cases, the parent of a segment shall be supplied, as in
  *           cases of newrelic_start_segment(). In other cases, the parent of
@@ -843,7 +857,8 @@ extern bool nr_txn_should_create_span_events(const nrtxn_t* txn);
  *
  * Returns : A pointer to the active segment.
  */
-extern nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn);
+extern nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn,
+                                                const char* async_context);
 
 /*
  * Purpose : Set the current segment for the transaction.
@@ -852,24 +867,28 @@ extern nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn);
  *           2. A pointer to the currently-executing segment.
  *
  * Note    : On the transaction is a data structure used to manage the parenting
- *           of stacks for the main context.  Currently it's implemented as a
- *           stack.  This call is equivalent to pushing a segment pointer onto
- *           the stack of parents.
+ *           of stacks for all async contexts. Currently it's implemented as a
+ *           hashmap of stacks.  This call is equivalent to pushing a segment
+ *           pointer onto the stack of parents for the relevant async context.
  *
  */
 extern void nr_txn_set_current_segment(nrtxn_t* txn, nr_segment_t* segment);
 
 /*
- * Purpose : Retire the currently-executing segment
+ * Purpose : Retire the given segment if it is the currently executing segment
+ *           on its async context.
+ *
+ *           If the given segment is not the currently executing segment on its
+ *           async context, this function will do nothing.
  *
  * Params  : The current transaction.
  *
- * Note    : On the transaction is a data structure used to manage the
- *           parenting of stacks for the main context.  Currently it's
- *           implemented as a stack.  This call is equivalent to popping
- *           a segment pointer from the stack of parents.
+ * Note    : On the transaction is a data structure used to manage the parenting
+ *           of stacks for all async contexts. Currently it's implemented as a
+ *           hashmap of stacks.  This call is equivalent to popping a segment
+ *           pointer from the stack of parents for the relevant async context.
  */
-extern void nr_txn_retire_current_segment(nrtxn_t* txn);
+extern void nr_txn_retire_current_segment(nrtxn_t* txn, nr_segment_t* segment);
 
 /*
  * Purpose : Destroy the fields within an nrtxnfinal_t.

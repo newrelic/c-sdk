@@ -120,15 +120,17 @@ extern char* nr_header_inbound_response(nrtxn_t* txn, int content_length);
  * Purpose : Create headers for an outbound external request.
  *
  * Params  : 1. The current transaction.
- *           2. Pointer to location to return the X_NEWRELIC_ID header.
- *           3. Pointer to location to return the X_NEWRELIC_TRANSACTION header.
- *           4. Pointer to location to return the X_NEWRELIC_SYNTHETICS header.
- *           4. Pointer to location to return the NEWRELIC header used for DT.
+ *           2. The current segment.
+ *           3. Pointer to location to return the X_NEWRELIC_ID header.
+ *           4. Pointer to location to return the X_NEWRELIC_TRANSACTION header.
+ *           5. Pointer to location to return the X_NEWRELIC_SYNTHETICS header.
+ *           6. Pointer to location to return the NEWRELIC header used for DT.
  *
  * Returns : Nothing. The headers are returned through the pointer parameters.
  *           The caller must free these strings after use.
  */
 extern void nr_header_outbound_request(nrtxn_t* txn,
+                                       nr_segment_t* segment,
                                        char** x_newrelic_id_ptr,
                                        char** x_newrelic_transaction_ptr,
                                        char** x_newrelic_synthetics_ptr,

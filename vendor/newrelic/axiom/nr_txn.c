@@ -330,6 +330,11 @@ static inline void nr_txn_create_dt_metrics(nrtxn_t* txn,
   nr_free(metric_name);
 }
 
+static void nr_txn_destroy_parent_stack(nr_stack_t* stack) {
+  nr_stack_destroy_fields(stack);
+  nr_free(stack);
+}
+
 nrtxn_t* nr_txn_begin(nrapp_t* app,
                       const nrtxnopt_t* opts,
                       const nr_attribute_config_t* attribute_config) {
@@ -389,9 +394,10 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
                                    app->security_policies);
 
   /*
-   * Allocate the stack to manage segment parenting
+   * Allocate the stacks to manage segment parenting
    */
-  nr_stack_init(&nt->parent_stack, NR_STACK_DEFAULT_CAPACITY);
+  nt->parent_stacks
+      = nr_hashmap_create((nr_hashmap_dtor_func_t)nr_txn_destroy_parent_stack);
 
   /*
    * Install the root segment
@@ -1055,7 +1061,7 @@ void nr_txn_destroy_fields(nrtxn_t* txn) {
   nr_error_destroy(&txn->error);
   nr_distributed_trace_destroy(&txn->distributed_trace);
   nr_segment_destroy(txn->segment_root);
-  nr_stack_destroy_fields(&txn->parent_stack);
+  nr_hashmap_destroy(&txn->parent_stacks);
   nrm_table_destroy(&txn->unscoped_metrics);
   nrm_table_destroy(&txn->scoped_metrics);
   nr_string_pool_destroy(&txn->trace_strings);
@@ -1241,8 +1247,11 @@ void nr_txn_end(nrtxn_t* txn) {
   /*
    * Finalise the segment tree.
    */
-  txn->final_data = nr_segment_tree_finalise(
-      txn, NR_MAX_SEGMENTS, NR_MAX_SPAN_EVENTS, nr_txn_handle_total_time, NULL);
+  txn->final_data = nr_segment_tree_finalise(txn, NR_MAX_SEGMENTS,
+                                             (0 != txn->options.max_span_events)
+                                                 ? txn->options.max_span_events
+                                                 : NR_MAX_SPAN_EVENTS,
+                                             nr_txn_handle_total_time, NULL);
 }
 
 bool nr_txn_set_timing(nrtxn_t* txn, nrtime_t start, nrtime_t duration) {
@@ -2455,12 +2464,12 @@ bool nr_txn_should_create_span_events(const nrtxn_t* txn) {
          && txn->options.span_events_enabled;
 }
 
-char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn) {
+char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn,
+                                              nr_segment_t* segment) {
   nr_distributed_trace_payload_t* payload;
   char* text = NULL;
-  nr_segment_t* current_segment;
 
-  if (NULL == txn) {
+  if (NULL == txn || NULL == segment) {
     goto end;
   }
 
@@ -2480,24 +2489,18 @@ char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn) {
     goto end;
   }
 
-  /*
-   * The span event identifier needs to be the same as the distributed trace
-   * guid.
-   */
   if (nr_txn_should_create_span_events(txn)) {
-    current_segment = nr_txn_get_current_segment(txn);
-    if (NULL == current_segment) {
-      return NULL;
+    /*
+     * Ensure the segment has an ID, since it's required to generate the
+     * distributed trace payload.
+     */
+    if (NULL == segment->id) {
+      segment->id = nr_guid_create(txn->rnd);
     }
-    if (NULL == current_segment->id) {
-      current_segment->id = nr_guid_create(txn->rnd);
-    }
-    nr_distributed_trace_set_guid(txn->distributed_trace, current_segment->id);
   }
 
-  payload = nr_distributed_trace_payload_create(
-      txn->distributed_trace,
-      nr_distributed_trace_inbound_get_guid(txn->distributed_trace));
+  payload = nr_distributed_trace_payload_create(txn->distributed_trace,
+                                                segment->id);
   text = nr_distributed_trace_payload_as_text(payload);
   nr_distributed_trace_payload_destroy(&payload);
 
@@ -2627,23 +2630,59 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
   return true;
 }
 
-nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn) {
+nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn,
+                                         const char* async_context) {
+  int async_context_idx = 0;
+
   if (nrunlikely(NULL == txn)) {
     return NULL;
   }
-  return nr_stack_get_top(&txn->parent_stack);
+
+  if (async_context) {
+    async_context_idx = nr_string_find(txn->trace_strings, async_context);
+    if (0 == async_context_idx) {
+      return NULL;
+    }
+  }
+
+  return nr_stack_get_top(
+      nr_hashmap_index_get(txn->parent_stacks, (uint64_t)async_context_idx));
 }
 
 void nr_txn_set_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
-  if (nrunlikely(NULL == txn)) {
+  uint64_t key;
+  nr_stack_t* stack;
+
+  if (nrunlikely(NULL == txn || NULL == segment)) {
     return;
   }
-  nr_stack_push(&txn->parent_stack, (void*)segment);
+
+  key = (uint64_t)segment->async_context;
+  stack = (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks, key);
+  if (NULL == stack) {
+    stack = nr_malloc(sizeof(nr_stack_t));
+    nr_stack_init(stack, NR_STACK_DEFAULT_CAPACITY);
+
+    if (NR_SUCCESS
+        != nr_hashmap_index_set(txn->parent_stacks, key, (void*)stack)) {
+      // If we can't add the stack to the hashmap, then we should free it to
+      // avoid a memory leak.
+      nr_stack_destroy_fields(stack);
+      nr_free(stack);
+      return;
+    }
+  }
+
+  nr_stack_push(stack, (void*)segment);
 }
 
-void nr_txn_retire_current_segment(nrtxn_t* txn) {
-  if (nrunlikely(NULL == txn)) {
+void nr_txn_retire_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
+  if (nrunlikely(NULL == txn || NULL == segment)) {
     return;
   }
-  nr_stack_pop(&txn->parent_stack);
+
+  nr_stack_remove_topmost(
+      (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks,
+                                        (uint64_t)segment->async_context),
+      segment);
 }

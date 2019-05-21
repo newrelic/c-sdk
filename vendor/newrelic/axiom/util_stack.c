@@ -33,3 +33,20 @@ void* nr_stack_pop(nr_stack_t* s) {
 void nr_stack_destroy_fields(nr_stack_t* s) {
   nr_vector_deinit(s);
 }
+
+bool nr_stack_remove_topmost(nr_stack_t* s, const void* element) {
+  size_t index = 0;
+
+  // The stack pushes to the end of the vector, so we need to search in reverse
+  // order.
+  if (nr_vector_find_last(s, element, NULL, NULL, &index)) {
+    void* found = NULL;
+
+    // nr_vector_remove() requires a pointer to receive the element, but since
+    // stacks don't take ownership of the elements within them, we can let it
+    // leak and rely on the code that owns the element to clean it up later.
+    return nr_vector_remove(s, index, &found);
+  }
+
+  return false;
+}

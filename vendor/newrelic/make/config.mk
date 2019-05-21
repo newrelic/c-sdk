@@ -32,7 +32,7 @@ HAVE_PROC_SELF_FD := $(shell test -d /proc/self/fd && echo 1 || echo 0)
 HAVE_CLOSEFROM := 0
 
 # Whether you have backtrace and backtrace_symbols_fd
-HAVE_BACKTRACE := $(shell test -e /usr/include/execinfo.h && echo 1 || echo 0)
+HAVE_BACKTRACE := $(shell $(CC) $(dir $(abspath $(lastword $(MAKEFILE_LIST))))backtrace_test.c -o /dev/null 2>&1 1>/dev/null && echo 1 || echo 0)
 
 # Whether you have libexecinfo
 HAVE_LIBEXECINFO := $(shell test -e /usr/lib/libexecinfo.so -o -e /usr/lib/libexecinfo.a && echo 1 || echo 0)
@@ -55,7 +55,7 @@ HAVE_LIBEXECINFO := $(shell test -e /usr/lib/libexecinfo.so -o -e /usr/lib/libex
 #
 # This continues to tie us ever closer to GNU make; neither the POSIX
 # specification nor BSD implementation support any of these functions.
-HAVE_PTHREAD_MUTEX_ERRORCHECK := $(shell $(CC) $(dir $(abspath $(lastword $(MAKEFILE_LIST))))pthread_test.c -o /dev/null -pthread && echo 1 || echo 0)
+HAVE_PTHREAD_MUTEX_ERRORCHECK := $(shell $(CC) $(dir $(abspath $(lastword $(MAKEFILE_LIST))))pthread_test.c -o /dev/null -pthread 2>&1 1>/dev/null && echo 1 || echo 0)
 
 # Whether reallocarray() is available from the standard library.
 #

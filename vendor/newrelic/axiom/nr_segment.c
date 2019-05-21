@@ -52,8 +52,18 @@ nr_segment_t* nr_segment_start(nrtxn_t* txn,
   } /* Otherwise, the parent of this new segment is the current segment on the
        transaction */
   else {
-    nr_segment_t* current_segment;
-    current_segment = nr_txn_get_current_segment(txn);
+    nr_segment_t* current_segment
+        = nr_txn_get_current_segment(txn, async_context);
+
+    /* Special case: if the current segment is NULL and the async context is not
+     * NULL, then this indicates that the new segment is the root of a new async
+     * context. In that case, we'll parent it to the current segment on the main
+     * context. (Users who want to have their new context be parented to another
+     * async context will need to provide a parent explicitly.) */
+    if (NULL == current_segment && NULL != async_context) {
+      current_segment = nr_txn_get_current_segment(txn, NULL);
+    }
+
     new_segment->parent = current_segment;
 
     if (NULL != current_segment) {
@@ -241,8 +251,6 @@ bool nr_segment_set_timing(nr_segment_t* segment,
 }
 
 bool nr_segment_end(nr_segment_t* segment) {
-  nr_segment_t* current_segment = NULL;
-
   if (nrunlikely(NULL == segment) || (NULL == segment->txn)) {
     return false;
   }
@@ -256,12 +264,7 @@ bool nr_segment_end(nr_segment_t* segment) {
   }
 
   segment->txn->segment_count += 1;
-
-  current_segment = nr_txn_get_current_segment(segment->txn);
-
-  if (current_segment == segment) {
-    nr_txn_retire_current_segment(segment->txn);
-  }
+  nr_txn_retire_current_segment(segment->txn, segment);
 
   return true;
 }
@@ -444,6 +447,43 @@ int nr_segment_wrapped_duration_comparator(const void* a,
                                            void* userdata NRUNUSED) {
   return nr_segment_duration_comparator((const nr_segment_t*)a,
                                         (const nr_segment_t*)b);
+}
+
+static int nr_segment_span_priority_comparator(const nr_segment_t* a,
+                                               const nr_segment_t* b) {
+  /*
+   * 1. Root segments always have the highest priority.
+   */
+  if (NULL == a->parent) {
+    return 1;
+  }
+  if (NULL == b->parent) {
+    return -1;
+  }
+
+  /*
+   * 2. Every segment having an id assigned. This id can stem from distributed
+   *    trace payload creation or from span id getters. Let's keep segments
+   *    whose ids are floating around out there.
+   */
+  if (NULL != a->id && NULL == b->id) {
+    return 1;
+  }
+  if (NULL != b->id && NULL == a->id) {
+    return -1;
+  }
+
+  /*
+   * 3. The longest segments.
+   */
+  return nr_segment_duration_comparator(a, b);
+}
+
+int nr_segment_wrapped_span_priority_comparator(const void* a,
+                                                const void* b,
+                                                void* userdata NRUNUSED) {
+  return nr_segment_span_priority_comparator((const nr_segment_t*)a,
+                                             (const nr_segment_t*)b);
 }
 
 nr_minmax_heap_t* nr_segment_heap_create(ssize_t bound,

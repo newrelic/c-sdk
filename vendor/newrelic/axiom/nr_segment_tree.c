@@ -39,7 +39,7 @@ nrtxnfinal_t nr_segment_tree_finalise(nrtxn_t* txn,
 
   if (should_save_spans && should_sample_spans) {
     first_pass_metadata.span_heap = nr_segment_heap_create(
-        span_limit, nr_segment_wrapped_duration_comparator);
+        span_limit, nr_segment_wrapped_span_priority_comparator);
   }
   if (should_save_trace && should_sample_trace) {
     first_pass_metadata.trace_heap = nr_segment_heap_create(

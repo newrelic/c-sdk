@@ -266,10 +266,10 @@ static void test_key_txns_fn(const char* testname,
 }
 
 static void test_txn_cmp_options(void) {
-  nrtxnopt_t o1
-      = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  nrtxnopt_t o2
-      = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  nrtxnopt_t o1 = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  nrtxnopt_t o2 = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   bool rv = false;
 
@@ -927,7 +927,7 @@ static void test_create_duration_metrics(void) {
   nrm_table_destroy(&txn->unscoped_metrics);
 
   nr_segment_destroy(txn->segment_root);
-  nr_stack_destroy_fields(&txn->parent_stack);
+  nr_hashmap_destroy(&txn->parent_stacks);
 }
 
 static void test_create_queue_metric(void) {
@@ -2307,9 +2307,9 @@ static void test_add_request_parameter(void) {
       "success",
       0
           == nr_strcmp(
-                 "{\"user\":[],\"agent\":[{\"dests\":[\"event\"],"
-                 "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
-                 json),
+              "{\"user\":[],\"agent\":[{\"dests\":[\"event\"],"
+              "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
+              json),
       "json=%s", NRSAFESTR(json));
   nr_free(json);
 
@@ -2320,10 +2320,10 @@ static void test_add_request_parameter(void) {
       "legacy enable true",
       0
           == nr_strcmp(
-                 "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
-                 "\"error\"],"
-                 "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
-                 json),
+              "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
+              "\"error\"],"
+              "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
+              json),
       "json=%s", NRSAFESTR(json));
   nr_free(json);
   legacy_enable = 0;
@@ -2335,10 +2335,10 @@ static void test_add_request_parameter(void) {
       "high security prevents capture",
       0
           == nr_strcmp(
-                 "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
-                 "\"error\"],"
-                 "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
-                 json),
+              "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
+              "\"error\"],"
+              "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
+              json),
       "json=%s", NRSAFESTR(json));
   nr_free(json);
   txn.high_security = 0;
@@ -2350,10 +2350,10 @@ static void test_add_request_parameter(void) {
       "LASP prevents capture",
       0
           == nr_strcmp(
-                 "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
-                 "\"error\"],"
-                 "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
-                 json),
+              "{\"user\":[],\"agent\":[{\"dests\":[\"event\",\"trace\","
+              "\"error\"],"
+              "\"key\":\"request.parameters.key\",\"value\":\"gamma\"}]}",
+              json),
       "json=%s", NRSAFESTR(json));
   nr_free(json);
   txn.lasp = 0;
@@ -2378,9 +2378,9 @@ static void test_set_request_referer(void) {
       "request referer added successfully with correct destinations",
       0
           == nr_strcmp(
-                 "{\"user\":[],\"agent\":[{\"dests\":[\"error\"],"
-                 "\"key\":\"request.headers.referer\",\"value\":\"zap\"}]}",
-                 json),
+              "{\"user\":[],\"agent\":[{\"dests\":[\"error\"],"
+              "\"key\":\"request.headers.referer\",\"value\":\"zap\"}]}",
+              json),
       "json=%s", NRSAFESTR(json));
   nr_free(json);
 
@@ -4302,7 +4302,6 @@ static void test_txn_dt_cross_agent_testcase(nrapp_t* app,
   nrobj_t* txn_event;
   nrobj_t* error_event;
   nrobj_t* span_event;
-  nr_segment_t* current_segment;
 
   const char* testname = nro_get_hash_string(hash, "test_name", NULL);
   const char* trusted_account_key
@@ -4390,7 +4389,8 @@ static void test_txn_dt_cross_agent_testcase(nrapp_t* app,
   size = nro_getsize(outbound_payloads);
   for (int i = 1; i <= size; i++) {
     const nrobj_t* spec = nro_get_array_hash(outbound_payloads, i, NULL);
-    char* payload = nr_txn_create_distributed_trace_payload(txn);
+    nr_segment_t segment = {.id = NULL};
+    char* payload = nr_txn_create_distributed_trace_payload(txn, &segment);
     nrobj_t* json_payload = nro_create_from_json(payload);
     const nrobj_t* json_payload_d = nro_get_hash_value(json_payload, "d", NULL);
 
@@ -4403,8 +4403,7 @@ static void test_txn_dt_cross_agent_testcase(nrapp_t* app,
     test_txn_dt_cross_agent_intrinsics(testname, "outbound payload",
                                        json_payload, spec);
 
-    current_segment = nr_txn_get_current_segment(txn);
-    nr_free(current_segment->id);
+    nr_free(segment.id);
     nro_delete(json_payload);
     nr_free(payload);
   }
@@ -5059,43 +5058,54 @@ static void test_nr_txn_is_current_path_named(void) {
 
 static void test_create_distributed_trace_payload(void) {
   char* text;
-  char* dt_guid1;
-  const char* dt_guid2;
-  const char* dt_guid3;
+  char* dt_guid;
   nrtxn_t txn;
   nr_segment_t* previous_segment = NULL;
   nr_segment_t* current_segment = NULL;
+  nr_stack_t parent_stack;
 
   nr_memset(&txn, 0, sizeof(nrtxn_t));
   txn.unscoped_metrics = nrm_table_create(0);
-  nr_stack_init(&txn.parent_stack, 10);
+  nr_stack_init(&parent_stack, 32);
+  txn.parent_stacks = nr_hashmap_create(NULL);
+  nr_hashmap_index_set(txn.parent_stacks, 0, &parent_stack);
   txn.distributed_trace = nr_distributed_trace_create();
   txn.rnd = nr_random_create();
+  txn.status.recording = 1;
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
 
   /*
    * Test : Bad parameters.
    */
-  tlib_pass_if_null("NULL txn", nr_txn_create_distributed_trace_payload(NULL));
+  tlib_pass_if_null("NULL txn", nr_txn_create_distributed_trace_payload(
+                                    NULL, txn.segment_root));
+  tlib_pass_if_null("NULL segment",
+                    nr_txn_create_distributed_trace_payload(&txn, NULL));
+  test_txn_metric_is("NULL segment should increment the exception metric",
+                     txn.unscoped_metrics, MET_FORCED,
+                     "Supportability/DistributedTrace/CreatePayload/Exception",
+                     1, 0, 0, 0, 0, 0);
 
   /*
    * Test : Distributed tracing disabled.
    */
   txn.options.distributed_tracing_enabled = 0;
-  tlib_pass_if_null("disabled", nr_txn_create_distributed_trace_payload(&txn));
+  tlib_pass_if_null("disabled", nr_txn_create_distributed_trace_payload(
+                                    &txn, txn.segment_root));
   test_txn_metric_is("exception", txn.unscoped_metrics, MET_FORCED,
                      "Supportability/DistributedTrace/CreatePayload/Exception",
-                     1, 0, 0, 0, 0, 0);
+                     2, 0, 0, 0, 0, 0);
 
   txn.options.distributed_tracing_enabled = true;
   /*
    * Test : Distributed tracing pointer is NULL.
    */
   txn.options.span_events_enabled = true;
-  tlib_pass_if_null("enabled", nr_txn_create_distributed_trace_payload(&txn));
+  tlib_pass_if_null("enabled", nr_txn_create_distributed_trace_payload(
+                                   &txn, txn.segment_root));
   test_txn_metric_is("exception", txn.unscoped_metrics, MET_FORCED,
                      "Supportability/DistributedTrace/CreatePayload/Exception",
-                     2, 0, 0, 0, 0, 0);
+                     3, 0, 0, 0, 0, 0);
 
   /*
    * Test : Valid distributed trace, span events off, transaction events on.
@@ -5103,7 +5113,7 @@ static void test_create_distributed_trace_payload(void) {
   txn.options.span_events_enabled = false;
   txn.options.analytics_events_enabled = true;
   nr_txn_set_guid(&txn, "wombat");
-  text = nr_txn_create_distributed_trace_payload(&txn);
+  text = nr_txn_create_distributed_trace_payload(&txn, txn.segment_root);
   tlib_fail_if_null("valid guid wombat", nr_strstr(text, "\"tx\":\"wombat\""));
   test_txn_metric_is("success", txn.unscoped_metrics, MET_FORCED,
                      "Supportability/DistributedTrace/CreatePayload/Success", 1,
@@ -5118,7 +5128,7 @@ static void test_create_distributed_trace_payload(void) {
   txn.status.recording = true;
   current_segment = nr_segment_start(&txn, NULL, NULL);
   nr_txn_set_guid(&txn, "kangaroos");
-  text = nr_txn_create_distributed_trace_payload(&txn);
+  text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
   tlib_fail_if_null("valid guid kangaroos",
                     nr_strstr(text, "\"tx\":\"kangaroos\""));
   test_txn_metric_is("success", txn.unscoped_metrics, MET_FORCED,
@@ -5133,19 +5143,18 @@ static void test_create_distributed_trace_payload(void) {
    */
   txn.distributed_trace->sampled = true;
 
-  text = nr_txn_create_distributed_trace_payload(&txn);
-  dt_guid1 = nr_strdup(nr_distributed_trace_get_guid(txn.distributed_trace));
+  text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
+  tlib_fail_if_null("The segment ID should be set when DT sampled is on",
+                    current_segment->id);
+  dt_guid = nr_strdup(current_segment->id);
   nr_free(text);
-  tlib_pass_if_str_equal("The DT guid should match the segment id", dt_guid1,
-                         current_segment->id);
-  text = nr_txn_create_distributed_trace_payload(&txn);
-  dt_guid2 = nr_distributed_trace_get_guid(txn.distributed_trace);
-  tlib_pass_if_str_equal("The new DT guid should match the old one", dt_guid1,
-                         dt_guid2);
+
+  text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
   tlib_pass_if_str_equal("The segment id should be the same",
-                         current_segment->id, dt_guid1);
+                         current_segment->id, dt_guid);
   nr_segment_end(current_segment);
   nr_free(text);
+  nr_free(dt_guid);
 
   /*
    * Test : Create a payload in the next segment.
@@ -5161,14 +5170,9 @@ static void test_create_distributed_trace_payload(void) {
    */
   previous_segment = current_segment;
   current_segment = nr_segment_start(&txn, NULL, NULL);
-  text = nr_txn_create_distributed_trace_payload(&txn);
-  dt_guid3 = nr_distributed_trace_get_guid(txn.distributed_trace);
-  tlib_pass_if_str_equal("The new segment id should match the 3rd DT guid",
-                         current_segment->id, dt_guid3);
+  text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
   tlib_fail_if_str_equal("There should be a new id on the new segment",
                          current_segment->id, previous_segment->id);
-  tlib_fail_if_str_equal("The new DT guid should not match the one from before",
-                         dt_guid3, dt_guid1);
   nr_free(text);
 
   /*
@@ -5181,7 +5185,7 @@ static void test_create_distributed_trace_payload(void) {
   txn.options.analytics_events_enabled = true;
   txn.distributed_trace->sampled = true;
   nr_txn_set_guid(&txn, "guid");
-  text = nr_txn_create_distributed_trace_payload(&txn);
+  text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
   tlib_fail_if_null("valid text", text);
   tlib_fail_if_null("valid guid", nr_strstr(text, "\"tx\":\"guid\""));
   test_txn_metric_is("success", txn.unscoped_metrics, MET_FORCED,
@@ -5189,13 +5193,10 @@ static void test_create_distributed_trace_payload(void) {
                      0, 0, 0, 0, 0);
   nr_free(text);
 
-  nr_free(dt_guid1);
   nr_random_destroy(&txn.rnd);
   nr_distributed_trace_destroy(&txn.distributed_trace);
-  nr_stack_destroy_fields(&txn.parent_stack);
-  nr_segment_destroy(txn.segment_root);
-  nr_segment_destroy(current_segment);
-  nr_segment_destroy(previous_segment);
+  nr_hashmap_destroy(&txn.parent_stacks);
+  nr_stack_destroy_fields(&parent_stack);
   nr_txn_destroy_fields(&txn);
 }
 
@@ -5223,6 +5224,8 @@ static void test_accept_before_create_distributed_tracing(void) {
   txn.options.span_events_enabled = true;
   txn.app_connect_reply
       = nro_create_from_json("{\"trusted_account_key\":\"9123\"}");
+  txn.status.recording = 1;
+  txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   txn.unscoped_metrics = nrm_table_create(0);
 
   /*
@@ -5241,7 +5244,7 @@ static void test_accept_before_create_distributed_tracing(void) {
                       "TransportDuration/App/9123/51424/HTTP/all");
 
   // Create
-  text = nr_txn_create_distributed_trace_payload(&txn);
+  text = nr_txn_create_distributed_trace_payload(&txn, txn.segment_root);
   tlib_fail_if_null("valid text", text);
   tlib_fail_if_null("valid transaction id",
                     nr_strstr(text, "\"tr\":\"3221bf09aa0bcf0d\""));
@@ -5405,7 +5408,7 @@ static void test_txn_accept_distributed_trace_payload_metrics(void) {
 
   nr_distributed_trace_destroy(&txn.distributed_trace);
   nr_segment_destroy(txn.segment_root);
-  nr_stack_destroy_fields(&txn.parent_stack);
+  nr_hashmap_destroy(&txn.parent_stacks);
   nro_delete(txn.app_connect_reply);
   nrm_table_destroy(&txn.unscoped_metrics);
 }
@@ -5467,6 +5470,8 @@ static void test_txn_accept_distributed_trace_payload(void) {
   nr_memset(&txn, 0, sizeof(nrtxn_t));
   txn.unscoped_metrics = nrm_table_create(0);
   txn.app_connect_reply = nro_new_hash();
+  txn.status.recording = 1;
+  txn.segment_root = nr_segment_start(&txn, NULL, NULL);
 
   /*
    * Test : Bad parameters.  Make sure nothing explodes
@@ -5598,7 +5603,8 @@ static void test_txn_accept_distributed_trace_payload(void) {
    */
   txn.distributed_trace = nr_distributed_trace_create();
   nr_distributed_trace_set_txn_id(txn.distributed_trace, "txnid");
-  create_payload = nr_txn_create_distributed_trace_payload(&txn);
+  create_payload
+      = nr_txn_create_distributed_trace_payload(&txn, txn.segment_root);
 
   nr_txn_accept_distributed_trace_payload(&txn, json_payload, NULL);
   test_txn_metric_is("create before accept", txn.unscoped_metrics, MET_FORCED,
@@ -5755,21 +5761,28 @@ static void test_should_create_span_events(void) {
   nr_distributed_trace_destroy(&txn.distributed_trace);
 }
 
-static void test_parent_stack(void) {
+static void test_parent_stacks(void) {
   nr_segment_t s = {.type = NR_SEGMENT_CUSTOM, .parent = NULL};
+  nrtxn_t txn = {.parent_stacks = NULL};
 
   /*
    * Test : Bad parameters
    */
   tlib_pass_if_null(
       "Getting the current segment for a NULL txn must return NULL",
-      nr_txn_get_current_segment(NULL));
+      nr_txn_get_current_segment(NULL, NULL));
 
-  /* Setting the current segment for a NULL txn must not seg fault */
+  /* Setting the current segment for a NULL txn must not segfault */
   nr_txn_set_current_segment(NULL, &s);
 
+  /* Setting the current segment for a NULL segment must not segfault */
+  nr_txn_set_current_segment(&txn, NULL);
+
   /* Retiring the current segment for a NULL txn must not seg fault */
-  nr_txn_retire_current_segment(NULL);
+  nr_txn_retire_current_segment(NULL, &s);
+
+  /* Retiring the current segment for a NULL segment must not seg fault */
+  nr_txn_retire_current_segment(&txn, NULL);
 
   /* See also: More meaningful unit-tests in test_segment.c.  Starting and
    * ending a segment trigger nr_txn_set_current_segment() and
@@ -5854,5 +5867,5 @@ void test_main(void* p NRUNUSED) {
   test_txn_accept_distributed_trace_payload_httpsafe();
   test_default_trace_id();
   test_should_create_span_events();
-  test_parent_stack();
+  test_parent_stacks();
 }

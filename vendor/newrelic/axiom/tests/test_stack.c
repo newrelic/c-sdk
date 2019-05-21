@@ -116,6 +116,55 @@ static void test_get(void) {
   nr_stack_destroy_fields(&s);
 }
 
+static void test_remove_topmost(void) {
+  nr_stack_t s;
+
+  nr_stack_init(&s, 15);
+
+  tlib_pass_if_bool_equal(
+      "Removing the topmost instance of an element on a NULL stack must fail",
+      false, nr_stack_remove_topmost(NULL, NULL));
+
+  tlib_pass_if_bool_equal(
+      "Removing the topmost instance of an element on an empty stack must fail",
+      false, nr_stack_remove_topmost(&s, NULL));
+
+  nr_stack_push(&s, (void*)1);
+  nr_stack_push(&s, (void*)2);
+  nr_stack_push(&s, (void*)3);
+
+  tlib_pass_if_bool_equal(
+      "Removing the topmost instance of an element that does not exist must "
+      "fail",
+      false, nr_stack_remove_topmost(&s, (void*)4));
+
+  tlib_pass_if_size_t_equal(
+      "Removing the topmost instance of an element that does not exist must "
+      "leave the stack in its original state",
+      3, s.used);
+
+  tlib_pass_if_bool_equal(
+      "Removing the topmost instance of an extant element must succeed", true,
+      nr_stack_remove_topmost(&s, (void*)2));
+
+  tlib_pass_if_size_t_equal(
+      "Removing the topmost instance of an extant element must actually remove "
+      "it",
+      2, s.used);
+
+  tlib_pass_if_ptr_equal(
+      "Removing the topmost instance of an extant element must not touch the "
+      "other elements",
+      (void*)1, nr_vector_get(&s, 0));
+
+  tlib_pass_if_ptr_equal(
+      "Removing the topmost instance of an extant element must not touch the "
+      "other elements",
+      (void*)3, nr_vector_get(&s, 1));
+
+  nr_stack_destroy_fields(&s);
+}
+
 tlib_parallel_info_t parallel_info = {.suggested_nthreads = 2, .state_size = 0};
 
 void test_main(void* p NRUNUSED) {
@@ -124,4 +173,5 @@ void test_main(void* p NRUNUSED) {
   test_push_pop();
   test_push_pop_extended();
   test_get();
+  test_remove_topmost();
 }

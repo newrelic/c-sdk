@@ -362,6 +362,32 @@ extern int nr_segment_wrapped_duration_comparator(const void* a,
                                                   void* userdata NRUNUSED);
 
 /*
+ * Purpose : Compare the span priority of two segments.
+ *
+ * Params : 1. A pointer to a, the first segment for comparison.
+ *          2. A pointer to b, the second segment for comparison.
+ *          3. An unused pointer required by nr_minmax_heap_t.
+ *
+ * Returns : -1 if the span priority of a is less than the span priority of b.
+ *            0 if the span priorities are equal.
+ *            1 if the span priority of a is greater than the span priority of 
+ *              b.
+ *
+ * Note    : This is a comparison function required for creating a minmax heap
+ *           of segments.
+ *
+ *           The span priority of a segment is defined as follows:
+ *            1. The root segment has higher priority than any other segment.
+ *            2. Segments with ids assigned have higher priority than any other
+ *               segments, except the root segment.
+ *            3. For all other cases, the segment with the longer duration has
+ *               higher span priority.
+ */
+extern int nr_segment_wrapped_span_priority_comparator(const void* a,
+                                                       const void* b,
+                                                       void* userdata NRUNUSED);
+
+/*
  * Purpose : Place an nr_segment_t pointer into a buffer.
  *             or "segments to trace".
  *

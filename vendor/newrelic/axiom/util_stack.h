@@ -82,4 +82,15 @@ void* nr_stack_pop(nr_stack_t* s);
  */
 void nr_stack_destroy_fields(nr_stack_t* s);
 
+/*
+ * Purpose : Remove the topmost instance of an element in a stack.
+ *
+ * Params  : 1. A pointer to a stack, s.
+ *           2. The element to find and remove.
+ *
+ * Returns : True if the element was found and removed; false otherwise or on
+ *           error.
+ */
+bool nr_stack_remove_topmost(nr_stack_t* s, const void* element);
+
 #endif /* NR_STACK_HDR */

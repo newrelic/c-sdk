@@ -694,6 +694,130 @@ static void test_iterate(void) {
   nr_vector_deinit(&v);
 }
 
+static void test_find(void) {
+  size_t index = 0;
+  void* userdata = (void*)12345;
+  nr_vector_t v;
+
+  nr_vector_init(&v, 8, NULL, NULL);
+  expected_sort_userdata = (intptr_t)userdata;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_bool_equal("finding in a NULL vector returns false", false,
+                          nr_vector_find_first(NULL, NULL, NULL, NULL, NULL));
+  tlib_pass_if_bool_equal("finding in a NULL vector returns false", false,
+                          nr_vector_find_last(NULL, NULL, NULL, NULL, NULL));
+
+  /*
+   * Test : Empty vector.
+   */
+  tlib_pass_if_bool_equal("finding in an empty vector returns false", false,
+                          nr_vector_find_first(&v, NULL, NULL, NULL, NULL));
+  tlib_pass_if_bool_equal("finding in an empty vector returns false", false,
+                          nr_vector_find_last(&v, NULL, NULL, NULL, NULL));
+
+  add_elements(&v, 8);
+
+  /*
+   * Test : Vector with the default comparator.
+   */
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with the default "
+      "comparator and sets the index",
+      true, nr_vector_find_first(&v, (void*)4, NULL, NULL, &index));
+  tlib_pass_if_size_t_equal("finding a value within a vector sets the index", 4,
+                            index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with the default "
+      "comparator and sets the index",
+      true, nr_vector_find_last(&v, (void*)5, NULL, NULL, &index));
+  tlib_pass_if_size_t_equal("finding a value within a vector sets the index", 5,
+                            index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with the default "
+      "comparator and does not set the index if NULL is given",
+      true, nr_vector_find_first(&v, (void*)4, NULL, NULL, NULL));
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with the default "
+      "comparator and does not set the index if NULL is given",
+      true, nr_vector_find_last(&v, (void*)5, NULL, NULL, NULL));
+
+  index = 42;
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns false with the default "
+      "comparator and does not set the index",
+      false, nr_vector_find_first(&v, (void*)10, NULL, NULL, &index));
+  tlib_pass_if_size_t_equal(
+      "finding a value within a vector does not change the index if the value "
+      "is not found",
+      42, index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns false with the default "
+      "comparator and does not set the index",
+      false, nr_vector_find_last(&v, (void*)10, NULL, NULL, &index));
+  tlib_pass_if_size_t_equal(
+      "finding a value within a vector does not change the index if the value "
+      "is not found",
+      42, index);
+
+  /*
+   * Test : Vector with a custom comparator.
+   */
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with a custom comparator "
+      "and sets the index",
+      true, nr_vector_find_first(&v, (void*)4, uintptr_cmp, userdata, &index));
+  tlib_pass_if_size_t_equal("finding a value within a vector sets the index", 4,
+                            index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with a custom comparator "
+      "comparator and sets the index",
+      true, nr_vector_find_last(&v, (void*)5, uintptr_cmp, userdata, &index));
+  tlib_pass_if_size_t_equal("finding a value within a vector sets the index", 5,
+                            index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with a custom comparator "
+      "comparator and does not set the index if NULL is given",
+      true, nr_vector_find_first(&v, (void*)4, uintptr_cmp, userdata, NULL));
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns true with a custom comparator "
+      "comparator and does not set the index if NULL is given",
+      true, nr_vector_find_last(&v, (void*)5, uintptr_cmp, userdata, NULL));
+
+  index = 42;
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns false with a custom comparator "
+      "comparator and does not set the index",
+      false,
+      nr_vector_find_first(&v, (void*)10, uintptr_cmp, userdata, &index));
+  tlib_pass_if_size_t_equal(
+      "finding a value within a vector does not change the index if the value "
+      "is not found",
+      42, index);
+
+  tlib_pass_if_bool_equal(
+      "finding a value within a vector returns false with a custom comparator "
+      "comparator and does not set the index",
+      false, nr_vector_find_last(&v, (void*)10, uintptr_cmp, userdata, &index));
+  tlib_pass_if_size_t_equal(
+      "finding a value within a vector does not change the index if the value "
+      "is not found",
+      42, index);
+
+  nr_vector_deinit(&v);
+}
+
 void test_main(void* p NRUNUSED) {
   test_create_destroy();
   test_init_deinit();
@@ -709,4 +833,5 @@ void test_main(void* p NRUNUSED) {
   test_replace();
   test_sort();
   test_iterate();
+  test_find();
 }

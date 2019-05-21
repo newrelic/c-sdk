@@ -34,6 +34,10 @@ typedef struct _mock_txn {
   nrtime_t unfinished_duration;
 } mock_txn;
 
+/*
+ * Mock nr_txn.c functions.
+ */
+
 nr_status_t nr_txn_freeze_name_update_apdex(nrtxn_t* txn) {
   return ((const mock_txn*)txn)->freeze_name_return;
 }
@@ -63,8 +67,31 @@ nrtime_t nr_txn_unfinished_duration(const nrtxn_t* txn) {
   return ((const mock_txn*)txn)->unfinished_duration;
 }
 
-char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn NRUNUSED) {
+char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn NRUNUSED,
+                                              nr_segment_t* segment NRUNUSED) {
   return nr_strdup("{ \"v\" : [0,1], \"d\" : {} }");
+}
+
+/*
+ * For the mocking above to work, we need to ensure that there are no undefined
+ * symbols that will cause nr_txn.o to be included from libaxiom.a, otherwise
+ * we'll get a bunch of errors around multiply defined symbols. This includes
+ * indirect dependencies: notably, nr_segment.o requires a few functions around
+ * segment stack maintenance, so we need to mock them enough to compile.
+ */
+nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn NRUNUSED,
+                                         const char* async_context NRUNUSED) {
+  return NULL;
+}
+
+void nr_txn_set_current_segment(nrtxn_t* txn NRUNUSED,
+                                nr_segment_t* segment NRUNUSED) {}
+
+void nr_txn_retire_current_segment(nrtxn_t* txn NRUNUSED,
+                                   nr_segment_t* segment NRUNUSED) {}
+
+nrtime_t nr_txn_start_time(const nrtxn_t* txn NRUNUSED) {
+  return 0;
 }
 
 #define test_metric_created(...) \
@@ -756,13 +783,14 @@ static void test_outbound_request(void) {
   txn->options.cross_process_enabled = 1;
   txn->options.synthetics_enabled = 1;
   txn->special_flags.debug_cat = 0;
+  txn->status.recording = 1;
   txn->synthetics = NULL;
   txn->type = NR_TXN_TYPE_CAT_INBOUND;
   txn->unscoped_metrics = nrm_table_create(2);
+  txn->segment_root = nr_segment_start(txn, NULL, NULL);
 
   txn->distributed_trace = nr_distributed_trace_create();
   txn->distributed_trace->inbound.guid = nr_strdup("e10f");
-  txn->distributed_trace->guid = nr_strdup(guid);
   txn->distributed_trace->account_id = nr_strdup("931d");
   txn->distributed_trace->app_id = nr_strdup("01aa");
   txn->options.cross_process_enabled = 0;
@@ -771,34 +799,45 @@ static void test_outbound_request(void) {
   /*
    * Test : Bad Parameters
    */
-  nr_header_outbound_request(0, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(0, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("null txn", x_newrelic_id, 0);
   tlib_pass_if_str_equal("null txn", x_newrelic_transaction, 0);
   tlib_pass_if_str_equal("null txn", x_newrelic_synthetics, 0);
   tlib_pass_if_str_equal("null txn", newrelic, 0);
 
+  nr_header_outbound_request(txn, NULL, &x_newrelic_id, &x_newrelic_transaction,
+                             &x_newrelic_synthetics, &newrelic);
+  tlib_pass_if_str_equal("null segment", x_newrelic_id, 0);
+  tlib_pass_if_str_equal("null segment", x_newrelic_transaction, 0);
+  tlib_pass_if_str_equal("null segment", x_newrelic_synthetics, 0);
+  tlib_pass_if_str_equal("null segment", newrelic, 0);
+
   /* Don't blow up! */
-  nr_header_outbound_request(NULL, NULL, NULL, NULL, NULL);
-  nr_header_outbound_request(txn, NULL, NULL, NULL, NULL);
+  nr_header_outbound_request(NULL, NULL, NULL, NULL, NULL, NULL);
+  nr_header_outbound_request(txn, txn->segment_root, NULL, NULL, NULL, NULL);
 
   txn->options.cross_process_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("cross process disabled", x_newrelic_id, 0);
   tlib_pass_if_str_equal("cross process disabled", x_newrelic_transaction, 0);
   txn->options.cross_process_enabled = 1;
 
   txn->app_connect_reply = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("no app_connect_reply", x_newrelic_id, 0);
   tlib_pass_if_str_equal("no app_connect_reply", x_newrelic_transaction, 0);
   txn->app_connect_reply = app_connect_reply;
 
   txnv.fake_guid = NULL;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("no guid", x_newrelic_id, 0);
   tlib_pass_if_str_equal("no guid", x_newrelic_transaction, 0);
   txnv.fake_guid = guid;
@@ -808,16 +847,18 @@ static void test_outbound_request(void) {
    */
   txn->options.cross_process_enabled = 0;
   txn->options.distributed_tracing_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_null("no CAT, no DT", x_newrelic_id);
   tlib_pass_if_null("no CAT, no DT", x_newrelic_transaction);
   tlib_pass_if_null("no CAT, no DT", newrelic);
 
   txn->options.cross_process_enabled = 1;
   txn->options.distributed_tracing_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_not_null("CAT, no DT", x_newrelic_id);
   tlib_pass_if_not_null("CAT, no DT", x_newrelic_transaction);
   tlib_pass_if_null("CAT, no DT", newrelic);
@@ -828,8 +869,9 @@ static void test_outbound_request(void) {
   txn->options.cross_process_enabled = 0;
   txn->options.distributed_tracing_enabled = 1;
   txn->type = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_true("no CAT, DT", txn->type | NR_TXN_TYPE_DT_OUTBOUND,
                     "txn->type=%d", txn->type);
   tlib_pass_if_null("no CAT, DT", x_newrelic_id);
@@ -840,8 +882,9 @@ static void test_outbound_request(void) {
 
   txn->options.cross_process_enabled = 1;
   txn->options.distributed_tracing_enabled = 1;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_null("CAT, DT", x_newrelic_id);
   tlib_pass_if_null("CAT, DT", x_newrelic_transaction);
   tlib_pass_if_not_null("CAT, DT", newrelic);
@@ -853,8 +896,9 @@ static void test_outbound_request(void) {
    */
   txn->options.cross_process_enabled = 1;
   txn->options.distributed_tracing_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("success", "VQQEVVNADgQIXQ==", x_newrelic_id);
   tlib_pass_if_str_equal("success",
                          "PxQHUFRQDAYGU1lbdnN0IiF3FB8EBw8RVU4aUgkKBwYGUw5ZCCBxI"
@@ -885,8 +929,9 @@ static void test_outbound_request(void) {
   txn->options.cross_process_enabled = 1;
   txn->options.distributed_tracing_enabled = 0;
   txn->synthetics = nr_synthetics_create("[1,100,\"a\",\"b\",\"c\"]");
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("synthetics", "VQQEVVNADgQIXQ==", x_newrelic_id);
   tlib_pass_if_str_equal("synthetics",
                          "PxQHUFRQDAYGU1lbdnN0IiF3FB8EBw8RVU4aUgkKBwYGUw5ZCCBxI"
@@ -918,8 +963,9 @@ static void test_outbound_request(void) {
   nr_free(decoded_x_newrelic_synthetics);
 
   txn->options.synthetics_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_str_equal("synthetics", "VQQEVVNADgQIXQ==", x_newrelic_id);
   tlib_pass_if_str_equal("synthetics",
                          "PxQHUFRQDAYGU1lbdnN0IiF3FB8EBw8RVU4aUgkKBwYGUw5ZCCBxI"
@@ -945,8 +991,9 @@ static void test_outbound_request(void) {
 
   txn->options.synthetics_enabled = 1;
   txn->options.cross_process_enabled = 0;
-  nr_header_outbound_request(txn, &x_newrelic_id, &x_newrelic_transaction,
-                             &x_newrelic_synthetics, &newrelic);
+  nr_header_outbound_request(txn, txn->segment_root, &x_newrelic_id,
+                             &x_newrelic_transaction, &x_newrelic_synthetics,
+                             &newrelic);
   tlib_pass_if_null("synthetics", x_newrelic_id);
   tlib_pass_if_null("synthetics", x_newrelic_transaction);
   tlib_pass_if_str_equal("synthetics",
@@ -961,6 +1008,7 @@ static void test_outbound_request(void) {
   nr_free(decoded_x_newrelic_synthetics);
 
   nro_delete(app_connect_reply);
+  nr_segment_destroy(txn->segment_root);
   nr_synthetics_destroy(&txn->synthetics);
   nr_distributed_trace_destroy(&txn->distributed_trace);
   nrm_table_destroy(&txn->unscoped_metrics);
@@ -1008,6 +1056,7 @@ static void test_lifecycle(void) {
   client_txn->special_flags.debug_cat = 0;
   client_txn->status.recording = 1;
   client_txn->synthetics = NULL;
+  client_txn->segment_root = nr_segment_start(client_txn, NULL, NULL);
 
   external_txn->app_connect_reply = shared_app_connect_reply;
   external_txn->cat.inbound_guid = NULL;
@@ -1029,9 +1078,9 @@ static void test_lifecycle(void) {
   /*
    * Client Transaction: Create the outbound headers.
    */
-  nr_header_outbound_request(client_txn, &x_newrelic_id,
-                             &x_newrelic_transaction, &x_newrelic_synthetics,
-                             &newrelic);
+  nr_header_outbound_request(client_txn, client_txn->segment_root,
+                             &x_newrelic_id, &x_newrelic_transaction,
+                             &x_newrelic_synthetics, &newrelic);
 
   /*
    * External Transaction: Process inbound headers and create return header.
@@ -1053,6 +1102,7 @@ static void test_lifecycle(void) {
                          "EXTERNAL_TXNNAME");
   tlib_pass_if_str_equal("full lifecycle", external_guid, "EXTERNAL_GUID");
 
+  nr_segment_destroy(client_txn->segment_root);
   nr_free(external_txn->cat.client_cross_process_id);
   nr_free(external_txn->cat.inbound_guid);
   nr_free(external_txn->cat.referring_path_hash);

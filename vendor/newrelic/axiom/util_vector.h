@@ -268,4 +268,44 @@ extern bool nr_vector_iterate(nr_vector_t* v,
                               nr_vector_iter_t callback,
                               void* userdata);
 
+/*
+ * Purpose : Find the first instance of a value in a vector.
+ *
+ * Params  : 1. The vector.
+ *           2. The value to search for.
+ *           3. The comparison function to use when comparing elements within
+ *              the vector. See nr_sort()'s compar documentation for more
+ *              detail. If NULL, values will be compared by pointer value.
+ *           4. The user data to pass to the comparison function.
+ *           5. An optional pointer to a value that will receive the key of the
+ *              found value. If no value is found, this value will not be set.
+ *
+ * Returns : True if the value was found; false otherwise or on error.
+ */
+extern bool nr_vector_find_first(const nr_vector_t* v,
+                                 const void* needle,
+                                 nr_vector_cmp_t comparator,
+                                 void* userdata,
+                                 size_t* index_ptr);
+
+/*
+ * Purpose : Find the last instance of a value in a vector.
+ *
+ * Params  : 1. The vector.
+ *           2. The value to search for.
+ *           3. The comparison function to use when comparing elements within
+ *              the vector. See nr_sort()'s compar documentation for more
+ *              detail. If NULL, values will be compared by pointer value.
+ *           4. The user data to pass to the comparison function.
+ *           5. An optional pointer to a value that will receive the key of the
+ *              found value. If no value is found, this value will not be set.
+ *
+ * Returns : True if the value was found; false otherwise or on error.
+ */
+extern bool nr_vector_find_last(const nr_vector_t* v,
+                                const void* needle,
+                                nr_vector_cmp_t comparator,
+                                void* userdata,
+                                size_t* index_ptr);
+
 #endif /* UTIL_VECTOR_HDR */

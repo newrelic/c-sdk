@@ -1,6 +1,8 @@
 #include "util_vector.h"
 #include "util_vector_private.h"
 
+#include <sys/types.h>
+
 #include "util_memory.h"
 #include "util_sort.h"
 
@@ -294,4 +296,100 @@ bool nr_vector_iterate(nr_vector_t* v,
   }
 
   return true;
+}
+
+static bool nr_vector_find_comparator(const nr_vector_t* v,
+                                      const size_t start,
+                                      const ssize_t delta,
+                                      const void* needle,
+                                      nr_vector_cmp_t comparator,
+                                      void* userdata,
+                                      size_t* index_ptr) {
+  size_t i;
+
+  for (i = start; i < v->used; i += delta) {
+    if (0 == (comparator)(v->elements[i], needle, userdata)) {
+      if (index_ptr) {
+        *index_ptr = i;
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool nr_vector_find_direct(const nr_vector_t* v,
+                                  const size_t start,
+                                  const ssize_t delta,
+                                  const void* needle,
+                                  size_t* index_ptr) {
+  size_t i;
+
+  for (i = start; i < v->used; i += delta) {
+    if (v->elements[i] == needle) {
+      if (index_ptr) {
+        *index_ptr = i;
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool nr_vector_find(const nr_vector_t* v,
+                           const size_t start,
+                           const bool forward,
+                           const void* needle,
+                           nr_vector_cmp_t comparator,
+                           void* userdata,
+                           size_t* index_ptr) {
+  const ssize_t delta = forward ? 1 : -1;
+
+  // The caller must already have checked v.
+
+  if (nrunlikely(start >= v->used)) {
+    return false;
+  }
+
+  if (comparator) {
+    return nr_vector_find_comparator(v, start, delta, needle, comparator,
+                                     userdata, index_ptr);
+  }
+
+  return nr_vector_find_direct(v, start, delta, needle, index_ptr);
+}
+
+bool nr_vector_find_first(const nr_vector_t* v,
+                          const void* needle,
+                          nr_vector_cmp_t comparator,
+                          void* userdata,
+                          size_t* index_ptr) {
+  if (nrunlikely(NULL == v)) {
+    return false;
+  }
+
+  if (0 == v->used) {
+    return false;
+  }
+
+  return nr_vector_find(v, 0, true, needle, comparator, userdata, index_ptr);
+}
+
+bool nr_vector_find_last(const nr_vector_t* v,
+                         const void* needle,
+                         nr_vector_cmp_t comparator,
+                         void* userdata,
+                         size_t* index_ptr) {
+  if (nrunlikely(NULL == v)) {
+    return false;
+  }
+
+  if (0 == v->used) {
+    return false;
+  }
+
+  return nr_vector_find(v, v->used - 1, false, needle, comparator, userdata,
+                        index_ptr);
 }

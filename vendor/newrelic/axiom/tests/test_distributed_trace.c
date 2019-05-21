@@ -67,44 +67,6 @@ static void test_distributed_trace_field_app_id(void) {
   nr_distributed_trace_destroy(&dt);
 }
 
-static void test_distributed_trace_field_guid(void) {
-  nr_distributed_trace_t* dt;
-
-  dt = nr_distributed_trace_create();
-
-  /*
-   * Test : Bad parameters.
-   */
-  tlib_pass_if_null("NULL dt", nr_distributed_trace_get_guid(NULL));
-
-  /*
-   * Test : Default value.
-   */
-  tlib_pass_if_null("default value", nr_distributed_trace_get_guid(dt));
-
-  /*
-   * Test : Set value.
-   */
-  nr_distributed_trace_set_guid(dt, "guid");
-  tlib_pass_if_str_equal("set guid", "guid", nr_distributed_trace_get_guid(dt));
-
-  /*
-   * Test : Unset value.
-   */
-  nr_distributed_trace_set_guid(dt, NULL);
-  tlib_pass_if_null("unset guid", nr_distributed_trace_get_guid(dt));
-
-  /*
-   * Test : Changed value.
-   */
-  nr_distributed_trace_set_guid(dt, "a");
-  nr_distributed_trace_set_guid(dt, "b");
-  tlib_pass_if_str_equal("changed guid", "b",
-                         nr_distributed_trace_get_guid(dt));
-
-  nr_distributed_trace_destroy(&dt);
-}
-
 static void test_distributed_trace_field_txn_id(void) {
   nr_distributed_trace_t* dt;
 
@@ -771,7 +733,7 @@ static void test_distributed_trace_payload_as_text(void) {
                     nr_distributed_trace_payload_as_text(&payload));
 
   /*
-   * Test : Missing id and transaction id.
+   * Test : Missing parent id and transaction id.
    */
   payload.metadata = &dt;
   tlib_pass_if_null("NULL payload", nr_distributed_trace_payload_as_text(NULL));
@@ -779,7 +741,8 @@ static void test_distributed_trace_payload_as_text(void) {
                     nr_distributed_trace_payload_as_text(&payload));
 
   /*
-   * Test : Valid payload, with all nullable fields NULL.
+   * Test : Valid payload, with all nullable fields NULL including the parent
+   *        id.
    */
   payload.metadata = &dt;
   dt.txn_id = "txnid";
@@ -791,11 +754,12 @@ static void test_distributed_trace_payload_as_text(void) {
   nr_free(text);
 
   /*
-   * Test : Valid payload, with all nullable fields NULL.
+   * Test : Valid payload, with all nullable fields NULL except for the parent
+   *        id.
    */
   payload.metadata = &dt;
+  payload.parent_id = "guid";
   dt.txn_id = NULL;
-  dt.guid = "guid";
   text = nr_distributed_trace_payload_as_text(&payload);
   tlib_pass_if_str_equal("NULL fields",
                          "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"id\":\"guid\","
@@ -843,7 +807,6 @@ void test_main(void* p NRUNUSED) {
   test_distributed_trace_create_destroy();
   test_distributed_trace_field_account_id();
   test_distributed_trace_field_app_id();
-  test_distributed_trace_field_guid();
   test_distributed_trace_field_txn_id();
   test_distributed_trace_field_priority();
   test_distributed_trace_field_sampled();

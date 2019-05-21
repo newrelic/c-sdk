@@ -37,6 +37,126 @@ static void test_finalise_bad_params(void) {
       nr_segment_tree_finalise(&txn, trace_limit, span_limit, NULL, NULL));
 }
 
+static void test_finalise_span_priority(void) {
+  nrtxn_t txn = {0};
+  nrtxnfinal_t result;
+  nr_span_event_t* span;
+  nr_segment_t* root;
+  nr_segment_t* custom;
+  nr_segment_t* external;
+  nr_segment_t* long_seg;
+
+  /* Mock up the transaction */
+  txn.abs_start_time = 1000;
+  txn.distributed_trace = nr_distributed_trace_create();
+  nr_distributed_trace_set_sampled(txn.distributed_trace, true);
+  txn.options.distributed_tracing_enabled = true;
+  txn.options.span_events_enabled = true;
+
+  txn.segment_count = 1;
+  txn.trace_strings = nr_string_pool_create();
+  txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.options.tt_threshold = 5000;
+
+  /* Mock up a long custom segment */
+  long_seg = nr_zalloc(sizeof(nr_segment_t));
+  long_seg->name = nr_string_add(txn.trace_strings, "Long");
+  long_seg->txn = &txn;
+  long_seg->start_time = 2000;
+  long_seg->stop_time = 20000;
+
+  /* Mock up the external segment */
+  external = nr_zalloc(sizeof(nr_segment_t));
+  external->name = nr_string_add(txn.trace_strings, "External");
+  external->txn = &txn;
+  external->start_time = 2000;
+  external->stop_time = 8000;
+  external->id = nr_strdup("id");
+
+  /* Mock up the custom segment */
+  custom = nr_zalloc(sizeof(nr_segment_t));
+  custom->name = nr_string_add(txn.trace_strings, "Custom");
+  custom->txn = &txn;
+  custom->start_time = 1000;
+  custom->stop_time = 9000;
+  nr_segment_children_init(&custom->children);
+  nr_segment_add_child(custom, external);
+
+  /* Mock up the root segment */
+  root = nr_zalloc(sizeof(nr_segment_t));
+  root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
+  root->txn = &txn;
+  root->start_time = 0;
+  root->stop_time = 20000;
+  nr_segment_children_init(&root->children);
+  nr_segment_add_child(root, custom);
+  nr_segment_add_child(root, long_seg);
+
+  txn.segment_root = root;
+  txn.segment_count = 4;
+
+  /*
+   * Our internal heap implementation doesn't allow for a heap of size
+   * 1. That's why we start with a span limit of 2 here.
+   */
+
+  /*
+   * Test : External and root segments should be kept.
+   */
+  result = nr_segment_tree_finalise(&txn, 0, 2, NULL, NULL);
+  tlib_pass_if_int_equal("2 span events: root and external",
+                         nr_vector_size(result.span_events), 2);
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 0);
+  tlib_pass_if_str_equal("2 span events: root and external",
+                         nr_span_event_get_name(span), "WebTransaction/*");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 1);
+  tlib_pass_if_str_equal("2 span events: root and external",
+                         nr_span_event_get_name(span), "External");
+
+  nr_txn_final_destroy_fields(&result);
+
+  /*
+   * Test : External, root and the longest custom segments should be kept.
+   */
+  result = nr_segment_tree_finalise(&txn, 0, 3, NULL, NULL);
+  tlib_pass_if_int_equal("3 span events: root, external and long custom",
+                         nr_vector_size(result.span_events), 3);
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 0);
+  tlib_pass_if_str_equal("3 span events: root, external and long custom",
+                         nr_span_event_get_name(span), "WebTransaction/*");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 1);
+  tlib_pass_if_str_equal("3 span events: root, external and long custom",
+                         nr_span_event_get_name(span), "External");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 2);
+  tlib_pass_if_str_equal("two span events: root and external",
+                         nr_span_event_get_name(span), "Long");
+
+  nr_txn_final_destroy_fields(&result);
+
+  /*
+   * Test : All segments should be kept.
+   */
+  result = nr_segment_tree_finalise(&txn, 0, 4, NULL, NULL);
+  tlib_pass_if_int_equal("all span events", nr_vector_size(result.span_events),
+                         4);
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 0);
+  tlib_pass_if_str_equal("all span events", nr_span_event_get_name(span),
+                         "WebTransaction/*");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 1);
+  tlib_pass_if_str_equal("all span events", nr_span_event_get_name(span),
+                         "Custom");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 2);
+  tlib_pass_if_str_equal("all span events", nr_span_event_get_name(span),
+                         "External");
+  span = (nr_span_event_t*)nr_vector_get(result.span_events, 3);
+  tlib_pass_if_str_equal("two span events: root and external",
+                         nr_span_event_get_name(span), "Long");
+
+  nr_txn_final_destroy_fields(&result);
+  nr_txn_destroy_fields(&txn);
+}
+
 static void test_finalise_one_only_with_metrics(void) {
   nrtxn_t txn = {.abs_start_time = 1000};
   size_t trace_limit = 1;
@@ -725,6 +845,7 @@ void test_main(void* p NRUNUSED) {
   test_finalise_total_time();
   test_finalise_with_sampling();
   test_finalise_with_extended_sampling();
+  test_finalise_span_priority();
   test_nearest_sampled_ancestor();
   test_nearest_sampled_ancestor_cycle();
 }

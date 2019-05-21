@@ -282,6 +282,7 @@ void nr_header_outbound_request_decoded(nrtxn_t* txn,
 }
 
 void nr_header_outbound_request(nrtxn_t* txn,
+                                nr_segment_t* segment,
                                 char** x_newrelic_id_ptr,
                                 char** x_newrelic_transaction_ptr,
                                 char** x_newrelic_synthetics_ptr,
@@ -289,13 +290,13 @@ void nr_header_outbound_request(nrtxn_t* txn,
   char* decoded_id = NULL;
   char* decoded_transaction = NULL;
 
-  if (0 == txn) {
+  if (NULL == txn || NULL == segment) {
     return;
   }
 
   if (txn->options.distributed_tracing_enabled) {
     if (newrelic_ptr) {
-      char* payload = nr_txn_create_distributed_trace_payload(txn);
+      char* payload = nr_txn_create_distributed_trace_payload(txn, segment);
 
       *newrelic_ptr = nr_b64_encode(payload, nr_strlen(payload), 0);
       txn->type |= NR_TXN_TYPE_DT_OUTBOUND;

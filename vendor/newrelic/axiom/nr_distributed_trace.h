@@ -102,8 +102,6 @@ extern const char* nr_distributed_trace_get_account_id(
     const nr_distributed_trace_t* dt);
 extern const char* nr_distributed_trace_get_app_id(
     const nr_distributed_trace_t* dt);
-extern const char* nr_distributed_trace_get_guid(
-    const nr_distributed_trace_t* dt);
 extern const char* nr_distributed_trace_get_txn_id(
     const nr_distributed_trace_t* dt);
 extern nr_sampling_priority_t nr_distributed_trace_get_priority(
@@ -133,15 +131,6 @@ extern const char* nr_distributed_trace_object_get_account_id(
     const nrobj_t* object);
 extern const char* nr_distributed_trace_object_get_trusted_key(
     const nrobj_t* object);
-
-/*
- * Purpose : Set the distributed trace GUID (the current span identifier).
- *
- * Params  : 1. The distributed trace.
- *           2. The GUID (current span identifier)..
- */
-extern void nr_distributed_trace_set_guid(nr_distributed_trace_t* dt,
-                                          const char* guid);
 
 /*
  * Purpose : Set the transaction id.
@@ -223,7 +212,7 @@ void nr_distributed_trace_inbound_set_transport_type(nr_distributed_trace_t* dt,
  *            must destroy with nr_distributed_trace_payload_destroy
  */
 nr_distributed_trace_payload_t* nr_distributed_trace_payload_create(
-    nr_distributed_trace_t* metadata,
+    const nr_distributed_trace_t* metadata,
     const char* parent_id);
 
 /*

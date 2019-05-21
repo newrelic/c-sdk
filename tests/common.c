@@ -8,6 +8,11 @@
 #include "nr_segment_private.h"
 #include "util_memory.h"
 
+static void txn_group_destroy_parent_stack(nr_stack_t* stack) {
+  nr_stack_destroy_fields(stack);
+  nr_free(stack);
+}
+
 /*! @brief Provides a fake app ready to be used in a transaction. */
 int app_group_setup(void** state) {
   newrelic_app_t* app;
@@ -43,7 +48,9 @@ int txn_group_setup(void** state) {
   txn->txn->unscoped_metrics = nrm_table_create(5);
 
   txn->txn->trace_strings = nr_string_pool_create();
-  nr_stack_init(&txn->txn->parent_stack, NR_STACK_DEFAULT_CAPACITY);
+
+  txn->txn->parent_stacks
+      = nr_hashmap_create((nr_hashmap_dtor_func_t)txn_group_destroy_parent_stack);
 
   txn->txn->segment_root = nr_zalloc(sizeof(nr_segment_t));
   txn->txn->segment_root->txn = txn->txn;

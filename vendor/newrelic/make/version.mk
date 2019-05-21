@@ -10,7 +10,7 @@ endif
 # (MAJOR.MINOR.PATCH) are the contents of the VERSION file. The final
 # segment is the build number contained in BUILD_NUMBER. Its value
 # typically comes from the environment and is set by Jenkins.
-AGENT_VERSION := $(shell if test -f VERSION; then cat VERSION; else cat ../../VERSION; fi).$(BUILD_NUMBER)
+AGENT_VERSION := $(shell if test -f VERSION; then cat VERSION; elif test -f ../VERSION; then cat ../VERSION; else cat ../../VERSION; fi).$(BUILD_NUMBER)
 
 # Jenkins provides the SHA for HEAD in the GIT_COMMIT environment
 # variable. If it's not defined, compute it ourselves.

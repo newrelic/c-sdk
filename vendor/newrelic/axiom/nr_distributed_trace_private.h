@@ -24,7 +24,6 @@ static const int NR_DISTRIBUTED_TRACE_VERSION_MINOR = 1;
 struct _nr_distributed_trace_t {
   char* account_id; /* The APM account identifier */
   char* app_id;     /* The application identifier (i.e. cluster agent ID) */
-  char* guid;       /* The current span identifier. */
   char* txn_id;     /* The transaction guid. */
   nr_sampling_priority_t priority; /* Likelihood to be saved */
   bool sampled;                    /* Whether this trip should be sampled */
@@ -54,7 +53,7 @@ struct _nr_distributed_trace_t {
  * metadata that does not change during a transaction.
  */
 struct _nr_distributed_trace_payload_t {
-  struct _nr_distributed_trace_t*
+  const struct _nr_distributed_trace_t*
       metadata; /* A pointer to the transaction's distributed trace metadata */
   char* parent_id;    /* The caller's span ID */
   nrtime_t timestamp; /* When the payload was created */
