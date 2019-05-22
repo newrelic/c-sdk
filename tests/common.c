@@ -4,6 +4,7 @@
 #include "transaction.h"
 
 #include "app.h"
+#include "nr_distributed_trace_private.h"
 #include "nr_txn.h"
 #include "nr_segment_private.h"
 #include "util_memory.h"
@@ -49,8 +50,11 @@ int txn_group_setup(void** state) {
 
   txn->txn->trace_strings = nr_string_pool_create();
 
-  txn->txn->parent_stacks
-      = nr_hashmap_create((nr_hashmap_dtor_func_t)txn_group_destroy_parent_stack);
+  txn->txn->parent_stacks = nr_hashmap_create(
+      (nr_hashmap_dtor_func_t)txn_group_destroy_parent_stack);
+
+  txn->txn->distributed_trace = nr_distributed_trace_create();
+  nr_distributed_trace_set_txn_id(txn->txn->distributed_trace, "e10f");
 
   txn->txn->segment_root = nr_zalloc(sizeof(nr_segment_t));
   txn->txn->segment_root->txn = txn->txn;

@@ -1142,11 +1142,11 @@ bool newrelic_ignore_transaction(newrelic_txn_t* transaction);
  * the span ID number, New Relic account ID number, and sampling information.
  * Note that a payload must be created within an active transaction.
  *
- * @param [in] transaction    An active transaction
+ * @param [in] transaction    An active transaction. This value cannot be NULL.
  * @param [in] segment        An active segment in which the distributed trace
  *                            payload is being created, or NULL to indicate
- *                            that the payload is created during the root
- *                            segment's execution.
+ *                            that the payload is created for the root
+ *                            segment.
  *
  * @return If successful, a string to manually add to a service's outbound
  * requests. If the instrumented application has not established a connection
@@ -1167,14 +1167,18 @@ char* newrelic_create_distributed_trace_payload(newrelic_txn_t* transaction,
  * and link corresponding spans together for a complete distributed trace. Note
  * that a payload must be accepted within an active transaction.
  *
- * @param [in] transaction    An active transaction.
+ * @param [in] transaction    An active transaction. This value cannot be NULL.
  * @param [in] payload        A string created by
  *                            newrelic_create_distributed_trace_payload().
+ *                            This value cannot be NULL.
  * @param [in] transport_type Transport type used for communicating the external
  *                            call. It is strongly recommended that one of
  *                            NEWRELIC_TRANSPORT_TYPE_UNKNOWN
  *                            through NEWRELIC_TRANSPORT_TYPE_OTHER are used
- *                            for this value.
+ *                            for this value.  If NULL is supplied for this
+ *                            parameter, an info-level message is logged and
+ *                            the default value of
+ *                            NEWRELIC_TRANSPORT_TYPE_UNKNOWN is used.
  *
  * @return true on success.
  */

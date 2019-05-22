@@ -18,6 +18,7 @@ OBJS := \
 	custom_event.o \
 	custom_metric.o \
 	datastore.o \
+	distributed_trace.o \
 	error.o \
 	external.o \
 	global.o \
