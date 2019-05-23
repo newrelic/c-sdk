@@ -98,6 +98,7 @@ TESTS := \
 	test_destroy \
 	test_distributed_trace \
 	test_distributed_trace_httpsafe \
+	test_distributed_trace_null_payload \
 	test_end_transaction \
 	test_external \
 	test_get_default_options \

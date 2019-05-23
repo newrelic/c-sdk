@@ -87,7 +87,6 @@ static void test_accept_payload_bad_parameters(void** state) {
   /* Attempting to accept a distributed trace payload with invalid parameters
    * must yield false */
   assert_false(newrelic_accept_distributed_trace_payload(NULL, NULL, NULL));
-  assert_false(newrelic_accept_distributed_trace_payload(txn, NULL, NULL));
   assert_false(newrelic_accept_distributed_trace_payload(NULL, payload, NULL));
   assert_false(newrelic_accept_distributed_trace_payload(
       NULL, NULL, NEWRELIC_TRANSPORT_TYPE_HTTP));

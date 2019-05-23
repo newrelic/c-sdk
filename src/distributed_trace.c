@@ -67,13 +67,6 @@ bool newrelic_accept_distributed_trace_payload(newrelic_txn_t* transaction,
     return false;
   }
 
-  if (NULL == payload) {
-    nrl_error(NRL_INSTRUMENT,
-              "cannot invoke newrelic_accept_distributed_trace_payload() on a "
-              "NULL payload");
-    return false;
-  }
-
   nrt_mutex_lock(&transaction->lock);
   ret = nr_txn_accept_distributed_trace_payload(transaction->txn, payload,
                                                 transport_type);
@@ -93,14 +86,6 @@ bool newrelic_accept_distributed_trace_payload_httpsafe(
               "cannot invoke "
               "newrelic_accept_distributed_trace_payload_httpsafe() on a "
               "NULL transaction");
-    return false;
-  }
-
-  if (NULL == payload) {
-    nrl_error(NRL_INSTRUMENT,
-              "cannot invoke "
-              "newrelic_accept_distributed_trace_payload_httpsafe() on a "
-              "NULL payload");
     return false;
   }
 

@@ -119,8 +119,6 @@ static void test_accept_payload_httpsafe_bad_parameters(void** state) {
    * must yield false */
   assert_false(
       newrelic_accept_distributed_trace_payload_httpsafe(NULL, NULL, NULL));
-  assert_false(
-      newrelic_accept_distributed_trace_payload_httpsafe(txn, NULL, NULL));
   assert_false(newrelic_accept_distributed_trace_payload_httpsafe(
       NULL, encoded_payload, NULL));
   assert_false(newrelic_accept_distributed_trace_payload_httpsafe(
