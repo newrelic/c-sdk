@@ -6,7 +6,10 @@
 
 #include "libnewrelic.h"
 #include "transaction.h"
+#include "segment.h"
+
 #include "nr_distributed_trace_private.h"
+#include "util_strings.h"
 
 #include "test.h"
 
@@ -54,17 +57,30 @@ static void test_create_payload(void** state) {
   newrelic_segment_t* s = newrelic_start_segment(txn, NULL, NULL);
   char* payload;
 
+  char* expected_payload_for_null_segment
+      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"tx\":\"e10f\"";
+
+  char* expected_payload_for_explicit_segment
+      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"id\":\"1234\",\"tx\":\"e10f\"";
+
   txn->txn->options.distributed_tracing_enabled = true;
   txn->txn->options.span_events_enabled = true;
+  s->segment->id = nr_strdup("1234");
 
   /* Creating a distributed trace payload with well-formed parameters must yield
    * a non-null payload */
   payload = newrelic_create_distributed_trace_payload(txn, NULL);
   assert_true(NULL != payload);
+  assert_true(0
+              == nr_strncmp(payload, expected_payload_for_null_segment,
+                            nr_strlen(expected_payload_for_null_segment)));
   nr_free(payload);
 
   payload = newrelic_create_distributed_trace_payload(txn, s);
   assert_true(NULL != payload);
+  assert_true(0
+              == nr_strncmp(payload, expected_payload_for_explicit_segment,
+                            nr_strlen(expected_payload_for_explicit_segment)));
   nr_free(payload);
 
   newrelic_end_segment(txn, &s);
@@ -78,7 +94,7 @@ static void test_accept_payload_bad_parameters(void** state) {
   newrelic_txn_t* txn = (newrelic_txn_t*)*state;
   newrelic_segment_t* s = newrelic_start_segment(txn, NULL, NULL);
   char* payload
-      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"id\":\"guid\",\"pr\":0.00000,"
+      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"pr\":0.00000,"
         "\"sa\":true,\"ti\":1557867530900}}";
 
   txn->txn->options.distributed_tracing_enabled = true;
@@ -102,7 +118,7 @@ static void test_accept_payload(void** state) {
   newrelic_txn_t* txn = (newrelic_txn_t*)*state;
   newrelic_segment_t* s = newrelic_start_segment(txn, NULL, NULL);
   char* payload
-      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"id\":\"guid\",\"pr\":0.00000,"
+      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"pr\":0.00000,"
         "\"sa\":true,\"ti\":1557867530900}}";
 
   txn->txn->options.distributed_tracing_enabled = true;

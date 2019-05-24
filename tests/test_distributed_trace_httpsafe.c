@@ -107,7 +107,7 @@ static void test_accept_payload_httpsafe_bad_parameters(void** state) {
   char* encoded_payload;
 
   char* payload
-      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"id\":\"guid\",\"pr\":0.00000,"
+      = "{\"v\":[0,1],\"d\":{\"ty\":\"App\",\"pr\":0.00000,"
         "\"sa\":true,\"ti\":1557867530900}}";
 
   encoded_payload = nr_b64_encode(payload, nr_strlen(payload), &encoded_len);
