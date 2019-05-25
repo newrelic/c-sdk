@@ -1225,6 +1225,8 @@ bool newrelic_accept_distributed_trace_payload_httpsafe(
  *
  * \example ex_custom.c
  * \example ex_datastore.c
+ * \example ex_distributed_tracing_client.c
+ * \example ex_distributed_tracing_server.c
  * \example ex_external.c
  * \example ex_notice_error.c
  * \example ex_segment.c

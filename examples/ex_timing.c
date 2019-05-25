@@ -10,8 +10,6 @@ int main(void) {
   newrelic_txn_t* txn = 0;
   newrelic_app_config_t* config = 0;
   newrelic_segment_t* seg = 0;
-  newrelic_segment_t* seg_a = 0;
-  newrelic_segment_t* seg_c = 0;
 
   example_init();
 
