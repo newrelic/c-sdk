@@ -803,10 +803,13 @@ bool newrelic_add_attribute_string(newrelic_txn_t* transaction,
  * Given an active transaction, this function records an error
  * inside of the transaction.
  *
- * @param [in] transaction An active transaction.
- * @param [in] priority The error's priority.
- * @param [in] errmsg A string comprising the error message.
- * @param [in] errclass A string comprising the error class.
+ * @param [in]  transaction An active transaction.
+ * @param [in]  priority The error's priority. The C SDK sends up one error per
+ *              transaction.  If multiple calls to this function are made during
+ *              a single transaction, the error with the highest priority is
+ *              reported to New Relic.
+ * @param [in]  errmsg A string comprising the error message.
+ * @param [in]  errclass A string comprising the error class.
  */
 void newrelic_notice_error(newrelic_txn_t* transaction,
                            int priority,
