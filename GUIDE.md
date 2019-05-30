@@ -170,14 +170,46 @@ and `database_name_reporting` both set to true. All the fields of
 
 ### Distributed Tracing
 
-Distributed tracing allows you to track the activity resulting from 
-requests to and from different applications or services. [You can 
-read more about distributed tracing here](https://docs.newrelic.com/docs/apm/distributed-tracing/getting-started/introduction-distributed-tracing).
+Distributed tracing allows you to monitor requests across a distributed system.
+When the multiple services of your distributed system are instrumented with 
+New Relic agents or SDKs, you can trace the path of a request as it travels 
+across a complex system. For the C SDK, you can use the distributed tracing 
+payload APIs to instrument the calling service and/or the called service. For 
+services instrumented with the C SDK, the calling service uses the API call 
+`newrelic_create_distributed_trace_payload()` to generate a payload. This 
+payload is accepted by the called service, 
+`newrelic_accept_distributed_trace_payload()`. [You can read more about 
+distributed tracing here](https://docs.newrelic.com/docs/apm/distributed-tracing/getting-started/introduction-distributed-tracing).
 
 **This feature is turned off by default. To turn it on you must 
 set `config->distributed_tracing.enabled` to true.** Span events 
 are turned on by default, to disable them you must set 
 `config->span_events.enabled` to false.
+
+Example: 
+
+```c 
+  /* start an external segment, this segment will be the connection between applications */
+  segment = newrelic_start_external_segment(txn, &params);
+
+  /* create the payload */
+  newrelic_payload = newrelic_create_distributed_trace_payload_httpsafe(txn, segment);
+  if (!newrelic_payload) {
+    return -1;
+  }
+  /* New Relic agents expect the distributed trace payload with the header name 'newrelic'. */
+  sprintf(newrelic_headers, "newrelic: %s", newrelic_payload);
+  headers = curl_slist_append(headers, newrelic_headers);
+  curl_easy_setopt(curl, CURLOPT_URL, "www.my_api.com");
+  res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+```
+
+Detailed descriptions of all the create and accept payload functions are located 
+[here](https://newrelic.github.io/c-sdk/libnewrelic_8h.html).
+
+<div align="right">
+    <b><a href="#table-of-contents">↥ back to the table of contents</a></b>
+</div>
 
 ### Segment Instrumentation
 

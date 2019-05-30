@@ -17,6 +17,8 @@ for C SDK documentation.
 * See New Relic's Documentation available at 
 [C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html).
 
+* See C SDK Guide available in [the C SDK repository](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md)
+
 * Browse 
 [New Relic's Explorers Hub](https://discuss.newrelic.com/c/build-on-new-relic/Open-Source-Agents-SDKs)
 for community discussions about the C SDK.
