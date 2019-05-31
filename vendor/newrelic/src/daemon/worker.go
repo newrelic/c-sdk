@@ -233,13 +233,20 @@ func parseBindAddr(s string) (address net.Addr, err error) {
 		return &net.UnixAddr{Name: s, Net: "unix"}, nil
 	}
 
-	// For TCP, we only support binding to the loopback address.
-	port, err := strconv.Atoi(s)
+	host, portStr, err := net.SplitHostPort(s)
+	if err != nil {
+		return nil, err
+	}
+	port, err := strconv.Atoi(portStr)
 	if err != nil || port < 1 || port > 65534 {
-		return nil, fmt.Errorf("invalid port %q - must be between 1 and 65534", s)
+		return nil, fmt.Errorf("invalid port %q - must be between 1 and 65534", portStr)
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return nil, fmt.Errorf("invalid host %q", host)
 	}
 
-	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, nil
+	return &net.TCPAddr{IP: ip, Port: port}, nil
 }
 
 // raiseFileLimit attempts to raise the soft limit for open file

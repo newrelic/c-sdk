@@ -1,5 +1,6 @@
 #include "nr_axiom.h"
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/un.h>
@@ -136,7 +137,15 @@ nr_status_t nr_agent_initialize_daemon_connection_parameters(
     nr_agent_daemon_sl = sizeof(nr_agent_daemon_inaddr);
     nr_memset(nr_agent_daemon_sa, 0, (int)nr_agent_daemon_sl);
 
-    nr_agent_daemon_inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (listen_path == NULL) {
+      nr_agent_daemon_inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    } else {
+      if (inet_pton(AF_INET, listen_path, &nr_agent_daemon_inaddr.sin_addr) != 1) {
+        nrl_error(NRL_DAEMON,
+                  "invalid daemon host ip");
+        return NR_FAILURE;
+      }
+    }
     nr_agent_daemon_inaddr.sin_port = htons((uint16_t)external_port);
     nr_agent_daemon_inaddr.sin_family = AF_INET;
 

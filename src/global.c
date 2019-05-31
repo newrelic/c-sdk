@@ -7,6 +7,7 @@
 #include "util_sleep.h"
 #include "util_strings.h"
 
+#include <limits.h>
 #include <stdlib.h>
 
 bool newrelic_log_configured = false;
@@ -54,6 +55,9 @@ bool newrelic_init(const char* daemon_socket, int time_limit_ms) {
 
 bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
   const char* path;
+  const char* offset;
+  char host[16]; // IPV4 only
+  long int port;
 
   if (!newrelic_log_configured) {
     // No log configuration; let's set some reasonable defaults and hope for
@@ -64,10 +68,37 @@ bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
   }
 
   path = daemon_socket ? daemon_socket : "/tmp/.newrelic.sock";
+  offset = strchr(path, ':');
+  if (offset == NULL) {
+    if (NR_SUCCESS != nr_agent_initialize_daemon_connection_parameters(path, 0)) {
+      nrl_error(NRL_API, "failed to initialise daemon connection to %s", path);
+      return false;
+    }
+  } else {
+    nr_memset(host, '\0', sizeof(host));
+    if (nr_strlcpy(host, path, offset - path + 1) == NULL) {
+      nrl_error(NRL_API, "failed to parse address host");
+      return false;
+    }
 
-  if (NR_SUCCESS != nr_agent_initialize_daemon_connection_parameters(path, 0)) {
-    nrl_error(NRL_API, "failed to initialise daemon connection to %s", path);
-    return false;
+    if (!nr_isdigit(*(offset + 1))) {
+      nrl_error(NRL_API, "invalid address port");
+      return false;
+    }
+    port = strtol(offset + 1, (char **)NULL, 10);
+    if (port == LONG_MIN || port == LONG_MAX) {
+      nrl_error(NRL_API, "failed to parse address port");
+      return false;
+    }
+    if (port < 1 || port > UINT_MAX) {
+      nrl_error(NRL_API, "address port is not with in the acceptible range: 1-%d", UINT_MAX);
+      return false;
+    }
+
+    if (NR_SUCCESS != nr_agent_initialize_daemon_connection_parameters(host, (int)port)) {
+      nrl_error(NRL_API, "failed to initialise daemon connection to %s:%ld", host, port);
+      return false;
+    }
   }
 
   if (!nr_agent_try_daemon_connect(time_limit_ms ? time_limit_ms : 10)) {

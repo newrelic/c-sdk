@@ -33,7 +33,8 @@ Options:
    --loglevel <level>         Log level (error, warning, info or debug)
                               Default: info
    --pidfile <file>           Set the path to the process id file
-   --port <port>              Listen on the specified port or socket file path
+   --addr <addr>              Listen on the specified ip:port or socket file path
+   --port <port>              Listen on the specified port or socket file path (deprecated, use --addr)
    --proxy <url>              Proxy credentials to use
    --auditlog <file>          Set the path to the audit file
    --cafile <file>            Set the path to root CA bundle
@@ -95,7 +96,8 @@ const (
 
 // Config provides the effective settings for the daemon.
 type Config struct {
-	BindAddr          string         `config:"port"`                           // Listener bind address, path=UDS, port=TCP
+	BindAddr          string         `config:"addr"`                           // Listener bind address
+	BindPort          string         `config:"port"`                           // Listener bind address, path=UDS, port=TCP
 	Proxy             string         `config:"proxy"`                          // Proxy credentials to use for reporting
 	Pidfile           string         `config:"pidfile"`                        // Path to daemon pid file
 	NoPidfile         bool           `config:"-"`                              // Used to avoid two processes using pidfile
@@ -265,7 +267,8 @@ func createFlagSet(cfg *Config) *flag.FlagSet {
 	flagSet.Usage = func() { fmt.Fprint(os.Stderr, "") }
 
 	flagSet.StringVar(&cfg.ConfigFile, "c", cfg.ConfigFile, "config file location")
-	flagSet.StringVar(&cfg.BindAddr, "port", cfg.BindAddr, "")
+	flagSet.StringVar(&cfg.BindAddr, "addr", cfg.BindAddr, "")
+	flagSet.StringVar(&cfg.BindPort, "port", cfg.BindPort, "")
 	flagSet.StringVar(&cfg.Proxy, "proxy", cfg.Proxy, "")
 	flagSet.StringVar(&cfg.Pidfile, "pidfile", cfg.Pidfile, "")
 	flagSet.BoolVar(&cfg.NoPidfile, "no-pidfile", cfg.NoPidfile, "")
@@ -391,6 +394,16 @@ func configure() *Config {
 		cfg.Role = getRole()
 	}
 
+  if cfg.BindPort != "" {
+		fmt.Fprint(os.Stderr, "--port is deprecated, use --addr instead\n")
+    _, err := strconv.Atoi(cfg.BindPort)
+    if err == nil {
+      cfg.BindAddr = "127.0.0.1:" + cfg.BindPort
+    } else {
+      cfg.BindAddr = cfg.BindPort
+    }
+  }
+
 	return &cfg
 }
 
@@ -512,7 +525,7 @@ func (r Role) String() string {
 func banner(cfg *Config) string {
 	buf := &bytes.Buffer{}
 	fmt.Fprintf(buf, "New Relic daemon version %s [", version.Full())
-	fmt.Fprintf(buf, "listen=%q", cfg.BindAddr)
+  fmt.Fprintf(buf, "listen=%q", cfg.BindAddr)
 
 	if cfg.Agent {
 		fmt.Fprint(buf, " startup=agent")
