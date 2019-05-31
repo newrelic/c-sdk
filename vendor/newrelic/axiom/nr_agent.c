@@ -1,6 +1,7 @@
 #include "nr_axiom.h"
 
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/un.h>
@@ -14,6 +15,7 @@
 #include "util_errno.h"
 #include "util_logging.h"
 #include "util_memory.h"
+#include "util_number_converter.h"
 #include "util_sleep.h"
 #include "util_strings.h"
 #include "util_syscalls.h"
@@ -57,6 +59,10 @@ nr_agent_connection_state_t nr_agent_connection_state
 nr_status_t nr_agent_initialize_daemon_connection_parameters(
     const char* listen_path,
     int external_port) {
+  struct addrinfo hints, *addr_res;
+  int addr_status;
+  char port[6];
+
   /*
    * Check parameters
    */
@@ -135,19 +141,32 @@ nr_status_t nr_agent_initialize_daemon_connection_parameters(
 
     nr_agent_daemon_sa = (struct sockaddr*)&nr_agent_daemon_inaddr;
     nr_agent_daemon_sl = sizeof(nr_agent_daemon_inaddr);
-    nr_memset(nr_agent_daemon_sa, 0, (int)nr_agent_daemon_sl);
 
     if (listen_path == NULL) {
+      nr_memset(nr_agent_daemon_sa, 0, (int)nr_agent_daemon_sl);
       nr_agent_daemon_inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+      nr_agent_daemon_inaddr.sin_port = htons((uint16_t)external_port);
+      nr_agent_daemon_inaddr.sin_family = AF_INET;
     } else {
-      if (inet_pton(AF_INET, listen_path, &nr_agent_daemon_inaddr.sin_addr) != 1) {
+      nr_memset(&hints, 0, sizeof(hints));
+      hints.ai_family = AF_INET;
+      hints.ai_socktype = SOCK_STREAM;
+      nr_itoa(port, sizeof(port), external_port);
+      addr_status = getaddrinfo(listen_path, port, &hints, &addr_res);
+      if (addr_status != 0) {
         nrl_error(NRL_DAEMON,
-                  "invalid daemon host ip");
+                  "could not resolve daemon address: %s", gai_strerror(addr_status));
         return NR_FAILURE;
       }
+      if (addr_res == NULL) {
+        nrl_error(NRL_DAEMON,
+                  "could not resolve daemon address: %s", listen_path);
+        return NR_FAILURE;
+      }
+
+      nr_memcpy(nr_agent_daemon_sa, addr_res->ai_addr, nr_agent_daemon_sl);
+      freeaddrinfo(addr_res);
     }
-    nr_agent_daemon_inaddr.sin_port = htons((uint16_t)external_port);
-    nr_agent_daemon_inaddr.sin_family = AF_INET;
 
     nr_agent_connect_method_msg[0] = '\0';
     snprintf(nr_agent_connect_method_msg, sizeof(nr_agent_connect_method_msg),

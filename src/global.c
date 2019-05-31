@@ -75,13 +75,13 @@ bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
       return false;
     }
   } else {
-    nr_memset(host, '\0', sizeof(host));
+    nr_memset(host, 0, sizeof(host));
     if (nr_strlcpy(host, path, offset - path + 1) == NULL) {
       nrl_error(NRL_API, "failed to parse address host");
       return false;
     }
 
-    if (!nr_isdigit(*(offset + 1))) {
+    if (!nr_isdigit(offset[1])) {
       nrl_error(NRL_API, "invalid address port");
       return false;
     }
