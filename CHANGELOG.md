@@ -25,6 +25,11 @@
 
 ### End of Life Notices ###
 
+- The `log_filename` and `log_level` fields of `newrelic_app_config_t` are
+  currently deprecated.  Future versions of the C SDK permanently remove these fields. 
+  To specify the log file and log level to use with the C SDK, use 
+  `newrelic_configure_log()`.
+
 ### Upgrade Notices ###
 
 ## 1.0.1 ##
