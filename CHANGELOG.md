@@ -18,6 +18,17 @@
 | [0.0.2](#002-alpha) | 2017-10-30 |
 | [0.0.1](#001-alpha) | 2017-09-21 |
 
+## Master Branch (In Progress/Current Working Version) ##
+
+### New Features ###
+
+### Bug Fixes ###
+
+### End of Life Notices ###
+
+### Upgrade Notices ###
+
+
 ## 1.1.0 ##
 
 ### New Features ###
