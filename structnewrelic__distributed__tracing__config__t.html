@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.16"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>New Relic C SDK: Data Structures</title>
+<title>New Relic C SDK: newrelic_distributed_tracing_config_t Struct Reference</title>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
 <link href="search/search.css" rel="stylesheet" type="text/css"/>
@@ -66,12 +66,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   </div>
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
-      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
       <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
     </ul>
   </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -86,22 +85,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">Data Structures</div>  </div>
+<div class="title">newrelic_distributed_tracing_config_t Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock">Here are the data structures with brief descriptions:</div><div class="directory">
-<table class="directory">
-<tr id="row_0_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__app__config__t.html" target="_self">newrelic_app_config_t</a></td><td class="desc">Configuration used to describe application name, license key, as well as optional transaction tracer and datastore configuration </td></tr>
-<tr id="row_1_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__datastore__segment__config__t.html" target="_self">newrelic_datastore_segment_config_t</a></td><td class="desc">Configuration used to configure how datastore segments are recorded in a transaction </td></tr>
-<tr id="row_2_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__datastore__segment__params__t.html" target="_self">newrelic_datastore_segment_params_t</a></td><td class="desc">Segment configuration used to instrument calls to databases and object stores </td></tr>
-<tr id="row_3_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__distributed__tracing__config__t.html" target="_self">newrelic_distributed_tracing_config_t</a></td><td class="desc">Configuration used for distributed tracing </td></tr>
-<tr id="row_4_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__external__segment__params__t.html" target="_self">newrelic_external_segment_params_t</a></td><td class="desc">Segment configuration used to instrument external calls </td></tr>
-<tr id="row_5_"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__span__event__config__t.html" target="_self">newrelic_span_event_config_t</a></td><td class="desc">Configuration used for span events </td></tr>
-<tr id="row_6_" class="even"><td class="entry"><span style="width:16px;display:inline-block;">&#160;</span><span class="icona"><span class="icon">C</span></span><a class="el" href="structnewrelic__transaction__tracer__config__t.html" target="_self">newrelic_transaction_tracer_config_t</a></td><td class="desc">Configuration used to configure transaction tracing </td></tr>
+
+<p>Configuration used for distributed tracing.  
+ <a href="structnewrelic__distributed__tracing__config__t.html#details">More...</a></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:a34fecd4b1d072b1bb18128e5029e9e6b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__distributed__tracing__config__t.html#a34fecd4b1d072b1bb18128e5029e9e6b">enabled</a></td></tr>
+<tr class="memdesc:a34fecd4b1d072b1bb18128e5029e9e6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specifies whether or not distributed tracing is enabled.  <a href="#a34fecd4b1d072b1bb18128e5029e9e6b">More...</a><br /></td></tr>
+<tr class="separator:a34fecd4b1d072b1bb18128e5029e9e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-</div><!-- directory -->
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Configuration used for distributed tracing. </p>
+</div><h2 class="groupheader">Field Documentation</h2>
+<a id="a34fecd4b1d072b1bb18128e5029e9e6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34fecd4b1d072b1bb18128e5029e9e6b">&#9670;&nbsp;</a></span>enabled</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool newrelic_distributed_tracing_config_t::enabled</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Specifies whether or not distributed tracing is enabled. </p>
+<p>When set to true, distributed tracing is enabled for the C SDK. The default configuration returned by <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a> sets this value to false. </p>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_client_8c-example.html#a7">ex_distributed_tracing_client.c</a>, and <a class="el" href="ex_distributed_tracing_server_8c-example.html#a7">ex_distributed_tracing_server.c</a>.</dd>
+</dl>
+
+</div>
+</div>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li><a class="el" href="libnewrelic_8h_source.html">libnewrelic.h</a></li>
+</ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->

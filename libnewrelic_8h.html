@@ -113,6 +113,12 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__datastore__segment__config__t.html">newrelic_datastore_segment_config_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used to configure how datastore segments are recorded in a transaction.  <a href="structnewrelic__datastore__segment__config__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__distributed__tracing__config__t.html">newrelic_distributed_tracing_config_t</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used for distributed tracing.  <a href="structnewrelic__distributed__tracing__config__t.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__span__event__config__t.html">newrelic_span_event_config_t</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used for span events.  <a href="structnewrelic__span__event__config__t.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__app__config__t.html">newrelic_app_config_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configuration used to describe application name, license key, as well as optional transaction tracer and datastore configuration.  <a href="structnewrelic__app__config__t.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -172,6 +178,36 @@ Macros</h2></td></tr>
 <tr class="memitem:abb59a5c6810914505cfe50fee091107f"><td class="memItemLeft" align="right" valign="top"><a id="abb59a5c6810914505cfe50fee091107f"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_DATASTORE_OTHER</b>&#160;&#160;&#160;&quot;Other&quot;</td></tr>
 <tr class="separator:abb59a5c6810914505cfe50fee091107f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Transport types for distributed tracing instrumentation</div></td></tr>
+<tr><td colspan="2"><div class="groupText"><p>The function <a class="el" href="libnewrelic_8h.html#a83c315034829548ed1e4729a14c6b47a" title="Accept a distributed trace payload.">newrelic_accept_distributed_trace_payload()</a> accepts a transport type which represents the type of connection used to transmit the trace payload. These transport names are used across New Relic agents and are used by the UI to group traces. </p>
+</div></td></tr>
+<tr class="memitem:a68d2f4189bd7edc07966fd0ee35dedc0"><td class="memItemLeft" align="right" valign="top"><a id="a68d2f4189bd7edc07966fd0ee35dedc0"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_UNKNOWN</b>&#160;&#160;&#160;&quot;Unknown&quot;</td></tr>
+<tr class="separator:a68d2f4189bd7edc07966fd0ee35dedc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89f43d7e423a0d085f2e64d6abc9a4b1"><td class="memItemLeft" align="right" valign="top"><a id="a89f43d7e423a0d085f2e64d6abc9a4b1"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_HTTP</b>&#160;&#160;&#160;&quot;HTTP&quot;</td></tr>
+<tr class="separator:a89f43d7e423a0d085f2e64d6abc9a4b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77d4e9dfa462578404ea4eae267fc5c3"><td class="memItemLeft" align="right" valign="top"><a id="a77d4e9dfa462578404ea4eae267fc5c3"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_HTTPS</b>&#160;&#160;&#160;&quot;HTTPS&quot;</td></tr>
+<tr class="separator:a77d4e9dfa462578404ea4eae267fc5c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a225c0a2ae7dc051dd1e248830180ab52"><td class="memItemLeft" align="right" valign="top"><a id="a225c0a2ae7dc051dd1e248830180ab52"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_KAFKA</b>&#160;&#160;&#160;&quot;Kafka&quot;</td></tr>
+<tr class="separator:a225c0a2ae7dc051dd1e248830180ab52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16dbbe838aca8fcf7aed685cac235348"><td class="memItemLeft" align="right" valign="top"><a id="a16dbbe838aca8fcf7aed685cac235348"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_JMS</b>&#160;&#160;&#160;&quot;JMS&quot;</td></tr>
+<tr class="separator:a16dbbe838aca8fcf7aed685cac235348"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a239c4fd30c1a9e7239d9520aec9ad5b1"><td class="memItemLeft" align="right" valign="top"><a id="a239c4fd30c1a9e7239d9520aec9ad5b1"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_IRONMQ</b>&#160;&#160;&#160;&quot;IronMQ&quot;</td></tr>
+<tr class="separator:a239c4fd30c1a9e7239d9520aec9ad5b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0410aabc27de4886f43ff74c93cc120"><td class="memItemLeft" align="right" valign="top"><a id="ad0410aabc27de4886f43ff74c93cc120"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_AMQP</b>&#160;&#160;&#160;&quot;AMQP&quot;</td></tr>
+<tr class="separator:ad0410aabc27de4886f43ff74c93cc120"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a549df22de9b5f0b2f46851723ca68ea5"><td class="memItemLeft" align="right" valign="top"><a id="a549df22de9b5f0b2f46851723ca68ea5"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_QUEUE</b>&#160;&#160;&#160;&quot;Queue&quot;</td></tr>
+<tr class="separator:a549df22de9b5f0b2f46851723ca68ea5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96253d18efe496c0646b10d03160c87c"><td class="memItemLeft" align="right" valign="top"><a id="a96253d18efe496c0646b10d03160c87c"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><b>NEWRELIC_TRANSPORT_TYPE_OTHER</b>&#160;&#160;&#160;&quot;Other&quot;</td></tr>
+<tr class="separator:a96253d18efe496c0646b10d03160c87c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -310,6 +346,18 @@ Functions</h2></td></tr>
 <tr class="memitem:a7b41f8690c3b2b7e024a16fa4bb59320"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a7b41f8690c3b2b7e024a16fa4bb59320">newrelic_ignore_transaction</a> (<a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *transaction)</td></tr>
 <tr class="memdesc:a7b41f8690c3b2b7e024a16fa4bb59320"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ignore the current transaction.  <a href="#a7b41f8690c3b2b7e024a16fa4bb59320">More...</a><br /></td></tr>
 <tr class="separator:a7b41f8690c3b2b7e024a16fa4bb59320"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4a3e1c28f84df02755f04f657ac76b4"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4">newrelic_create_distributed_trace_payload</a> (<a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *transaction, <a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a> *segment)</td></tr>
+<tr class="memdesc:ae4a3e1c28f84df02755f04f657ac76b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a distributed trace payload.  <a href="#ae4a3e1c28f84df02755f04f657ac76b4">More...</a><br /></td></tr>
+<tr class="separator:ae4a3e1c28f84df02755f04f657ac76b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83c315034829548ed1e4729a14c6b47a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a83c315034829548ed1e4729a14c6b47a">newrelic_accept_distributed_trace_payload</a> (<a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *transaction, const char *payload, const char *transport_type)</td></tr>
+<tr class="memdesc:a83c315034829548ed1e4729a14c6b47a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accept a distributed trace payload.  <a href="#a83c315034829548ed1e4729a14c6b47a">More...</a><br /></td></tr>
+<tr class="separator:a83c315034829548ed1e4729a14c6b47a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab7faf8ad452a656fd2e84cd641aa088"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#aab7faf8ad452a656fd2e84cd641aa088">newrelic_create_distributed_trace_payload_httpsafe</a> (<a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *transaction, <a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a> *segment)</td></tr>
+<tr class="memdesc:aab7faf8ad452a656fd2e84cd641aa088"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a distributed trace payload, an http-safe, base64-encoded string.  <a href="#aab7faf8ad452a656fd2e84cd641aa088">More...</a><br /></td></tr>
+<tr class="separator:aab7faf8ad452a656fd2e84cd641aa088"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e8a3c3e402a10bd8ffdd48f9c0cea8e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libnewrelic_8h.html#a2e8a3c3e402a10bd8ffdd48f9c0cea8e">newrelic_accept_distributed_trace_payload_httpsafe</a> (<a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *transaction, const char *payload, const char *transport_type)</td></tr>
+<tr class="memdesc:a2e8a3c3e402a10bd8ffdd48f9c0cea8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Accept a distributed trace payload, an http-safe, base64-encoded string.  <a href="#a2e8a3c3e402a10bd8ffdd48f9c0cea8e">More...</a><br /></td></tr>
+<tr class="separator:a2e8a3c3e402a10bd8ffdd48f9c0cea8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications. </p>
@@ -481,6 +529,92 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="a83c315034829548ed1e4729a14c6b47a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83c315034829548ed1e4729a14c6b47a">&#9670;&nbsp;</a></span>newrelic_accept_distributed_trace_payload()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool newrelic_accept_distributed_trace_payload </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *&#160;</td>
+          <td class="paramname"><em>transaction</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>payload</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>transport_type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Accept a distributed trace payload. </p>
+<p>Accept newrelic headers, or a payload, created with <a class="el" href="libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4" title="Create a distributed trace payload.">newrelic_create_distributed_trace_payload()</a>. Such headers are manually added to a service's outbound request. The receiving service gets the newrelic header from the incoming request and uses this function to accept the payload and link corresponding spans together for a complete distributed trace. Note that a payload must be accepted within an active transaction.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction. This value cannot be NULL. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">payload</td><td>A string created by <a class="el" href="libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4" title="Create a distributed trace payload.">newrelic_create_distributed_trace_payload()</a>. This value cannot be NULL. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">transport_type</td><td>Transport type used for communicating the external call. It is strongly recommended that one of NEWRELIC_TRANSPORT_TYPE_UNKNOWN through NEWRELIC_TRANSPORT_TYPE_OTHER are used for this value. If NULL is supplied for this parameter, an info-level message is logged and the default value of NEWRELIC_TRANSPORT_TYPE_UNKNOWN is used.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success. </dd></dl>
+
+</div>
+</div>
+<a id="a2e8a3c3e402a10bd8ffdd48f9c0cea8e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e8a3c3e402a10bd8ffdd48f9c0cea8e">&#9670;&nbsp;</a></span>newrelic_accept_distributed_trace_payload_httpsafe()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool newrelic_accept_distributed_trace_payload_httpsafe </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *&#160;</td>
+          <td class="paramname"><em>transaction</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>payload</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>transport_type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Accept a distributed trace payload, an http-safe, base64-encoded string. </p>
+<p>This function offers the same behaviour as <a class="el" href="libnewrelic_8h.html#a83c315034829548ed1e4729a14c6b47a" title="Accept a distributed trace payload.">newrelic_accept_distributed_trace_payload()</a> but accepts a base64-encoded string for the payload.</p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#a83c315034829548ed1e4729a14c6b47a" title="Accept a distributed trace payload.">newrelic_accept_distributed_trace_payload()</a> </dd></dl>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_server_8c-example.html#a11">ex_distributed_tracing_server.c</a>.</dd>
+</dl>
+
+</div>
+</div>
 <a id="abfe6f64a8eec7d60d8588f8969781d34"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abfe6f64a8eec7d60d8588f8969781d34">&#9670;&nbsp;</a></span>newrelic_add_attribute_double()</h2>
 
@@ -744,7 +878,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to an allocated application, or NULL on error; any errors resulting from a badly-formed configuration are logged. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a6">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a6">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a8">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a3">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a6">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a5">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a6">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a6">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a6">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a8">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a8">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a8">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a3">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a6">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a5">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a6">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -776,7 +910,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Create a populated application configuration. </p>
-<p>Given an application name and license key, this method returns an SDK configuration. Specifically, it returns a pointer to a <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a> with initialized app_name and license_key fields along with default values for the remaining fields. The caller should free the configuration after the application has been created.</p>
+<p>Given an application name and license key, this method returns an SDK configuration. Specifically, it returns a pointer to a <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a> with initialized app_name and license_key fields along with default values for the remaining fields. After the application has been created with <a class="el" href="libnewrelic_8h.html#a61dd90439ae3cc5060021f6ab4701132" title="Create an application.">newrelic_create_app()</a>, the caller should free the configuration using <a class="el" href="libnewrelic_8h.html#aeb76f1a9e8e3003df209cb47d76f2a8c" title="Destroy the application configuration.">newrelic_destroy_app_config()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">app_name</td><td>The name of the application. </td></tr>
@@ -785,7 +919,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>An application configuration populated with app_name and license_key; all other fields are initialized to their defaults. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a1">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a1">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a3">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a2">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a1">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a1">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a1">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a1">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a1">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a1">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a1">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a3">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a2">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a1">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a1">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a1">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -817,6 +951,79 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a custom event; NULL otherwise. </dd></dl>
 <dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a11">ex_custom.c</a>.</dd>
+</dl>
+
+</div>
+</div>
+<a id="ae4a3e1c28f84df02755f04f657ac76b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4a3e1c28f84df02755f04f657ac76b4">&#9670;&nbsp;</a></span>newrelic_create_distributed_trace_payload()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char* newrelic_create_distributed_trace_payload </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *&#160;</td>
+          <td class="paramname"><em>transaction</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a> *&#160;</td>
+          <td class="paramname"><em>segment</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a distributed trace payload. </p>
+<p>Create a newrelic header, or a payload, to add to a service's outbound requests. This header contains the metadata necessary to link spans together for a complete distributed trace. The metadata includes: the trace ID number, the span ID number, New Relic account ID number, and sampling information. Note that a payload must be created within an active transaction.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction. This value cannot be NULL. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">segment</td><td>An active segment in which the distributed trace payload is being created, or NULL to indicate that the payload is created for the root segment.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>If successful, a string to manually add to a service's outbound requests. If the instrumented application has not established a connection to the daemon or if distributed tracing is not enabled in the <a class="el" href="structnewrelic__app__config__t.html" title="Configuration used to describe application name, license key, as well as optional transaction tracer ...">newrelic_app_config_t</a>, this function returns NULL. The caller is responsible for invoking free() on the returned string. </dd></dl>
+
+</div>
+</div>
+<a id="aab7faf8ad452a656fd2e84cd641aa088"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab7faf8ad452a656fd2e84cd641aa088">&#9670;&nbsp;</a></span>newrelic_create_distributed_trace_payload_httpsafe()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char* newrelic_create_distributed_trace_payload_httpsafe </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#add4646ef16f4f0c9b75934cf96909655">newrelic_txn_t</a> *&#160;</td>
+          <td class="paramname"><em>transaction</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="libnewrelic_8h.html#a0dd5e6b43e83f9efb9171decf7556b91">newrelic_segment_t</a> *&#160;</td>
+          <td class="paramname"><em>segment</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a distributed trace payload, an http-safe, base64-encoded string. </p>
+<p>This function offers the same behaviour as <a class="el" href="libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4" title="Create a distributed trace payload.">newrelic_create_distributed_trace_payload()</a> but creates a base64-encoded string for the payload. The caller is responsible for invoking free() on the returned string.</p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4" title="Create a distributed trace payload.">newrelic_create_distributed_trace_payload()</a> </dd></dl>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_client_8c-example.html#a13">ex_distributed_tracing_client.c</a>.</dd>
 </dl>
 
 </div>
@@ -1045,7 +1252,7 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>false if app is NULL or points to NULL; true otherwise.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>This function must only be called once for a given application. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a19">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a14">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a14">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a8">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a16">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a11">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a14">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a19">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a14">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a17">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a14">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a14">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a8">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a16">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a11">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a14">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -1076,7 +1283,7 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>false if config is NULL or points to NULL; true otherwise.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>This function must only be called once for a given application configuration. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a7">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a7">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a9">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a4">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a7">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a6">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a7">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a7">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a7">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a9">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a9">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a9">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a4">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a7">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a6">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a7">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -1144,7 +1351,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if the parameters represented an active transaction and custom segment to record as complete; false otherwise. If an error occurred, a log message will be written to the SDK log at LOG_ERROR level. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a17">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a12">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a12">ex_external.c</a>, <a class="el" href="ex_segment_8c-example.html#a11">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a9">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a12">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a17">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a12">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a15">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_external_8c-example.html#a12">ex_external.c</a>, <a class="el" href="ex_segment_8c-example.html#a11">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a9">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a12">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -1175,7 +1382,7 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>false if transaction is NULL or points to NULL; false if data cannot be sent to newrelic; true otherwise.</dd></dl>
 <dl class="section warning"><dt>Warning</dt><dd>This function must only be called once for a given transaction. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a18">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a13">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a13">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a7">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a15">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a10">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a13">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a18">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a13">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a16">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a13">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a13">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a7">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a15">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a10">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a13">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -1295,13 +1502,13 @@ Functions</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">transaction</td><td>An active transaction. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">priority</td><td>The error's priority. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">priority</td><td>The error's priority. The C SDK sends up one error per transaction. If multiple calls to this function are made during a single transaction, the error with the highest priority is reported to New Relic. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">errmsg</td><td>A string comprising the error message. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">errclass</td><td>A string comprising the error class. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_notice_error_8c-example.html#a0">ex_notice_error.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_client_8c-example.html#a14">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a12">ex_distributed_tracing_server.c</a>, and <a class="el" href="ex_notice_error_8c-example.html#a0">ex_notice_error.c</a>.</dd>
 </dl>
 
 </div>
@@ -1644,7 +1851,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to an external segment, which may then be provided to <a class="el" href="libnewrelic_8h.html#ad76a1b26d72bdb380156a64645a2a117" title="Record the completion of a segment in a transaction.">newrelic_end_segment()</a> when the external request is complete. If an error occurs when creating the external segment, NULL is returned, and a log message will be written to the SDK log at LOG_ERROR level. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_external_8c-example.html#a11">ex_external.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_client_8c-example.html#a11">ex_distributed_tracing_client.c</a>, and <a class="el" href="ex_external_8c-example.html#a11">ex_external.c</a>.</dd>
 </dl>
 
 </div>
@@ -1772,7 +1979,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to the transaction. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a8">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a8">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a10">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a5">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a8">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a7">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a8">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a8">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a8">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a10">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a10">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a10">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#a5">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#a8">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#a7">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#a8">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -1803,7 +2010,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu May 2 2019 21:35:44 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 4 2019 17:57:34 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

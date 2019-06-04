@@ -123,11 +123,17 @@ char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 <tr class="memitem:a46286a77059ce675d5be1fbfb0fd0fbb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structnewrelic__datastore__segment__config__t.html">newrelic_datastore_segment_config_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__app__config__t.html#a46286a77059ce675d5be1fbfb0fd0fbb">datastore_tracer</a></td></tr>
 <tr class="memdesc:a46286a77059ce675d5be1fbfb0fd0fbb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional. The datastore tracer configuration.  <a href="#a46286a77059ce675d5be1fbfb0fd0fbb">More...</a><br /></td></tr>
 <tr class="separator:a46286a77059ce675d5be1fbfb0fd0fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ae316d57cf18ba48a0759e876742fd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structnewrelic__distributed__tracing__config__t.html">newrelic_distributed_tracing_config_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__app__config__t.html#a59ae316d57cf18ba48a0759e876742fd">distributed_tracing</a></td></tr>
+<tr class="memdesc:a59ae316d57cf18ba48a0759e876742fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional. Distributed tracing configuration.  <a href="#a59ae316d57cf18ba48a0759e876742fd">More...</a><br /></td></tr>
+<tr class="separator:a59ae316d57cf18ba48a0759e876742fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03040c425a129aaa3f8a9623a8f04f2b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structnewrelic__span__event__config__t.html">newrelic_span_event_config_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structnewrelic__app__config__t.html#a03040c425a129aaa3f8a9623a8f04f2b">span_events</a></td></tr>
+<tr class="memdesc:a03040c425a129aaa3f8a9623a8f04f2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional. Span event configuration.  <a href="#a03040c425a129aaa3f8a9623a8f04f2b">More...</a><br /></td></tr>
+<tr class="separator:a03040c425a129aaa3f8a9623a8f04f2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Configuration used to describe application name, license key, as well as optional transaction tracer and datastore configuration. </p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a>. </dd></dl>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#_a0">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#_a0">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#_a0">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#_a1">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#_a0">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#_a0">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#_a0">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#_a0">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#_a0">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#_a0">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#_a0">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#_a0">ex_external.c</a>, <a class="el" href="ex_notice_error_8c-example.html#_a1">ex_notice_error.c</a>, <a class="el" href="ex_segment_8c-example.html#_a0">ex_segment.c</a>, <a class="el" href="ex_simple_8c-example.html#_a0">ex_simple.c</a>, and <a class="el" href="ex_timing_8c-example.html#_a0">ex_timing.c</a>.</dd>
 </dl>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="a46286a77059ce675d5be1fbfb0fd0fbb"></a>
@@ -144,6 +150,25 @@ char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 
 <p>Optional. The datastore tracer configuration. </p>
 <p>By default, the configuration returned by <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a> enables datastore segments with instance_reporting and database_name_reporting set to true. </p>
+
+</div>
+</div>
+<a id="a59ae316d57cf18ba48a0759e876742fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59ae316d57cf18ba48a0759e876742fd">&#9670;&nbsp;</a></span>distributed_tracing</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structnewrelic__distributed__tracing__config__t.html">newrelic_distributed_tracing_config_t</a> newrelic_app_config_t::distributed_tracing</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Optional. Distributed tracing configuration. </p>
+<p>By default, the configuration returned by <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a> disables the distributed tracing feature by setting distributed_tracing.enabled to true. </p>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_distributed_tracing_client_8c-example.html#a6">ex_distributed_tracing_client.c</a>, and <a class="el" href="ex_distributed_tracing_server_8c-example.html#a6">ex_distributed_tracing_server.c</a>.</dd>
+</dl>
 
 </div>
 </div>
@@ -182,6 +207,23 @@ char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 
 </div>
 </div>
+<a id="a03040c425a129aaa3f8a9623a8f04f2b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03040c425a129aaa3f8a9623a8f04f2b">&#9670;&nbsp;</a></span>span_events</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structnewrelic__span__event__config__t.html">newrelic_span_event_config_t</a> newrelic_app_config_t::span_events</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Optional. Span event configuration. </p>
+<p>By default, the configuration returned by <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a> enables span event creation for the C SDK by setting span_events.enabled to true. </p>
+
+</div>
+</div>
 <a id="a4af85ff1d46e913a03967a58778ff009"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4af85ff1d46e913a03967a58778ff009">&#9670;&nbsp;</a></span>transaction_tracer</h2>
 
@@ -196,7 +238,7 @@ char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 
 <p>Optional. The transaction tracer configuration. </p>
 <p>By default, the configuration returned by <a class="el" href="libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa" title="Create a populated application configuration.">newrelic_create_app_config()</a> enables transaction traces, with the threshold set to NEWRELIC_THRESHOLD_IS_APDEX_FAILING. </p>
-<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a2">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a2">ex_datastore.c</a>, <a class="el" href="ex_external_8c-example.html#a4">ex_external.c</a>, <a class="el" href="ex_segment_8c-example.html#a2">ex_segment.c</a>, and <a class="el" href="ex_timing_8c-example.html#a2">ex_timing.c</a>.</dd>
+<dl class="section examples"><dt>Examples</dt><dd><a class="el" href="ex_custom_8c-example.html#a2">ex_custom.c</a>, <a class="el" href="ex_datastore_8c-example.html#a2">ex_datastore.c</a>, <a class="el" href="ex_distributed_tracing_client_8c-example.html#a2">ex_distributed_tracing_client.c</a>, <a class="el" href="ex_distributed_tracing_server_8c-example.html#a2">ex_distributed_tracing_server.c</a>, <a class="el" href="ex_external_8c-example.html#a4">ex_external.c</a>, <a class="el" href="ex_segment_8c-example.html#a2">ex_segment.c</a>, and <a class="el" href="ex_timing_8c-example.html#a2">ex_timing.c</a>.</dd>
 </dl>
 
 </div>
@@ -208,7 +250,7 @@ char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="stru
 <!-- HTML footer for doxygen 1.8.15-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu May 2 2019 21:35:44 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jun 4 2019 17:57:34 for New Relic C SDK by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.16
 </small></address>

@@ -1,5 +1,7 @@
 var searchData=
 [
+  ['newrelic_5faccept_5fdistributed_5ftrace_5fpayload',['newrelic_accept_distributed_trace_payload',['../libnewrelic_8h.html#a83c315034829548ed1e4729a14c6b47a',1,'libnewrelic.h']]],
+  ['newrelic_5faccept_5fdistributed_5ftrace_5fpayload_5fhttpsafe',['newrelic_accept_distributed_trace_payload_httpsafe',['../libnewrelic_8h.html#a2e8a3c3e402a10bd8ffdd48f9c0cea8e',1,'libnewrelic.h']]],
   ['newrelic_5fadd_5fattribute_5fdouble',['newrelic_add_attribute_double',['../libnewrelic_8h.html#abfe6f64a8eec7d60d8588f8969781d34',1,'libnewrelic.h']]],
   ['newrelic_5fadd_5fattribute_5fint',['newrelic_add_attribute_int',['../libnewrelic_8h.html#a1f0fe987526c023a2101111b7ee557b3',1,'libnewrelic.h']]],
   ['newrelic_5fadd_5fattribute_5flong',['newrelic_add_attribute_long',['../libnewrelic_8h.html#a2a082a144cff6c805c6373d9d4f1f551',1,'libnewrelic.h']]],
@@ -8,6 +10,8 @@ var searchData=
   ['newrelic_5fcreate_5fapp',['newrelic_create_app',['../libnewrelic_8h.html#a61dd90439ae3cc5060021f6ab4701132',1,'libnewrelic.h']]],
   ['newrelic_5fcreate_5fapp_5fconfig',['newrelic_create_app_config',['../libnewrelic_8h.html#af067b3ff89a40b6fa417e18be5e847aa',1,'libnewrelic.h']]],
   ['newrelic_5fcreate_5fcustom_5fevent',['newrelic_create_custom_event',['../libnewrelic_8h.html#a83b5b78623bcefda6d4e1e6d207f7b7a',1,'libnewrelic.h']]],
+  ['newrelic_5fcreate_5fdistributed_5ftrace_5fpayload',['newrelic_create_distributed_trace_payload',['../libnewrelic_8h.html#ae4a3e1c28f84df02755f04f657ac76b4',1,'libnewrelic.h']]],
+  ['newrelic_5fcreate_5fdistributed_5ftrace_5fpayload_5fhttpsafe',['newrelic_create_distributed_trace_payload_httpsafe',['../libnewrelic_8h.html#aab7faf8ad452a656fd2e84cd641aa088',1,'libnewrelic.h']]],
   ['newrelic_5fcustom_5fevent_5fadd_5fattribute_5fdouble',['newrelic_custom_event_add_attribute_double',['../libnewrelic_8h.html#af84bdcea08fbefb2023b47907a304188',1,'libnewrelic.h']]],
   ['newrelic_5fcustom_5fevent_5fadd_5fattribute_5fint',['newrelic_custom_event_add_attribute_int',['../libnewrelic_8h.html#ade406683e960b53a1b4a2d832872ab1a',1,'libnewrelic.h']]],
   ['newrelic_5fcustom_5fevent_5fadd_5fattribute_5flong',['newrelic_custom_event_add_attribute_long',['../libnewrelic_8h.html#a0ee8f438644f7699c8427fe231d7ffc1',1,'libnewrelic.h']]],
