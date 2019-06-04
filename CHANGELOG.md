@@ -22,19 +22,22 @@
 
 ### New Features ###
 
-**Support for Distributed tracing**
+- **Support for Distributed tracing**
 
-Distributed tracing lets you see the path that a request
-takes as it travels through your distributed system. By
-showing the distributed activity through a unified view,
-you can troubleshoot and understand a complex system better
-than ever before.
+    Distributed tracing lets you see the path that a request
+    takes as it travels through your distributed system. By
+    showing the distributed activity through a unified view,
+    you can troubleshoot and understand a complex system better
+    than ever before.
 
-Distributed tracing is available with an APM Pro or
-equivalent subscription. To see a complete distributed
-trace, you need to enable the feature on a set of
-neighboring services. More information can be found in the New Relic
-[documentation](https://docs.newrelic.com/docs/agents/c-sdk/instrumentation/enable-distributed-tracing-your-c-applications). 
+    Distributed tracing is available with an APM Pro or
+    equivalent subscription. To see a complete distributed
+    trace, you need to enable the feature on a set of
+    neighboring services. 
+
+    Refer to the New Relic
+    [C SDK documentation](https://docs.newrelic.com/docs/agents/c-sdk/instrumentation/enable-distributed-tracing-your-c-applications)
+    for more information on enabling distributed tracing for the C SDK.
 
 ### End of Life Notices ###
 
