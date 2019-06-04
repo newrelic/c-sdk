@@ -4,6 +4,7 @@
 
 | Release Number | Release Date |
 | ------------- |-------------|
+| [1.1.0](#110) | 2019-06-04 |
 | [1.0.1](#101) | 2019-05-02 |
 | [1.0.0](#100) | 2019-04-23 |
 | [0.1.3](#013) | 2019-03-20 |
@@ -17,11 +18,23 @@
 | [0.0.2](#002-alpha) | 2017-10-30 |
 | [0.0.1](#001-alpha) | 2017-09-21 |
 
-## Master Branch (In Progress/Current Working Version) ##
+## 1.1.0 ##
 
 ### New Features ###
 
-### Bug Fixes ###
+**Support for Distributed tracing**
+
+Distributed tracing lets you see the path that a request
+takes as it travels through your distributed system. By
+showing the distributed activity through a unified view,
+you can troubleshoot and understand a complex system better
+than ever before.
+
+Distributed tracing is available with an APM Pro or
+equivalent subscription. To see a complete distributed
+trace, you need to enable the feature on a set of
+neighboring services. More information can be found in the New Relic
+[documentation](https://docs.newrelic.com/docs/agents/c-sdk/instrumentation/enable-distributed-tracing-your-c-applications). 
 
 ### End of Life Notices ###
 
@@ -29,8 +42,6 @@
   currently deprecated.  Future versions of the C SDK permanently remove these fields. 
   To specify the log file and log level to use with the C SDK, use 
   `newrelic_configure_log()`.
-
-### Upgrade Notices ###
 
 ## 1.0.1 ##
 
