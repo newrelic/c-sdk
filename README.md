@@ -44,7 +44,7 @@ The C SDK works on 64-bit Linux operating systems with:
 
 Running unit tests requires cmake 2.8 or higher.
 
-Compiling the New Relic daemon requires Go 1.4 or higher.
+Compiling the New Relic daemon requires Go 1.7 or higher.
 
 ## Building the C SDK
 
