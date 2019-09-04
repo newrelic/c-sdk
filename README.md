@@ -23,6 +23,8 @@ for C SDK documentation.
 [New Relic's Explorers Hub](https://discuss.newrelic.com/c/build-on-new-relic/Open-Source-Agents-SDKs)
 for community discussions about the C SDK.
 
+* Check out the [C SDK distributed tracing example](https://github.com/newrelic/c-dt-example).
+
 * Use your preferred search engine to find other New Relic resources.
 
 ## Contributing

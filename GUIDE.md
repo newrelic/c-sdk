@@ -204,6 +204,8 @@ Example:
   res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 ```
 
+An example application can be used as reference [here](https://github.com/newrelic/c-dt-example).
+
 Detailed descriptions of all the create and accept payload functions are located 
 [here](https://newrelic.github.io/c-sdk/libnewrelic_8h.html).
 
