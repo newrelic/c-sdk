@@ -31,6 +31,7 @@ tests/test_*
 #
 libnewrelic.a
 libnewrelic.o
+libnewrelic.so
 newrelic-daemon
 vendor/newrelic/bin/
 vendor/newrelic/pkg/
