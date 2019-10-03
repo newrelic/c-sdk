@@ -1222,6 +1222,25 @@ bool newrelic_accept_distributed_trace_payload_httpsafe(
     const char* transport_type);
 
 /**
+ * @brief Set a transaction name
+ *
+ * Given an active transaction and a name, this function sets the transaction
+ * name to the given name.
+ *
+ * @param [in] transaction  An active transaction.
+ * @param [in] name         Name for the transaction.
+ *
+ * @return true on success.
+ *
+ * @warning Do not use brackets [] at the end of your transaction name.
+ * New Relic automatically strips brackets from the name. Instead, use
+ * parentheses () or other symbols if needed.
+ *
+ */
+bool newrelic_set_transaction_name(newrelic_txn_t* transaction,
+                                   const char* transaction_name);
+
+/**
  * A list of examples for Doxygen to cross-reference. If a function in
  * libnewrelic.h appears in one of these examples, the example source
  * file appears under the "Examples" header.

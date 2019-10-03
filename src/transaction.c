@@ -158,3 +158,27 @@ bool newrelic_ignore_transaction(newrelic_txn_t* transaction) {
 
   return nr_txn_ignore(transaction->txn);
 }
+
+bool newrelic_set_transaction_name(newrelic_txn_t* transaction,
+                                   const char* name) {
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to name a NULL transaction");
+    return false;
+  }
+
+  if (NULL == name) {
+    nrl_error(NRL_API, "name cannot be NULL");
+    return false;
+  }
+
+  if (NR_SUCCESS
+      == nr_txn_set_path("API", transaction->txn, name, NR_PATH_TYPE_CUSTOM,
+                         NR_OK_TO_OVERWRITE)) {
+    nrl_debug(NRL_API, "name set to: \"%s\"", name);
+
+    return true;
+  }
+
+  nrl_error(NRL_API, "unable to name transaction");
+  return false;
+}

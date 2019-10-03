@@ -56,7 +56,7 @@ static void test_txn_null_name(void** state) {
 }
 
 /*
- * Purpose: Tests that function can survive a null name
+ * Purpose: Tests that a transaction is valid
  */
 static void test_txn_valid(void** state) {
   newrelic_txn_t* txn = NULL;
@@ -99,6 +99,50 @@ static void test_txn_ignore(void** state) {
 
   assert_false(newrelic_ignore_transaction(NULL));
 }
+
+/*
+ * Purpose: Tests we can name a transaction
+ */
+static void test_txn_naming(void** state) {
+  newrelic_app_t* appWithInfo = (newrelic_app_t*)*state;
+  bool ret = false;
+  newrelic_txn_t* txn = NULL;
+
+  /*
+   * Check that a NULL transaction cannot be named
+   */
+  ret = newrelic_set_transaction_name(txn, "aTransaction");
+  assert_false(ret);
+
+  /*
+   * Setup a valid transaction
+   */
+  txn = newrelic_start_transaction(appWithInfo, "aTransaction", false);
+  assert_non_null(txn);
+  assert_non_null(txn->txn);
+
+  /*
+   * Check for failed transaction naming using path_is_frozen
+   */
+  txn->txn->status.path_is_frozen = 1;
+  ret = newrelic_set_transaction_name(txn, "aTransaction");
+  assert_false(ret);
+  txn->txn->status.path_is_frozen = 0;
+
+  /*
+   * Check transaction naming handles a NULL name
+   */
+  ret = newrelic_set_transaction_name(txn, NULL);
+  assert_false(ret);
+
+  /*
+   * Check transaction naming success
+   */
+  ret = newrelic_set_transaction_name(txn, "New Transaction Name");
+  assert_true(ret);
+
+  newrelic_end_transaction(&txn);
+}
 /*
  * Purpose: Main entry point (i.e. runs the tests)
  */
@@ -108,6 +152,7 @@ int main(void) {
       cmocka_unit_test(test_txn_null_name),
       cmocka_unit_test(test_txn_valid),
       cmocka_unit_test(test_txn_ignore),
+      cmocka_unit_test(test_txn_naming),
   };
 
   return cmocka_run_group_tests(license_tests,     /* our tests */
