@@ -11,9 +11,25 @@
 
 #include "test.h"
 
+static int nr_check_params(const nr_conn_params_t* params,
+                           const nr_conn_params_t* expected) {
+  if (params == expected) {
+    return 1;
+  }
+
+  if (NULL == params || NULL == expected) {
+    return 0;
+  }
+
+  if (params->type != expected->type) {
+    return 0;
+  }
+
+  return 1;
+}
+
 nr_status_t __wrap_nr_agent_initialize_daemon_connection_parameters(
-    const char* listen_path,
-    int external_port);
+    nr_conn_params_t* params);
 
 int __wrap_nr_agent_try_daemon_connect(int time_limit_ms);
 
@@ -22,10 +38,8 @@ nr_status_t __wrap_nrl_set_log_file(const char* filename);
 nr_status_t __wrap_nrl_set_log_level(const char* level);
 
 nr_status_t __wrap_nr_agent_initialize_daemon_connection_parameters(
-    const char* listen_path,
-    int external_port) {
-  check_expected(listen_path);
-  check_expected(external_port);
+    nr_conn_params_t* params) {
+  check_expected(params);
 
   return (nr_status_t)mock();
 }
@@ -93,6 +107,8 @@ static void test_configure_log(void** state NRUNUSED) {
 }
 
 static void test_do_init(void** state NRUNUSED) {
+  nr_conn_params_t params;
+
   // Implicit log configuration fails.
   expect_string(__wrap_nrl_set_log_file, filename, "stderr");
   will_return(__wrap_nrl_set_log_file, NR_FAILURE);
@@ -105,10 +121,7 @@ static void test_do_init(void** state NRUNUSED) {
   will_return(__wrap_nrl_set_log_file, NR_SUCCESS);
   expect_string(__wrap_nrl_set_log_level, level, "info");
   will_return(__wrap_nrl_set_log_level, NR_SUCCESS);
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/tmp/.newrelic.sock");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  expect_any(__wrap_nr_agent_initialize_daemon_connection_parameters, params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_FAILURE);
   assert_false(newrelic_do_init(NULL, 0));
@@ -117,10 +130,10 @@ static void test_do_init(void** state NRUNUSED) {
 
   // Connect fails. (No log function mocking, since that shouldn't happen
   // again.)
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/tmp/.newrelic.sock");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  params = (nr_conn_params_t){.type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET,
+                              .location.udspath = "/tmp/.newrelic.sock"};
+  expect_check(__wrap_nr_agent_initialize_daemon_connection_parameters, params,
+               (CheckParameterValue)nr_check_params, &params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_SUCCESS);
   expect_value(__wrap_nr_agent_try_daemon_connect, time_limit_ms, 10);
@@ -131,10 +144,10 @@ static void test_do_init(void** state NRUNUSED) {
 
   // Connect succeeds. (Explicit parameters this time; the NULL and 0 handling
   // were tested by earlier test cases.)
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/dev/null");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  params = (nr_conn_params_t){.type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET,
+                              .location.udspath = "/dev/null"};
+  expect_check(__wrap_nr_agent_initialize_daemon_connection_parameters, params,
+               (CheckParameterValue)nr_check_params, &params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_SUCCESS);
   expect_value(__wrap_nr_agent_try_daemon_connect, time_limit_ms, 20);
@@ -145,16 +158,18 @@ static void test_do_init(void** state NRUNUSED) {
 }
 
 static void test_ensure_init(void** state NRUNUSED) {
+  nr_conn_params_t params;
+
   // test_do_init() handles all the interesting cases; just ensure that the
   // nr_agent_applist check happens correctly. Firstly, normal initialisation.
   expect_string(__wrap_nrl_set_log_file, filename, "stderr");
   will_return(__wrap_nrl_set_log_file, NR_SUCCESS);
   expect_string(__wrap_nrl_set_log_level, level, "info");
   will_return(__wrap_nrl_set_log_level, NR_SUCCESS);
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/tmp/.newrelic.sock");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  params = (nr_conn_params_t){.type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET,
+                              .location.udspath = "/tmp/.newrelic.sock"};
+  expect_check(__wrap_nr_agent_initialize_daemon_connection_parameters, params,
+               (CheckParameterValue)nr_check_params, &params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_SUCCESS);
   expect_value(__wrap_nr_agent_try_daemon_connect, time_limit_ms, 10);
@@ -169,16 +184,18 @@ static void test_ensure_init(void** state NRUNUSED) {
 }
 
 static void test_init(void** state NRUNUSED) {
+  nr_conn_params_t params;
+
   // test_do_init() handles all the interesting cases; just ensure that the
   // nr_agent_applist check happens correctly. Firstly, normal initialisation.
   expect_string(__wrap_nrl_set_log_file, filename, "stderr");
   will_return(__wrap_nrl_set_log_file, NR_SUCCESS);
   expect_string(__wrap_nrl_set_log_level, level, "info");
   will_return(__wrap_nrl_set_log_level, NR_SUCCESS);
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/dev/null");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  params = (nr_conn_params_t){.type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET,
+                              .location.udspath = "/tmp/.newrelic.sock"};
+  expect_check(__wrap_nr_agent_initialize_daemon_connection_parameters, params,
+               (CheckParameterValue)nr_check_params, &params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_SUCCESS);
   expect_value(__wrap_nr_agent_try_daemon_connect, time_limit_ms, 20);
@@ -192,6 +209,8 @@ static void test_init(void** state NRUNUSED) {
 }
 
 static void test_shutdown(void** state NRUNUSED) {
+  nr_conn_params_t params;
+
   // Without initialisation, this should succeed, silently.
   newrelic_shutdown();
 
@@ -201,10 +220,10 @@ static void test_shutdown(void** state NRUNUSED) {
   will_return(__wrap_nrl_set_log_file, NR_SUCCESS);
   expect_string(__wrap_nrl_set_log_level, level, "info");
   will_return(__wrap_nrl_set_log_level, NR_SUCCESS);
-  expect_string(__wrap_nr_agent_initialize_daemon_connection_parameters,
-                listen_path, "/dev/null");
-  expect_value(__wrap_nr_agent_initialize_daemon_connection_parameters,
-               external_port, 0);
+  params = (nr_conn_params_t){.type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET,
+                              .location.udspath = "/tmp/.newrelic.sock"};
+  expect_check(__wrap_nr_agent_initialize_daemon_connection_parameters, params,
+               (CheckParameterValue)nr_check_params, &params);
   will_return(__wrap_nr_agent_initialize_daemon_connection_parameters,
               NR_SUCCESS);
   expect_value(__wrap_nr_agent_try_daemon_connect, time_limit_ms, 20);

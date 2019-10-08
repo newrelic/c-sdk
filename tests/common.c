@@ -45,6 +45,9 @@ int txn_group_setup(void** state) {
   nr_free(opts);
   txn->txn->status.recording = 1;
 
+  txn->txn->segment_slab
+      = nr_slab_create(sizeof(nr_segment_t), sizeof(nr_segment_t) * 100);
+
   txn->txn->scoped_metrics = nrm_table_create(5);
   txn->txn->unscoped_metrics = nrm_table_create(5);
 
@@ -56,13 +59,7 @@ int txn_group_setup(void** state) {
   txn->txn->distributed_trace = nr_distributed_trace_create();
   nr_distributed_trace_set_txn_id(txn->txn->distributed_trace, "e10f");
 
-  txn->txn->segment_root = nr_zalloc(sizeof(nr_segment_t));
-  txn->txn->segment_root->txn = txn->txn;
-  nr_segment_children_init(&txn->txn->segment_root->children);
-  txn->txn->segment_root->start_time = 0;
-  txn->txn->segment_root->stop_time = 0;
-  nr_txn_set_current_segment(txn->txn, txn->txn->segment_root);
-  txn->txn->segment_count = 1;
+  txn->txn->segment_root = nr_segment_start(txn->txn, NULL, NULL);
 
   *state = txn;
   return 0;  // tells cmocka setup completed, 0==OK

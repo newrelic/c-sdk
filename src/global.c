@@ -53,7 +53,9 @@ bool newrelic_init(const char* daemon_socket, int time_limit_ms) {
 }
 
 bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
-  const char* path;
+  const char* address;
+  nr_conn_params_t* params;
+  nr_status_t ret;
 
   if (!newrelic_log_configured) {
     // No log configuration; let's set some reasonable defaults and hope for
@@ -63,10 +65,23 @@ bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
     }
   }
 
-  path = daemon_socket ? daemon_socket : "/tmp/.newrelic.sock";
+  address = daemon_socket ? daemon_socket : "/tmp/.newrelic.sock";
 
-  if (NR_SUCCESS != nr_agent_initialize_daemon_connection_parameters(path, 0)) {
-    nrl_error(NRL_API, "failed to initialise daemon connection to %s", path);
+  params = nr_conn_params_init(address);
+
+  if (NULL == params) {
+    nrl_error(NRL_API,
+              "failed to initialise connection parameters from address %s",
+              address);
+    return false;
+  }
+
+  ret = nr_agent_initialize_daemon_connection_parameters(params);
+
+  nr_conn_params_free(params);
+
+  if (NR_SUCCESS != ret) {
+    nrl_error(NRL_API, "failed to initialise daemon connection to %s", address);
     return false;
   }
 
@@ -74,7 +89,7 @@ bool newrelic_do_init(const char* daemon_socket, int time_limit_ms) {
     nrl_error(NRL_API,
               "failed to connect to the daemon using a timeout of %d ms at the "
               "path %s",
-              time_limit_ms, path);
+              time_limit_ms, address);
     return false;
   }
 

@@ -93,6 +93,7 @@ correctly.
 */
 
 #include "common.h"
+#include <unistd.h>
 
 RUN_NONWEB_TXN("basic") {
   newrelic_segment_t* s1;
@@ -100,9 +101,14 @@ RUN_NONWEB_TXN("basic") {
   newrelic_segment_t* s3;
 
   s1 = newrelic_start_segment(txn, "s1", "other");
+
   s2 = newrelic_start_segment(txn, "s2", "other");
+  usleep(2);
   newrelic_end_segment(txn, &s2);
+
   s3 = newrelic_start_segment(txn, "s3", "other");
+  usleep(2);
   newrelic_end_segment(txn, &s3);
+
   newrelic_end_segment(txn, &s1);
 }
