@@ -4,6 +4,7 @@
 
 | Release Number | Release Date |
 | ------------- |-------------|
+| [1.2.0](#120) | 2019-10-09 |
 | [1.1.0](#110) | 2019-06-04 |
 | [1.0.1](#101) | 2019-05-02 |
 | [1.0.0](#100) | 2019-04-23 |
@@ -18,14 +19,14 @@
 | [0.0.2](#002-alpha) | 2017-10-30 |
 | [0.0.1](#001-alpha) | 2017-09-21 |
 
-## Master Branch (In Progress/Current Working Version) ##
+## 1.2.0 ##
 
 ### New Features ###
 
-**A container-friendly C SDK.**
+**More flexibility for container deployments**
 
 - The daemon and the instrumented application no longer have to reside on the
-  same host and can now communicate over a IPv4 or IPv6 TCP socket. For the
+  same host and can now communicate over an IPv4 or IPv6 TCP socket. For the
   instrumented application this can be configured via the `daemon_socket`
   argument of the `newrelic_init` function. For the daemon this can be
   configured via the `--address` command line option.
@@ -45,8 +46,6 @@
 
 - The daemon now synchronously handles critical code paths related to harvesting
   and merging transaction data. This prevents crashes caused by race conditions.
-
-### End of Life Notices ###
 
 ### Upgrade Notices ###
 
