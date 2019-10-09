@@ -795,8 +795,9 @@ other C SDK functions are called:
 * `newrelic_init`
 
 ### SDK-Daemon Communication
-The SDK makes blocking writes to the daemon. Unless the kernel is resource-
-starved, it will handle these writes efficiently.
+The SDK can connect to the daemon via Unix domain sockets, abstract sockets,
+local ports or remote IPv4 or IPv6 TCP ports. See the documentation of
+`newrelic_init` for further details.
 
 ### Memory Management
 The C SDK's memory use is proportional to the amount of data sent. The libc

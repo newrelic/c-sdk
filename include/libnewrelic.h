@@ -568,18 +568,26 @@ bool newrelic_configure_log(const char* filename, newrelic_loglevel_t level);
  * used, which matches the default socket location used by newrelic-daemon if
  * one isn't given.
  *
+ * The daemon socket location can be specified in four different ways:
+ *
+ * - To use a specified file as a UNIX domain socket (UDS), provide an absolute
+ *    path name as a string.
+ * - To use a standard TCP port, specify a number in the range 1 to 65534.
+ * - To use an abstract socket, prefix the socket name with '@'.
+ * - To connect to a daemon that is running on a different host, set this value
+ *   to '<host>:<port>', where '<host>' denotes either a host name or an IP
+ *   address, and '<port>' denotes a valid port number. Both IPv4 and IPv6 are
+ *   supported.
+ *
  * If an explicit call to this function is required, it must occur before the
  * first call to newrelic_create_app().
  *
  * Subsequent calls to this function after a successful call to newrelic_init()
  * or newrelic_create_app() will fail.
  *
- * @param [in] daemon_socket  The path to the daemon socket. On Linux, if this
- *                            starts with a literal '@', then this is treated
- *                            as the name of an abstract domain socket instead
- *                            of a filesystem path. If this is NULL, then the
- *                            default will be used, which is to look for a UNIX
- *                            domain socket at /tmp/.newrelic.sock.
+ * @param [in] daemon_socket  The path to the daemon socket. If this is NULL,
+ *                            then the default will be used, which is to look
+ *                            for a UNIX domain socket at /tmp/.newrelic.sock.
  * @param [in] time_limit_ms  The amount of time, in milliseconds, that the C
  *                            SDK will wait for a response from the daemon
  *                            before considering initialization to have failed.
