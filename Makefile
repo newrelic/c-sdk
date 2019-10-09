@@ -29,6 +29,7 @@ export CMOCKA_INCLUDE
 # OS X 10.11 does not provide pcre-config by default.
 # Check whether it exists, and if not assume a sensible default.
 PCRE_CFLAGS := $(shell pcre-config --cflags)
+PCRE_LIBS := $(shell pcre-config --libs)
 
 #
 # We pull in the current SDK version from the VERSION file, and expose it to
@@ -113,7 +114,7 @@ valgrind: vendor libnewrelic.a
 # the static library and have gcc wrap it in the appropriate shared library
 # goop.
 libnewrelic.so: libnewrelic.a
-	$(CC) -shared -pthread $(PCRE_CFLAGS) -ldl -o $@ -Wl,--whole-archive $^  -Wl,--no-whole-archive
+	$(CC) -shared -pthread -o $@ -Wl,--whole-archive $^ -Wl,--no-whole-archive $(PCRE_LIBS) -ldl
 
 .PHONY: src-static
 src-static:
