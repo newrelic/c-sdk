@@ -43,6 +43,7 @@ var searchData=
   ['newrelic_5fset_5fsegment_5fparent',['newrelic_set_segment_parent',['../libnewrelic_8h.html#ab5e6fad7c352e507a31008753c2b1409',1,'libnewrelic.h']]],
   ['newrelic_5fset_5fsegment_5fparent_5froot',['newrelic_set_segment_parent_root',['../libnewrelic_8h.html#a1dbed005e50697cdf47f88f95d16fa2d',1,'libnewrelic.h']]],
   ['newrelic_5fset_5fsegment_5ftiming',['newrelic_set_segment_timing',['../libnewrelic_8h.html#a3a803e3956f754082fb8aaee9154b158',1,'libnewrelic.h']]],
+  ['newrelic_5fset_5ftransaction_5fname',['newrelic_set_transaction_name',['../libnewrelic_8h.html#afe080004b9f1b63292c4ec2f978f9939',1,'libnewrelic.h']]],
   ['newrelic_5fset_5ftransaction_5ftiming',['newrelic_set_transaction_timing',['../libnewrelic_8h.html#aa10391e95324811de986b486402b55da',1,'libnewrelic.h']]],
   ['newrelic_5fspan_5fevent_5fconfig_5ft',['newrelic_span_event_config_t',['../structnewrelic__span__event__config__t.html',1,'']]],
   ['newrelic_5fsql_5fobfuscated',['NEWRELIC_SQL_OBFUSCATED',['../libnewrelic_8h.html#adc4633517354b6ee5c04e7b3585b3140a27572e656df9266fdf8aea6c2e46a4bd',1,'libnewrelic.h']]],
