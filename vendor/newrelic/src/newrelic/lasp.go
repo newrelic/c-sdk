@@ -73,7 +73,7 @@ func (ap *AgentPolicies) verifySecurityPolicies(preconnectReply PreconnectReply)
 	// Finally, we check each agent supported policy, and that check that the preconnect
 	// provided policies know about it (either required, or not). If preconnect
 	// does not have something for, then something is seriously wrong.
-	for key, _ := range ap.Policies {
+	for key := range ap.Policies {
 		if _, ok := preconnectReply.SecurityPolicies[key]; !ok {
 			return false, errPolicyMissingFromPreconnect(fmt.Sprintf("%v", key))
 		}

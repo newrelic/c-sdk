@@ -62,14 +62,15 @@ const (
 	HarvestAll          HarvestType = HarvestDefaultData | HarvestTxnEvents | HarvestCustomEvents | HarvestErrorEvents | HarvestSpanEvents
 )
 
-// This type represents a processor harvest event: when this is received by a
+// ProcessorHarvest represents a processor harvest event: when this is received by a
 // processor, it indicates that a harvest should be performed for the harvest
 // and run ID contained within. The word "event" doesn't appear in the type only
 // to avoid confusion with analytic events.
 type ProcessorHarvest struct {
 	*AppHarvest
-	ID   AgentRunID
-	Type HarvestType
+	ID       AgentRunID
+	Type     HarvestType
+	Blocking bool
 }
 
 type ProcessorConfig struct {
@@ -117,6 +118,7 @@ type ConnectArgs struct {
 	PayloadRaw                   *RawConnectPayload
 	License                      collector.LicenseKey
 	SecurityPolicyToken          string
+	HighSecurity                 bool
 	Client                       collector.Client
 	AppKey                       AppKey
 	AgentLanguage                string
@@ -130,7 +132,7 @@ func ConnectApplication(args *ConnectArgs) ConnectAttempt {
 	rep := ConnectAttempt{Key: args.AppKey}
 	preconnectReply := PreconnectReply{}
 
-	args.Payload, err = EncodePayload(&RawPreconnectPayload{SecurityPolicyToken: args.SecurityPolicyToken})
+	args.Payload, err = EncodePayload(&RawPreconnectPayload{SecurityPolicyToken: args.SecurityPolicyToken, HighSecurity: args.HighSecurity})
 	if err != nil {
 		log.Errorf("unable to connect application: %v", err)
 		return rep
@@ -265,6 +267,7 @@ func (p *Processor) considerConnect(app *App) {
 		PayloadRaw:                   dataRaw,
 		License:                      app.info.License,
 		SecurityPolicyToken:          app.info.SecurityPolicyToken,
+		HighSecurity:                 app.info.HighSecurity,
 		Client:                       p.cfg.Client,
 		AppKey:                       app.Key(),
 		AgentLanguage:                app.info.AgentLanguage,
@@ -414,6 +417,8 @@ type harvestArgs struct {
 	harvestErrorChannel chan<- HarvestError
 	client              collector.Client
 	splitLargePayloads  bool
+	// Used for final harvest before daemon exit
+	blocking bool
 }
 
 func harvestPayload(p PayloadCreator, args *harvestArgs) {
@@ -450,7 +455,14 @@ func harvestPayload(p PayloadCreator, args *harvestArgs) {
 }
 
 func considerHarvestPayload(p PayloadCreator, args *harvestArgs) {
-	if !p.Empty() {
+	if p.Empty() {
+		return
+	}
+
+	if args.blocking {
+		// Invoked primarily by CleanExit
+		harvestPayload(p, args)
+	} else {
 		go harvestPayload(p, args)
 	}
 }
@@ -493,9 +505,13 @@ func harvestByType(ah *AppHarvest, args *harvestArgs, ht HarvestType) {
 	//       at the same rate.
 	// In such cases, harvest all types and return.
 	if ht&HarvestAll == HarvestAll {
-
 		ah.Harvest = NewHarvest(time.Now())
-		go harvestAll(harvest, args)
+		if args.blocking {
+			// Invoked primarily by CleanExit
+			harvestAll(harvest, args)
+		} else {
+			go harvestAll(harvest, args)
+		}
 		return
 	}
 
@@ -591,9 +607,10 @@ func (p *Processor) doHarvest(ph ProcessorHarvest) {
 		// to not overload the backend by sending two payloads instead
 		// of one every 60 seconds.
 		splitLargePayloads: app.info.Settings["newrelic.distributed_tracing_enabled"] == true,
+		blocking:           ph.Blocking,
 	}
 
-	go harvestByType(ph.AppHarvest, &args, harvestType)
+	harvestByType(ph.AppHarvest, &args, harvestType)
 }
 
 func (p *Processor) processHarvestError(d HarvestError) {
@@ -731,6 +748,27 @@ func (p *Processor) IncomingAppInfo(id *AgentRunID, info *AppInfo) AppInfoReply 
 	out := <-resultChan
 	close(resultChan)
 	return out
+}
+
+// CleanExit terminates p.Run()'s loop and iterates over the processor's
+// harvests, explicitly calling doHarvest on them. By setting the
+// ProcessorHarvest's Type to HarvestFinal, later functions avoid goroutines
+// so that we only return from this function when all harvests complete
+func (p *Processor) CleanExit() {
+	// Terminate p.Run()'s loop and stop receiving data
+	p.quitChan <- struct{}{}
+	p.txnDataChannel = nil
+	p.appInfoChannel = nil
+
+	// Harvest all remaining data
+	for id, ah := range p.harvests {
+		p.doHarvest(ProcessorHarvest{
+			AppHarvest: ah,
+			ID:         id,
+			Type:       HarvestAll,
+			Blocking:   true,
+		})
+	}
 }
 
 func (p *Processor) quit() {

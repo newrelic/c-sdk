@@ -113,7 +113,7 @@ void nr_app_harvest_private_init(nr_app_harvest_t* ah,
   ah->target_transactions_per_cycle = sampling_target;
 
   nrl_debug(NRL_AGENT,
-            "Adpative sampling configuration. Connect: " NR_TIME_FMT
+            "Adaptive sampling configuration. Connect: " NR_TIME_FMT
             " us. Frequency: " NR_TIME_FMT " us. Target: %d.",
             connect_timestamp, harvest_frequency, sampling_target);
 

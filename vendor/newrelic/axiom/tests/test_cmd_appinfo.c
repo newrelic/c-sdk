@@ -28,7 +28,7 @@ static void test_create_empty_query(void) {
   int high_security;
 
   nr_memset(&info, 0, sizeof(info));
-  query = nr_appinfo_create_query("", &info);
+  query = nr_appinfo_create_query("", "", &info);
 
   nr_flatbuffers_table_init_root(&msg, nr_flatbuffers_data(query),
                                  nr_flatbuffers_len(query));
@@ -43,6 +43,7 @@ static void test_create_empty_query(void) {
   test_pass_if_empty_vector(&app, APP_FIELD_ENVIRONMENT);
   test_pass_if_empty_vector(&app, APP_FIELD_SETTINGS);
   test_pass_if_empty_vector(&app, APP_DISPLAY_HOST);
+  test_pass_if_empty_vector(&app, APP_HOST);
   test_pass_if_empty_vector(&app, APP_FIELD_LABELS);
 
   high_security
@@ -73,7 +74,7 @@ static void test_create_query(void) {
   info.security_policies_token = nr_strdup("my_security_policy_token");
   info.supported_security_policies = nro_create_from_json("{\"foo\":false}");
 
-  query = nr_appinfo_create_query("12345", &info);
+  query = nr_appinfo_create_query("12345", "this_host", &info);
 
   nr_flatbuffers_table_init_root(&msg, nr_flatbuffers_data(query),
                                  nr_flatbuffers_len(query));
@@ -107,6 +108,9 @@ static void test_create_query(void) {
   tlib_pass_if_str_equal(__func__, "[[\"my_environment\",\"hi\"]]",
                          (const char*)nr_flatbuffers_table_read_bytes(
                              &app, APP_FIELD_ENVIRONMENT));
+  tlib_pass_if_str_equal(
+      __func__, "this_host",
+      (const char*)nr_flatbuffers_table_read_bytes(&app, APP_HOST));
 
   high_security
       = nr_flatbuffers_table_read_i8(&app, APP_FIELD_HIGH_SECURITY, 0);

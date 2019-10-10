@@ -65,12 +65,12 @@ static void test_segment_new_txn_with_segment_root(void) {
   tlib_pass_if_not_null("A new transaction must have a segment root",
                         txn->segment_root);
 
-  tlib_pass_if_not_null(
-      "A new transaction's segment root must have room for children",
-      txn->segment_root->children.elements);
+  tlib_pass_if_size_t_equal(
+      "A new transaction's segment root must initialise its children", 0,
+      nr_segment_children_size(&txn->segment_root->children));
 
-  tlib_pass_if_int_equal("A new transaction must have a segment count of 1",
-                         txn->segment_count, 1);
+  tlib_pass_if_size_t_equal("A new transaction must have a segment count of 0",
+                            txn->segment_count, 0);
 
   tlib_pass_if_ptr_equal(
       "A new transaction's current parent must be initialized to its segment "
@@ -147,8 +147,8 @@ static void test_segment_start(void) {
                          txn);
   tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
                               s->start_time, 0);
-  tlib_pass_if_not_null("A started segment has a hash for user attributes",
-                        s->user_attributes);
+  tlib_pass_if_null("A started segment has a NULL hash for user attributes",
+                    s->user_attributes);
   tlib_pass_if_ptr_equal(
       "A segment started with an implicit parent must have the transaction's"
       " segment_root as parent",
@@ -259,8 +259,8 @@ static void test_segment_start_async(void) {
                          first_stepchild->txn, txn);
   tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
                               first_stepchild->start_time, 0);
-  tlib_pass_if_not_null("A started segment has a hash for user attributes",
-                        first_stepchild->user_attributes);
+  tlib_pass_if_null("A started segment has a NULL hash for user attributes",
+                    first_stepchild->user_attributes);
   tlib_pass_if_int_equal(
       "A started segment has an initialized async context",
       first_stepchild->async_context,
@@ -297,17 +297,14 @@ static void test_segment_start_async(void) {
       "current segment for the new context",
       nr_txn_get_current_segment(txn, "another_async"), first_grandchild);
 
-  tlib_pass_if_not_null(
-      "Starting a segment on a valid txn must allocate space for children",
-      &first_grandchild->children);
   tlib_pass_if_uint64_t_equal("A started segment has default type CUSTOM",
                               first_grandchild->type, NR_SEGMENT_CUSTOM);
   tlib_pass_if_ptr_equal("A started segment must save its transaction",
                          first_grandchild->txn, txn);
   tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
                               first_grandchild->start_time, 0);
-  tlib_pass_if_not_null("A started segment has a hash for user attributes",
-                        first_grandchild->user_attributes);
+  tlib_pass_if_null("A started segment has a NULL hash for user attributes",
+                    first_grandchild->user_attributes);
   tlib_pass_if_int_equal(
       "A started segment has an initialized async context",
       first_grandchild->async_context,
@@ -321,7 +318,7 @@ static void test_segment_start_async(void) {
   tlib_pass_if_ptr_equal(
       "A segment started with an implicit parent must be a child of that "
       "parent",
-      nr_vector_get(&first_born->children, 0), first_grandchild);
+      nr_segment_children_get(&first_born->children, 0), first_grandchild);
 
   /*
    * Test : Async operation. Starting a segment with no parent on the same
@@ -342,17 +339,14 @@ static void test_segment_start_async(void) {
       "current segment for the new context",
       nr_txn_get_current_segment(txn, "another_async"), great_grandchild);
 
-  tlib_pass_if_not_null(
-      "Starting a segment on a valid txn must allocate space for children",
-      &great_grandchild->children);
   tlib_pass_if_uint64_t_equal("A started segment has default type CUSTOM",
                               great_grandchild->type, NR_SEGMENT_CUSTOM);
   tlib_pass_if_ptr_equal("A started segment must save its transaction",
                          great_grandchild->txn, txn);
   tlib_fail_if_uint64_t_equal("A started segment has an initialized start time",
                               great_grandchild->start_time, 0);
-  tlib_pass_if_not_null("A started segment has a hash for user attributes",
-                        great_grandchild->user_attributes);
+  tlib_pass_if_null("A started segment has a NULL hash for user attributes",
+                    great_grandchild->user_attributes);
   tlib_pass_if_int_equal(
       "A started segment has an initialized async context",
       great_grandchild->async_context,
@@ -366,7 +360,8 @@ static void test_segment_start_async(void) {
   tlib_pass_if_ptr_equal(
       "A segment started with an implicit parent must be a child of that "
       "parent",
-      nr_vector_get(&first_grandchild->children, 0), great_grandchild);
+      nr_segment_children_get(&first_grandchild->children, 0),
+      great_grandchild);
 
   /*
    * Test : Async operation. Starting a segment with an explicit parent,
@@ -550,10 +545,10 @@ static void test_set_null_parent(void) {
       nr_segment_children_get_next(&mother.children, &segment));
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&mother.children);
+  nr_segment_children_deinit(&mother.children);
   nr_segment_destroy_fields(&mother);
 
-  nr_segment_children_destroy_fields(&segment.children);
+  nr_segment_children_deinit(&segment.children);
   nr_segment_destroy_fields(&segment);
 }
 
@@ -603,18 +598,18 @@ static void test_set_non_null_parent(void) {
       "Setting a well-formed segment with a new parent means the old parent "
       "must "
       "have a new first child",
-      nr_vector_get(&mother.children, 0), &segment);
+      nr_segment_children_get(&mother.children, 0), &segment);
 
   tlib_fail_if_ptr_equal(
       "Setting a well-formed segment with a new parent means the segment must "
       "not be a child of its old parent",
-      nr_vector_get(&mother.children, 0), &thing_one);
+      nr_segment_children_get(&mother.children, 0), &thing_one);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&mother.children);
+  nr_segment_children_deinit(&mother.children);
   nr_segment_destroy_fields(&mother);
 
-  nr_segment_children_destroy_fields(&segment.children);
+  nr_segment_children_deinit(&segment.children);
   nr_segment_destroy_fields(&segment);
 }
 
@@ -905,7 +900,7 @@ static void test_segment_iterate_bachelor(void) {
       list_2.elements[0]->name, bachelor_2.name);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&bachelor_2.children);
+  nr_segment_children_deinit(&bachelor_2.children);
 }
 
 static void test_segment_iterate(void) {
@@ -965,9 +960,9 @@ static void test_segment_iterate(void) {
   }
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&grandmother.children);
-  nr_segment_children_destroy_fields(&grown_child_1.children);
-  nr_segment_children_destroy_fields(&grown_child_2.children);
+  nr_segment_children_deinit(&grandmother.children);
+  nr_segment_children_deinit(&grown_child_1.children);
+  nr_segment_children_deinit(&grown_child_2.children);
 }
 
 /* The C Agent API gives customers the ability to arbitrarily parent a segment
@@ -1025,9 +1020,9 @@ static void test_segment_iterate_cycle_one(void) {
   }
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&grandmother.children);
-  nr_segment_children_destroy_fields(&grown_child.children);
-  nr_segment_children_destroy_fields(&child.children);
+  nr_segment_children_deinit(&grandmother.children);
+  nr_segment_children_deinit(&grown_child.children);
+  nr_segment_children_deinit(&child.children);
 }
 
 static void test_segment_iterate_cycle_two(void) {
@@ -1096,9 +1091,9 @@ static void test_segment_iterate_cycle_two(void) {
   }
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&grandmother.children);
-  nr_segment_children_destroy_fields(&grown_child_1.children);
-  nr_segment_children_destroy_fields(&grown_child_2.children);
+  nr_segment_children_deinit(&grandmother.children);
+  nr_segment_children_deinit(&grown_child_1.children);
+  nr_segment_children_deinit(&grown_child_2.children);
 }
 
 static void test_segment_iterate_with_amputation(void) {
@@ -1155,8 +1150,8 @@ static void test_segment_iterate_with_amputation(void) {
   }
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&grandmother.children);
-  nr_segment_children_destroy_fields(&grown_child_1.children);
+  nr_segment_children_deinit(&grandmother.children);
+  nr_segment_children_deinit(&grown_child_1.children);
 }
 
 static void test_segment_iterate_with_post_callback(void) {
@@ -1221,9 +1216,9 @@ static void test_segment_iterate_with_post_callback(void) {
   }
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&grandmother.children);
-  nr_segment_children_destroy_fields(&grown_child_1.children);
-  nr_segment_children_destroy_fields(&grown_child_2.children);
+  nr_segment_children_deinit(&grandmother.children);
+  nr_segment_children_deinit(&grown_child_1.children);
+  nr_segment_children_deinit(&grown_child_2.children);
 }
 
 static void test_segment_destroy(void) {
@@ -1254,25 +1249,27 @@ static void test_segment_destroy(void) {
    */
   nr_segment_destroy(bachelor_2);
 
-  /* The valgrind check will affirm nothing is faulted or leaked. */
+  nr_free(bachelor_1);
+  nr_free(bachelor_2);
 }
 
 static void test_segment_destroy_tree(void) {
   int i;
+  nr_slab_t* slab = nr_slab_create(sizeof(nr_segment_t), 0);
   char* test_string = "0123456789";
   nr_test_list_t list = {.capacity = NR_TEST_LIST_CAPACITY, .used = 0};
 
   /* Declare eight segments; give them .name values in pre-order */
-  nr_segment_t* grandmother = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* grandmother = nr_slab_next(slab);
 
-  nr_segment_t* grown_child_1 = nr_zalloc(sizeof(nr_segment_t));
-  nr_segment_t* grown_child_2 = nr_zalloc(sizeof(nr_segment_t));
-  nr_segment_t* grown_child_3 = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* grown_child_1 = nr_slab_next(slab);
+  nr_segment_t* grown_child_2 = nr_slab_next(slab);
+  nr_segment_t* grown_child_3 = nr_slab_next(slab);
 
-  nr_segment_t* child_1 = nr_zalloc(sizeof(nr_segment_t));
-  nr_segment_t* child_2 = nr_zalloc(sizeof(nr_segment_t));
-  nr_segment_t* child_3 = nr_zalloc(sizeof(nr_segment_t));
-  nr_segment_t* child_4 = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* child_1 = nr_slab_next(slab);
+  nr_segment_t* child_2 = nr_slab_next(slab);
+  nr_segment_t* child_3 = nr_slab_next(slab);
+  nr_segment_t* child_4 = nr_slab_next(slab);
 
   grown_child_1->name = 1;
   grown_child_2->name = 3;
@@ -1358,6 +1355,7 @@ static void test_segment_destroy_tree(void) {
    * of segments.  The valgrind check will affirm nothing is faulted or
    * leaked. */
   nr_segment_destroy(grandmother);
+  nr_slab_destroy(&slab);
 }
 
 static void test_segment_discard(void) {
@@ -1368,6 +1366,7 @@ static void test_segment_discard(void) {
   nr_segment_t* D;
 
   txn.status.recording = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
 
   /* Bad parameters. */
   tlib_pass_if_false("NULL address", nr_segment_discard(NULL),
@@ -1375,7 +1374,7 @@ static void test_segment_discard(void) {
   tlib_pass_if_false("NULL segment", nr_segment_discard(&txn.segment_root),
                      "expected false");
 
-  txn.segment_root = nr_zalloc(sizeof(nr_segment_t));
+  txn.segment_root = nr_slab_next(txn.segment_slab);
 
   tlib_pass_if_false("NULL segment pointer to txn",
                      nr_segment_discard(&txn.segment_root), "expected false");
@@ -1431,7 +1430,7 @@ static void test_segment_discard(void) {
   tlib_pass_if_true("delete node with kids", nr_segment_discard(&B),
                     "expected true");
   tlib_pass_if_size_t_equal("A has two children", 2,
-                            nr_vector_size(&A->children));
+                            nr_segment_children_size(&A->children));
   tlib_pass_if_ptr_equal("A is C's parent", C->parent, A);
   tlib_pass_if_ptr_equal("A is D's parent", D->parent, A);
   tlib_pass_if_ptr_equal("B is NULL", B, NULL);
@@ -1445,12 +1444,14 @@ static void test_segment_discard(void) {
    */
   tlib_pass_if_true("delete leaf node", nr_segment_discard(&C),
                     "expected true");
-  tlib_pass_if_size_t_equal("A has one child", 1, nr_vector_size(&A->children));
+  tlib_pass_if_size_t_equal("A has one child", 1,
+                            nr_segment_children_size(&A->children));
   tlib_pass_if_ptr_equal("A is D's parent", D->parent, A);
   tlib_pass_if_ptr_equal("C is NULL", B, NULL);
   tlib_pass_if_size_t_equal("segment count", 2, txn.segment_count);
 
   nr_segment_destroy(A);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 static void test_segment_tree_to_heap(void) {
@@ -1548,6 +1549,10 @@ static void test_segment_tree_to_heap(void) {
   nr_minmax_heap_destroy(&heaps.trace_heap);
   nr_minmax_heap_destroy(&heaps.span_heap);
   nr_segment_destroy(root);
+  nr_free(root);
+  nr_free(mini);
+  nr_free(midi);
+  nr_free(maxi);
 }
 
 static void test_segment_set(void) {
@@ -1573,6 +1578,8 @@ static void test_segment_set(void) {
 
   nr_set_destroy(&set);
   nr_segment_destroy(root);
+  nr_free(root);
+  nr_free(mini);
 }
 
 static void test_segment_heap_to_set(void) {
@@ -1639,6 +1646,10 @@ static void test_segment_heap_to_set(void) {
   /* Clean up */
   nr_minmax_heap_destroy(&heaps.trace_heap);
   nr_segment_destroy(root);
+  nr_free(root);
+  nr_free(mini);
+  nr_free(midi);
+  nr_free(maxi);
 }
 
 static void test_segment_set_parent_cycle(void) {
@@ -1694,14 +1705,14 @@ static void test_segment_set_parent_cycle(void) {
   tlib_pass_if_null("Root should not have a parent", root.parent);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
-  nr_segment_children_destroy_fields(&C.children);
-  nr_segment_children_destroy_fields(&D.children);
-  nr_segment_children_destroy_fields(&E.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
+  nr_segment_children_deinit(&C.children);
+  nr_segment_children_deinit(&D.children);
+  nr_segment_children_deinit(&E.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -1788,6 +1799,54 @@ static void test_segment_span_comparator(void) {
                          0);
 }
 
+static void test_segment_init_deinit(void) {
+  nrtxn_t txn = {0};
+  nr_segment_t* root;
+  nr_segment_t* s;
+
+  txn.status.recording = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
+
+  txn.segment_root = nr_slab_next(txn.segment_slab);
+  txn.segment_root->txn = &txn;
+  txn.segment_count = 1;
+
+  root = txn.segment_root;
+
+  /* start a new child segment */
+  s = nr_segment_start(&txn, root, NULL);
+  nr_segment_end(s);
+  tlib_pass_if_size_t_equal("one child", 1,
+                            nr_segment_children_size(&root->children));
+
+  /* de-initialize the child segment */
+  nr_segment_deinit(s);
+  tlib_pass_if_size_t_equal("no child", 0,
+                            nr_segment_children_size(&root->children));
+
+  /* re-initialize the child segment */
+  nr_segment_init(s, &txn, root, NULL);
+  tlib_pass_if_true("stop time must be set to 0 on initialization",
+                    0 == s->stop_time, "Expected true");
+  tlib_pass_if_size_t_equal("one child", 1,
+                            nr_segment_children_size(&root->children));
+
+  /* reparent child segments on de-initialization */
+  nr_segment_end(nr_segment_start(&txn, s, NULL));
+  nr_segment_end(nr_segment_start(&txn, s, NULL));
+  nr_segment_end(nr_segment_start(&txn, s, NULL));
+  nr_segment_end(s);
+  tlib_pass_if_size_t_equal("3 children", 3,
+                            nr_segment_children_size(&s->children));
+  nr_segment_deinit(s);
+  tlib_pass_if_size_t_equal("3 children", 3,
+                            nr_segment_children_size(&root->children));
+
+  nr_segment_destroy(s);
+  nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
+}
+
 tlib_parallel_info_t parallel_info = {.suggested_nthreads = 2, .state_size = 0};
 
 void test_main(void* p NRUNUSED) {
@@ -1820,4 +1879,5 @@ void test_main(void* p NRUNUSED) {
   test_segment_set_parent_cycle();
   test_segment_no_recording();
   test_segment_span_comparator();
+  test_segment_init_deinit();
 }

@@ -23,32 +23,46 @@ nr_segment_t* nr_segment_start(nrtxn_t* txn,
     return NULL;
   }
 
-  new_segment = nr_zalloc(sizeof(nr_segment_t));
+  new_segment = (nr_segment_t*)nr_slab_next(txn->segment_slab);
+  if (nrunlikely(NULL == new_segment)) {
+    return NULL;
+  }
 
-  new_segment->color = NR_SEGMENT_WHITE;
-  new_segment->type = NR_SEGMENT_CUSTOM;
-  new_segment->txn = txn;
+  nr_segment_init(new_segment, txn, parent, async_context);
+
+  return new_segment;
+}
+
+bool nr_segment_init(nr_segment_t* segment,
+                     nrtxn_t* txn,
+                     nr_segment_t* parent,
+                     const char* async_context) {
+  if (nrunlikely(NULL == segment)) {
+    return false;
+  }
+
+  segment->color = NR_SEGMENT_WHITE;
+  segment->type = NR_SEGMENT_CUSTOM;
+  segment->txn = txn;
 
   /* A segment's time is expressed in terms of time relative to the transaction.
    * Determine the difference between the transaction's start time and now. */
-  new_segment->start_time
-      = nr_time_duration(nr_txn_start_time(txn), nr_get_time());
-
-  new_segment->user_attributes = nro_new_hash();
-
-  nr_segment_children_init(&new_segment->children);
+  segment->start_time = nr_time_duration(nr_txn_start_time(txn), nr_get_time());
 
   if (async_context) {
-    new_segment->async_context
-        = nr_string_add(txn->trace_strings, async_context);
+    segment->async_context = nr_string_add(txn->trace_strings, async_context);
+  } else {
+    segment->async_context = 0;
   }
+
+  nr_segment_children_init(&segment->children);
 
   /* If an explicit parent has been passed in, parent this newly
    * started segment with the explicit parent. Make the newly-started
    * segment a sibling of its parent's (possibly) already-existing children. */
   if (parent) {
-    new_segment->parent = parent;
-    nr_segment_children_add(&parent->children, new_segment);
+    segment->parent = parent;
+    nr_segment_children_add(&parent->children, segment);
   } /* Otherwise, the parent of this new segment is the current segment on the
        transaction */
   else {
@@ -64,14 +78,15 @@ nr_segment_t* nr_segment_start(nrtxn_t* txn,
       current_segment = nr_txn_get_current_segment(txn, NULL);
     }
 
-    new_segment->parent = current_segment;
+    segment->parent = current_segment;
 
     if (NULL != current_segment) {
-      nr_segment_children_add(&current_segment->children, new_segment);
+      nr_segment_children_add(&current_segment->children, segment);
     }
-    nr_txn_set_current_segment(txn, new_segment);
+    nr_txn_set_current_segment(txn, segment);
   }
-  return new_segment;
+
+  return true;
 }
 
 bool nr_segment_set_custom(nr_segment_t* segment) {
@@ -291,10 +306,9 @@ static nr_segment_color_t nr_segment_toggle_color(nr_segment_color_t color) {
  */
 static void nr_segment_destroy_children_post_callback(nr_segment_t* segment,
                                                       void* userdata NRUNUSED) {
-  /* Free the segment */
+  /* Free the fields within the segment */
   nr_segment_destroy_fields(segment);
-  nr_segment_children_destroy_fields(&segment->children);
-  nr_free(segment);
+  nr_segment_children_deinit(&segment->children);
 }
 
 /*
@@ -302,14 +316,8 @@ static void nr_segment_destroy_children_post_callback(nr_segment_t* segment,
  * tree of segments and free them and all their children.
  */
 static nr_segment_iter_return_t nr_segment_destroy_children_callback(
-    nr_segment_t* segment,
+    nr_segment_t* segment NRUNUSED,
     void* userdata NRUNUSED) {
-  // If this segment has room for children, but no children,
-  // then let's free the room for children.
-  if (0 == nr_vector_size(&segment->children)) {
-    nr_vector_deinit(&segment->children);
-  }
-
   return ((nr_segment_iter_return_t){
       .post_callback = nr_segment_destroy_children_post_callback});
 }
@@ -340,7 +348,7 @@ static void nr_segment_iterate_helper(nr_segment_t* root,
     if (reset_color == root->color) {
       nr_segment_iter_return_t cb_return;
       size_t i;
-      size_t n_children = nr_vector_size(&root->children);
+      size_t n_children = nr_segment_children_size(&root->children);
 
       root->color = set_color;
 
@@ -349,7 +357,7 @@ static void nr_segment_iterate_helper(nr_segment_t* root,
 
       // Iterate the children.
       for (i = 0; i < n_children; i++) {
-        nr_segment_iterate_helper(nr_vector_get(&root->children, i),
+        nr_segment_iterate_helper(nr_segment_children_get(&root->children, i),
                                   reset_color, set_color, callback, userdata);
       }
 
@@ -392,38 +400,61 @@ void nr_segment_destroy(nr_segment_t* root) {
       root, (nr_segment_iter_t)nr_segment_destroy_children_callback, NULL);
 }
 
-bool nr_segment_discard(nr_segment_t** segment_ptr) {
-  nr_segment_t* segment;
+static bool nr_segment_deinit_impl(nr_segment_t* segment) {
+  /* Unhook the segment from its parent. */
+  nr_segment_children_remove(&segment->parent->children, segment);
 
+  /* Reparent all children. */
+  nr_segment_children_reparent(&segment->children, segment->parent);
+
+  nr_segment_children_deinit(&segment->children);
+
+  segment->txn->segment_count -= 1;
+
+  return true;
+}
+
+bool nr_segment_deinit(nr_segment_t* segment) {
+  if (nrunlikely(NULL == segment || NULL == segment->parent
+                 || NULL == segment->txn)) {
+    return false;
+  }
+
+  /* Public de-initialization is optimized for custom segments without
+   * initialized metrics vector. */
+  if (nrunlikely(NULL != segment->id || NULL != segment->metrics
+                 || NR_SEGMENT_CUSTOM != segment->type)) {
+    return false;
+  }
+
+  if (!nr_segment_deinit_impl(segment)) {
+    return false;
+  }
+
+  /* Zero out the segment, so it is in the same state as a newly
+   * allocated segment. */
+  nr_memset(segment, 0, sizeof(nr_segment_t));
+
+  return true;
+}
+
+bool nr_segment_discard(nr_segment_t** segment_ptr) {
   if (NULL == segment_ptr || NULL == *segment_ptr
       || NULL == (*segment_ptr)->txn) {
     return false;
   }
 
-  segment = *segment_ptr;
-
-  /* Don't discard root nodes. */
-  if (NULL == segment->parent) {
+  /* Don't discard the root node. */
+  if (NULL == (*segment_ptr)->parent) {
     return false;
   }
 
-  /* Reparent all children. */
-  while (nr_vector_size(&segment->children) > 0) {
-    bool rv = nr_segment_set_parent(nr_vector_get(&segment->children, 0),
-                                    segment->parent);
-
-    if (!rv) {
-      return false;
-    }
+  if (!nr_segment_deinit_impl(*segment_ptr)) {
+    return false;
   }
 
-  /* Unhook the segment from its parent. */
-  nr_segment_children_remove(&segment->parent->children, segment);
-
-  segment->txn->segment_count -= 1;
-
   /* Free memory. */
-  nr_segment_destroy(segment);
+  nr_segment_destroy(*segment_ptr);
   (*segment_ptr) = NULL;
 
   return true;
@@ -548,13 +579,28 @@ static nr_segment_iter_return_t nr_segment_stoh_iterator_callback(
   /* Set up the exclusive time so that children can adjust it as necessary. */
   nr_exclusive_time_destroy(&segment->exclusive_time);
   segment->exclusive_time
-      = nr_exclusive_time_create(segment->start_time, segment->stop_time);
+      = nr_exclusive_time_create(nr_segment_children_size(&segment->children),
+                                 segment->start_time, segment->stop_time);
 
   /* Adjust the parent's exclusive time. */
   if (segment->parent
       && segment->parent->async_context == segment->async_context) {
     nr_exclusive_time_add_child(segment->parent->exclusive_time,
                                 segment->start_time, segment->stop_time);
+  }
+
+  /*
+   * Adjust the main context exclusive time if necessary.
+   *
+   * This supports the discount_main_context_blocking transaction option: if
+   * that option is enabled, then the metadata will have a non-NULL main context
+   * exclusive time pointer. If the current segment is asynchronous, then we
+   * need to add the segment to the main context exclusive time structure so the
+   * blocking time can be calculated once the first pass is complete.
+   */
+  if (segment->async_context && metadata->main_context) {
+    nr_exclusive_time_add_child(metadata->main_context, segment->start_time,
+                                segment->stop_time);
   }
 
   trace_heap = metadata->trace_heap;

@@ -92,7 +92,7 @@ static void test_buffer_contents_fn(const char* testname,
 }
 
 static void test_json_print_bad_parameters(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nrpool_t* segment_names;
 
@@ -109,23 +109,23 @@ static void test_json_print_bad_parameters(void) {
    */
   rv = nr_segment_traces_json_print_segments(NULL, NULL, NULL, NULL, NULL, NULL,
                                              NULL);
-  tlib_pass_if_true("Return value must be -1 when input params are NULL",
-                    -1 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Return value must be false when input params are NULL", false, rv);
 
   rv = nr_segment_traces_json_print_segments(NULL, NULL, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Return value must be -1 when input buff is NULL", -1 == rv,
-                    "rv=%d", rv);
+  tlib_pass_if_bool_equal("Return value must be false when input buff is NULL",
+                          false, rv);
 
   rv = nr_segment_traces_json_print_segments(buf, NULL, NULL, NULL, NULL, &root,
                                              segment_names);
-  tlib_pass_if_true("Return value must be -1 when input txn is NULL", -1 == rv,
-                    "rv=%d", rv);
+  tlib_pass_if_bool_equal("Return value must be false when input txn is NULL",
+                          false, rv);
 
   rv = nr_segment_traces_json_print_segments(buf, NULL, NULL, NULL, &txn, &root,
                                              NULL);
-  tlib_pass_if_true("Return value must be -1 when input pool is NULL", -1 == rv,
-                    "rv=%d", rv);
+  tlib_pass_if_bool_equal("Return value must be -1 when input pool is NULL",
+                          false, rv);
 
   /* Clean up */
   nr_string_pool_destroy(&segment_names);
@@ -133,7 +133,7 @@ static void test_json_print_bad_parameters(void) {
 }
 
 static void test_json_print_segments_root_only(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -160,8 +160,8 @@ static void test_json_print_segments_root_only(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a single root segment must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a single root segment must succeed", true, rv);
   test_buffer_contents("success", buf, "[0,9,\"`0\",{},[]]");
 
   tlib_pass_if_uint_equal("span event size", nr_vector_size(span_events), 1);
@@ -180,7 +180,7 @@ static void test_json_print_segments_root_only(void) {
 }
 
 static void test_json_print_segments_bad_segments(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -222,32 +222,16 @@ static void test_json_print_segments_bad_segments(void) {
   child.name = nr_string_add(txn.trace_strings, "Mongo/alpha");
 
   /*
-   * Test : Segment stop equal to segment start
-   */
-  rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
-                                             &root, segment_names);
-  tlib_pass_if_true(
-      "Printing JSON for a segment that has equal start and stop must fail",
-      -1 == rv, "rv=%d", rv);
-
-  tlib_pass_if_uint_equal("not all span events created",
-                          nr_vector_size(span_events), 1);
-
-  nr_buffer_reset(buf);
-  nr_vector_destroy(&span_events);
-  span_events = nr_vector_create(9, nr_vector_span_event_dtor, NULL);
-
-  /*
    * Test : Segment stop before segment start
    */
   child.start_time = 4000;
   child.stop_time = 2000;
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true(
+  tlib_pass_if_bool_equal(
       "Printing JSON for a segment that has out of order start and stop must "
       "fail",
-      -1 == rv, "rv=%d", rv);
+      false, rv);
 
   tlib_pass_if_uint_equal("not all span events created",
                           nr_vector_size(span_events), 1);
@@ -264,9 +248,9 @@ static void test_json_print_segments_bad_segments(void) {
   child.name = 0;
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true(
-      "Printing JSON for a segment with an unknown name must succeed", 0 == rv,
-      "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a segment with an unknown name must succeed", true,
+      rv);
   test_buffer_contents("unknown name", buf,
                        "[0,9,\"`0\",{},[[1,3,\"`1\",{},[]]]]");
 
@@ -281,10 +265,10 @@ static void test_json_print_segments_bad_segments(void) {
                      2000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&child.children);
+  nr_segment_children_deinit(&child.children);
   nr_segment_destroy_fields(&child);
 
   nr_string_pool_destroy(&txn.trace_strings);
@@ -295,7 +279,7 @@ static void test_json_print_segments_bad_segments(void) {
 }
 
 static void test_json_print_segment_with_data(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -338,8 +322,8 @@ static void test_json_print_segment_with_data(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a segment with data must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("Printing JSON for a segment with data must succeed",
+                          true, rv);
   test_buffer_contents("node with data", buf,
                        "[0,9,\"`0\",{},"
                        "[[1,3,\"`1\",{\"uri\":\"domain.com\"},[]]]]");
@@ -355,10 +339,10 @@ static void test_json_print_segment_with_data(void) {
                      evt_root, 2000, 2000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&child.children);
+  nr_segment_children_deinit(&child.children);
   nr_segment_destroy_fields(&child);
 
   nr_string_pool_destroy(&txn.trace_strings);
@@ -369,7 +353,7 @@ static void test_json_print_segment_with_data(void) {
 }
 
 static void test_json_print_segments_two_nodes(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -410,8 +394,8 @@ static void test_json_print_segments_two_nodes(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a root+child pair must succeed", 0 == rv,
-                    "rv=%d", rv);
+  tlib_pass_if_bool_equal("Printing JSON for a root+child pair must succeed",
+                          true, rv);
   test_buffer_contents("success", buf, "[0,9,\"`0\",{},[[1,3,\"`1\",{},[]]]]");
 
   tlib_pass_if_uint_equal("span event size", nr_vector_size(span_events), 2);
@@ -425,10 +409,10 @@ static void test_json_print_segments_two_nodes(void) {
                      2000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&child.children);
+  nr_segment_children_deinit(&child.children);
   nr_segment_destroy_fields(&child);
 
   nr_string_pool_destroy(&txn.trace_strings);
@@ -439,7 +423,7 @@ static void test_json_print_segments_two_nodes(void) {
 }
 
 static void test_json_print_segments_hanoi(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -493,8 +477,8 @@ static void test_json_print_segments_hanoi(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a cascade of four segments must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a cascade of four segments must succeed", true, rv);
   test_buffer_contents("towers of hanoi", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{},[[2,5,\"`2\",{},[[3,4,"
                        "\"`3\",{},[]]]]]]]]");
@@ -513,11 +497,11 @@ static void test_json_print_segments_hanoi(void) {
   SPAN_EVENT_COMPARE(evt_c, "C", NR_SPAN_GENERIC, evt_b, 4000, 1000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -531,7 +515,7 @@ static void test_json_print_segments_hanoi(void) {
 }
 
 static void test_json_print_segments_three_siblings(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -582,8 +566,8 @@ static void test_json_print_segments_three_siblings(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a rooted set of triplets must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a rooted set of triplets must succeed", true, rv);
   test_buffer_contents("sequential nodes", buf,
                        "[0,9,\"`0\",{},[[1,2,\"`1\",{},[]],[3,4,\"`2\",{},[]],["
                        "5,6,\"`3\",{},[]]]]");
@@ -602,7 +586,7 @@ static void test_json_print_segments_three_siblings(void) {
   SPAN_EVENT_COMPARE(evt_c, "C", NR_SPAN_GENERIC, evt_root, 6000, 1000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
   nr_segment_destroy_fields(&A);
@@ -617,7 +601,7 @@ static void test_json_print_segments_three_siblings(void) {
 }
 
 static void test_json_print_segments_datastore_params(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -670,7 +654,7 @@ static void test_json_print_segments_datastore_params(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("datastore params", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{"
                        "\"host\":\"localhost\","
@@ -694,7 +678,7 @@ static void test_json_print_segments_datastore_params(void) {
                                "localhost:3308");
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
   nr_segment_destroy_fields(&A);
@@ -707,7 +691,7 @@ static void test_json_print_segments_datastore_params(void) {
 }
 
 static void test_json_print_segments_external_async_user_attrs(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -759,7 +743,7 @@ static void test_json_print_segments_external_async_user_attrs(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("datastore params", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{"
                        "\"uri\":\"example.com\","
@@ -781,7 +765,7 @@ static void test_json_print_segments_external_async_user_attrs(void) {
   SPAN_EVENT_COMPARE_EXTERNAL(evt_a, "example.com", "GET", "curl");
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
   nr_segment_destroy_fields(&A);
@@ -794,7 +778,7 @@ static void test_json_print_segments_external_async_user_attrs(void) {
 }
 
 static void test_json_print_segments_datastore_external(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -870,7 +854,7 @@ static void test_json_print_segments_datastore_external(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("two kids", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{},["
                        "[2,3,\"`2\",{"
@@ -909,10 +893,10 @@ static void test_json_print_segments_datastore_external(void) {
                                "localhost:unknown");
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
+  nr_segment_children_deinit(&A.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -927,7 +911,7 @@ static void test_json_print_segments_datastore_external(void) {
 }
 
 static void test_json_print_segments_two_generations(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -979,7 +963,7 @@ static void test_json_print_segments_two_generations(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("two kids", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{},[[2,3,\"`2\",{},[]],[4,"
                        "5,\"`3\",{},[]]]]]]");
@@ -998,10 +982,10 @@ static void test_json_print_segments_two_generations(void) {
   SPAN_EVENT_COMPARE(evt_c, "C", NR_SPAN_GENERIC, evt_a, 5000, 1000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
+  nr_segment_children_deinit(&A.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -1015,7 +999,7 @@ static void test_json_print_segments_two_generations(void) {
 }
 
 static void test_json_print_segments_async_basic(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1074,8 +1058,8 @@ static void test_json_print_segments_async_basic(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a basic async scenario must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a basic async scenario must succeed", true, rv);
   test_buffer_contents("basic", buf,
                        "["
                        "0,9,\"`0\",{},"
@@ -1101,10 +1085,10 @@ static void test_json_print_segments_async_basic(void) {
   SPAN_EVENT_COMPARE(evt_loop, "loop", NR_SPAN_GENERIC, evt_main, 2000, 2000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&main_segment.children);
+  nr_segment_children_deinit(&main_segment.children);
 
   nr_segment_destroy_fields(&main_segment);
   nr_segment_destroy_fields(&loop_segment);
@@ -1117,7 +1101,7 @@ static void test_json_print_segments_async_basic(void) {
 }
 
 static void test_json_print_segments_async_multi_child(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1184,7 +1168,7 @@ static void test_json_print_segments_async_multi_child(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents(
       "Printing JSON for a three-child async scenario must succeed", buf,
       "["
@@ -1217,10 +1201,10 @@ static void test_json_print_segments_async_multi_child(void) {
   SPAN_EVENT_COMPARE(evt_a_b, "a", NR_SPAN_GENERIC, evt_main, 7000, 1000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&main_segment.children);
+  nr_segment_children_deinit(&main_segment.children);
 
   nr_segment_destroy_fields(&main_segment);
   nr_segment_destroy_fields(&a_a);
@@ -1235,7 +1219,7 @@ static void test_json_print_segments_async_multi_child(void) {
 }
 
 static void test_json_print_segments_async_multi_context(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1315,7 +1299,7 @@ static void test_json_print_segments_async_multi_context(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("multiple contexts", buf,
                        "["
                        "0,9,\"`0\",{},"
@@ -1353,10 +1337,10 @@ static void test_json_print_segments_async_multi_context(void) {
   SPAN_EVENT_COMPARE(evt_d, "d", NR_SPAN_GENERIC, evt_main, 9000, 1000);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&main_segment.children);
+  nr_segment_children_deinit(&main_segment.children);
   nr_segment_destroy_fields(&main_segment);
 
   nr_segment_destroy_fields(&a_a);
@@ -1373,7 +1357,7 @@ static void test_json_print_segments_async_multi_context(void) {
 }
 
 static void test_json_print_segments_async_context_nesting(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1474,7 +1458,7 @@ static void test_json_print_segments_async_context_nesting(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents("context nesting", buf,
                        "["
                        "0,9,\"`0\",{},"
@@ -1527,13 +1511,13 @@ static void test_json_print_segments_async_context_nesting(void) {
   SPAN_EVENT_COMPARE(evt_g, "g", NR_SPAN_GENERIC, evt_main, 7200, 800);
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&main_segment.children);
-  nr_segment_children_destroy_fields(&a.children);
-  nr_segment_children_destroy_fields(&b.children);
-  nr_segment_children_destroy_fields(&d.children);
+  nr_segment_children_deinit(&main_segment.children);
+  nr_segment_children_deinit(&a.children);
+  nr_segment_children_deinit(&b.children);
+  nr_segment_children_deinit(&d.children);
 
   nr_segment_destroy_fields(&main_segment);
   nr_segment_destroy_fields(&a);
@@ -1552,7 +1536,7 @@ static void test_json_print_segments_async_context_nesting(void) {
 }
 
 static void test_json_print_segments_async_with_data(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nrobj_t* hash;
   nrpool_t* segment_names;
@@ -1605,7 +1589,7 @@ static void test_json_print_segments_async_with_data(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, NULL, NULL, NULL, &txn, &root,
                                              segment_names);
-  tlib_pass_if_true("success", 0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal("success", true, rv);
   test_buffer_contents(
       "basic", buf,
       "["
@@ -1621,8 +1605,8 @@ static void test_json_print_segments_async_with_data(void) {
       "]");
 
   /* Clean up */
-  nr_segment_children_destroy_fields(&root.children);
-  nr_segment_children_destroy_fields(&main_segment.children);
+  nr_segment_children_deinit(&root.children);
+  nr_segment_children_deinit(&main_segment.children);
 
   nr_segment_destroy_fields(&root);
   nr_segment_destroy_fields(&main_segment);
@@ -1634,7 +1618,7 @@ static void test_json_print_segments_async_with_data(void) {
 }
 
 static void test_json_print_segments_with_sampling(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1690,8 +1674,8 @@ static void test_json_print_segments_with_sampling(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, set, set, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a sampled tree of segments must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a sampled tree of segments must succeed", true, rv);
   test_buffer_contents("Free samples", buf,
                        "[0,9,\"`0\",{},[[2,5,\"`1\",{},[]]]]");
 
@@ -1706,11 +1690,11 @@ static void test_json_print_segments_with_sampling(void) {
 
   /* Clean up */
   nr_set_destroy(&set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -1724,7 +1708,7 @@ static void test_json_print_segments_with_sampling(void) {
 }
 
 static void test_json_print_segments_with_sampling_cousin_parent(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -1840,9 +1824,9 @@ static void test_json_print_segments_with_sampling_cousin_parent(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, set, set, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true(
+  tlib_pass_if_bool_equal(
       "Printing JSON for a sampled cousin parent tree of segments must succeed",
-      0 == rv, "rv=%d", rv);
+      true, rv);
   test_buffer_contents("Cousin Parent", buf,
                        "[0,14,\"`0\",{},[[1,5,\"`1\",{},[[1,3,\"`2\",{},[]]]],["
                        "1,6,\"`3\",{},[[4,6,\"`4\",{},[[5,5,\"`5\",{},[]]]]]]]"
@@ -1867,20 +1851,20 @@ static void test_json_print_segments_with_sampling_cousin_parent(void) {
 
   /* Clean up */
   nr_set_destroy(&set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
-  nr_segment_children_destroy_fields(&C.children);
-  nr_segment_children_destroy_fields(&D.children);
-  nr_segment_children_destroy_fields(&E.children);
-  nr_segment_children_destroy_fields(&F.children);
-  nr_segment_children_destroy_fields(&G.children);
-  nr_segment_children_destroy_fields(&H.children);
-  nr_segment_children_destroy_fields(&I.children);
-  nr_segment_children_destroy_fields(&J.children);
-  nr_segment_children_destroy_fields(&K.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
+  nr_segment_children_deinit(&C.children);
+  nr_segment_children_deinit(&D.children);
+  nr_segment_children_deinit(&E.children);
+  nr_segment_children_deinit(&F.children);
+  nr_segment_children_deinit(&G.children);
+  nr_segment_children_deinit(&H.children);
+  nr_segment_children_deinit(&I.children);
+  nr_segment_children_deinit(&J.children);
+  nr_segment_children_deinit(&K.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -1902,7 +1886,7 @@ static void test_json_print_segments_with_sampling_cousin_parent(void) {
 }
 
 static void test_json_print_segments_with_sampling_inner_loop(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -2006,8 +1990,8 @@ static void test_json_print_segments_with_sampling_inner_loop(void) {
    */
   rv = nr_segment_traces_json_print_segments(
       buf, span_events, trace_set, span_set, &txn, &root, segment_names);
-  tlib_pass_if_true("Printing JSON for a sampled tree of segments must succeed",
-                    0 == rv, "rv=%d", rv);
+  tlib_pass_if_bool_equal(
+      "Printing JSON for a sampled tree of segments must succeed", true, rv);
   test_buffer_contents("Inner Loop", buf,
                        "[0,9,\"`0\",{},[[3,4,\"`1\",{},[]],[1,4,\"`2\",{},[]],["
                        "5,5,\"`3\",{},[]]]]");
@@ -2030,16 +2014,16 @@ static void test_json_print_segments_with_sampling_inner_loop(void) {
   /* Clean up */
   nr_set_destroy(&trace_set);
   nr_set_destroy(&span_set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
-  nr_segment_children_destroy_fields(&C.children);
-  nr_segment_children_destroy_fields(&D.children);
-  nr_segment_children_destroy_fields(&E.children);
-  nr_segment_children_destroy_fields(&F.children);
-  nr_segment_children_destroy_fields(&G.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
+  nr_segment_children_deinit(&C.children);
+  nr_segment_children_deinit(&D.children);
+  nr_segment_children_deinit(&E.children);
+  nr_segment_children_deinit(&F.children);
+  nr_segment_children_deinit(&G.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -2057,7 +2041,7 @@ static void test_json_print_segments_with_sampling_inner_loop(void) {
 }
 
 static void test_json_print_segments_with_sampling_genghis_khan(void) {
-  int rv;
+  bool rv;
   nrbuf_t* buf;
   nr_vector_t* span_events;
   nrpool_t* segment_names;
@@ -2156,9 +2140,9 @@ static void test_json_print_segments_with_sampling_genghis_khan(void) {
    */
   rv = nr_segment_traces_json_print_segments(buf, span_events, set, set, &txn,
                                              &root, segment_names);
-  tlib_pass_if_true(
+  tlib_pass_if_bool_equal(
       "Printing JSON for a genghis khan sampled tree of segments must succeed",
-      0 == rv, "rv=%d", rv);
+      true, rv);
   test_buffer_contents("genghis khan", buf,
                        "[0,9,\"`0\",{},[[1,6,\"`1\",{},[]],[3,4,\"`2\",{},[]],["
                        "1,4,\"`3\",{},[]],[4,6,\"`4\",{},[]],[0,8,\"`5\",{},[]]"
@@ -2187,18 +2171,18 @@ static void test_json_print_segments_with_sampling_genghis_khan(void) {
 
   /* Clean up */
   nr_set_destroy(&set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
-  nr_segment_children_destroy_fields(&C.children);
-  nr_segment_children_destroy_fields(&D.children);
-  nr_segment_children_destroy_fields(&E.children);
-  nr_segment_children_destroy_fields(&F.children);
-  nr_segment_children_destroy_fields(&G.children);
-  nr_segment_children_destroy_fields(&H.children);
-  nr_segment_children_destroy_fields(&I.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
+  nr_segment_children_deinit(&C.children);
+  nr_segment_children_deinit(&D.children);
+  nr_segment_children_deinit(&E.children);
+  nr_segment_children_deinit(&F.children);
+  nr_segment_children_deinit(&G.children);
+  nr_segment_children_deinit(&H.children);
+  nr_segment_children_deinit(&I.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -2209,6 +2193,96 @@ static void test_json_print_segments_with_sampling_genghis_khan(void) {
   nr_segment_destroy_fields(&G);
   nr_segment_destroy_fields(&H);
   nr_segment_destroy_fields(&I);
+
+  nr_string_pool_destroy(&txn.trace_strings);
+  nr_string_pool_destroy(&segment_names);
+
+  nr_buffer_destroy(&buf);
+  nr_vector_destroy(&span_events);
+}
+
+static void test_json_print_segments_extremely_short(void) {
+  bool rv;
+  nrbuf_t* buf;
+  nr_vector_t* span_events;
+  nrpool_t* segment_names;
+
+  nrtxn_t txn = {.abs_start_time = 1000};
+
+  nr_span_event_t* evt_root;
+  nr_span_event_t* evt_a;
+  nr_span_event_t* evt_c;
+
+  // clang-format off
+  nr_segment_t root = {.txn = &txn, .start_time = 0, .stop_time = 9000};
+  nr_segment_t A = {.txn = &txn, .start_time = 1000, .stop_time = 6000};
+  nr_segment_t B = {.txn = &txn, .start_time = 2000, .stop_time = 2000};
+  nr_segment_t C = {.txn = &txn, .start_time = 3000, .stop_time = 4000};
+  // clang-format on
+
+  buf = nr_buffer_create(4096, 4096);
+  span_events = nr_vector_create(9, nr_vector_span_event_dtor, NULL);
+  segment_names = nr_string_pool_create();
+
+  /* Mock up the transaction */
+  txn.segment_count = 4;
+  txn.segment_root = &root;
+  txn.trace_strings = nr_string_pool_create();
+
+  /* Create a collection of mock segments */
+
+  /*    ------root-------
+   *       ----A----
+   *        ---B--- (zero duration)
+   *         --C--
+   */
+
+  nr_segment_children_init(&root.children);
+  nr_segment_children_init(&A.children);
+  nr_segment_children_init(&B.children);
+
+  nr_segment_add_child(&root, &A);
+  nr_segment_add_child(&A, &B);
+  nr_segment_add_child(&B, &C);
+
+  root.name = nr_string_add(txn.trace_strings, "WebTransaction/*");
+  A.name = nr_string_add(txn.trace_strings, "A");
+  B.name = nr_string_add(txn.trace_strings, "B");
+  C.name = nr_string_add(txn.trace_strings, "C");
+
+  /*
+   * Test : Normal operation
+   */
+  rv = nr_segment_traces_json_print_segments(buf, span_events, NULL, NULL, &txn,
+                                             &root, segment_names);
+  tlib_pass_if_bool_equal(
+      "A segment with zero duration must not appear in the transaction trace",
+      true, rv);
+  test_buffer_contents("segment B omitted", buf,
+                       "[0,9,\"`0\",{},[[1,6,\"`1\",{},[[3,4,\"`2\",{},"
+                       "[]]]]]]");
+
+  tlib_pass_if_uint_equal("span event size", nr_vector_size(span_events), 3);
+
+  evt_root = (nr_span_event_t*)nr_vector_get(span_events, 0);
+  evt_a = (nr_span_event_t*)nr_vector_get(span_events, 1);
+  evt_c = (nr_span_event_t*)nr_vector_get(span_events, 2);
+
+  SPAN_EVENT_COMPARE(evt_root, "WebTransaction/*", NR_SPAN_GENERIC, NULL, 1000,
+                     9000);
+  SPAN_EVENT_COMPARE(evt_a, "A", NR_SPAN_GENERIC, evt_root, 2000, 5000);
+  SPAN_EVENT_COMPARE(evt_c, "C", NR_SPAN_GENERIC, evt_a, 4000, 1000);
+
+  /* Clean up */
+  nr_segment_children_deinit(&root.children);
+  nr_segment_destroy_fields(&root);
+
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
+
+  nr_segment_destroy_fields(&A);
+  nr_segment_destroy_fields(&B);
+  nr_segment_destroy_fields(&C);
 
   nr_string_pool_destroy(&txn.trace_strings);
   nr_string_pool_destroy(&segment_names);
@@ -2373,7 +2447,7 @@ static void test_trace_create_trace_spans(void) {
   nr_free(txn.name);
   nr_string_pool_destroy(&txn.trace_strings);
 
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
   nr_segment_destroy_fields(&A);
 
@@ -2463,7 +2537,7 @@ static void test_trace_create_data(void) {
   nr_vector_destroy(&metadata.out->span_events);
   nr_free(txn.name);
 
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -2562,7 +2636,7 @@ static void test_trace_create_data_with_sampling(void) {
   nr_vector_destroy(&metadata.out->span_events);
   nr_free(txn.name);
 
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -2602,6 +2676,8 @@ void test_main(void* p NRUNUSED) {
   test_json_print_segments_with_sampling_cousin_parent();
   test_json_print_segments_with_sampling_inner_loop();
   test_json_print_segments_with_sampling_genghis_khan();
+
+  test_json_print_segments_extremely_short();
 
   test_trace_create_data_bad_parameters();
   test_trace_create_data();

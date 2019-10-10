@@ -110,7 +110,7 @@ func lexInitial(d *Decoder, v reflect.Value) (next stateFn, err error) {
 			return lexKeyword, nil
 		default:
 			return nil, fmt.Errorf(
-			    "config: syntax error, expected keyword or comment, got %q", ch)
+				"config: syntax error, expected keyword or comment, got %q", ch)
 		}
 	}
 }
@@ -140,8 +140,8 @@ func lexKeyword(d *Decoder, v reflect.Value) (next stateFn, err error) {
 			return lexValue, nil
 		default:
 			return nil, fmt.Errorf(
-			    "invalid character %q following keyword: %s", ch,
-			    d.token.String())
+				"invalid character %q following keyword: %s", ch,
+				d.token.String())
 		}
 	}
 }
@@ -160,7 +160,7 @@ func lexDelimiter(d *Decoder, v reflect.Value) (next stateFn, err error) {
 		if err != nil {
 			if err == io.EOF {
 				return nil, fmt.Errorf("expected delimiter after keyword %q",
-				                       d.keyword)
+					d.keyword)
 			}
 			return nil, err
 		}
@@ -174,7 +174,7 @@ func lexDelimiter(d *Decoder, v reflect.Value) (next stateFn, err error) {
 		}
 
 		return nil, fmt.Errorf("expected delimiter after keyword '%s', got %q",
-		                       d.keyword, ch)
+			d.keyword, ch)
 	}
 }
 
@@ -226,14 +226,14 @@ func lexValue(d *Decoder, v reflect.Value) (next stateFn, err error) {
 // When this function is called, the opening quote has already been
 // consumed.
 func lexSingleQuoteString(d *Decoder, v reflect.Value) (next stateFn,
-        err error) {
+	err error) {
 	value, err := d.r.ReadBytes('\'')
 	if err != nil {
 		if err != io.EOF {
 			return nil, err
 		}
 		return nil, fmt.Errorf("unexpected EOF: %q is missing a closing quote",
-		                       d.keyword)
+			d.keyword)
 	}
 
 	d.token.Write(value[:len(value)-1])
@@ -259,14 +259,14 @@ var unescapeReplacer = strings.NewReplacer(
 // When this function is called, the opening quote has already been
 // consumed.
 func lexDoubleQuoteString(d *Decoder, v reflect.Value) (
-        next stateFn, err error) {
+	next stateFn, err error) {
 	value, err := d.r.ReadBytes('"')
 	if err != nil {
 		if err != io.EOF {
 			return nil, err
 		}
 		return nil, fmt.Errorf("unexpected EOF: %q is missing a closing quote",
-		                       d.keyword)
+			d.keyword)
 	}
 
 	d.token.Write(value[:len(value)-1])

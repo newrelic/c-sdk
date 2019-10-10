@@ -69,7 +69,8 @@ enum {
   APP_DISPLAY_HOST = 9,
   APP_SECURITY_POLICY_TOKEN = 10,
   APP_SUPPORTED_SECURITY_POLICIES = 11,
-  APP_NUM_FIELDS = 12,
+  APP_HOST = 12,
+  APP_NUM_FIELDS = 13,
 };
 
 /* Generated from: table AppReply */
@@ -157,6 +158,7 @@ enum {
 };
 
 extern nr_flatbuffer_t* nr_appinfo_create_query(const char* agent_run_id,
+                                                const char* system_host_name,
                                                 const nr_app_info_t* info);
 
 extern nr_status_t nr_cmd_appinfo_process_reply(const uint8_t* data,

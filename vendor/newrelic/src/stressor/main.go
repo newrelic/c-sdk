@@ -26,8 +26,10 @@ import (
 
 	"flatbuffersdata"
 	"newrelic"
+	"newrelic/collector"
 	"newrelic/protocol"
 	"newrelic/ratelimit"
+	"newrelic/sysinfo"
 )
 
 const helpMessage = `Usage: stressor [OPTIONS]
@@ -46,6 +48,8 @@ OPTIONS
                          exiting.
   --daemon-pprof=PORT    Capture additional performance data from the daemon's
                          pprof profiling interface. [default: no]
+  --agent-hostname       Set the name to be used as the hostname of the
+			 reporting agent. [default: local hostname]
 
 DESCRIPTION
   The stressor is used to test the daemon in isolation (i.e. without
@@ -56,6 +60,9 @@ DESCRIPTION
   When the level of concurrency is unspecified (or set less than or equal
   to zero), the stressor will dynamically vary the level of concurrency
   in order to sustain the target requests per minute.
+
+  The stressor considers the environment variables NEW_RELIC_LICENSE_KEY and
+  NEW_RELIC_HOST.
 
 EXAMPLES
   stressor --rpm 300 --lifespan 30s
@@ -85,6 +92,7 @@ var (
 	flagLogFile     = flag.String("logfile", "stdout", "")
 	flagCPUProfile  = flag.String("cpuprofile", "", "")
 	flagDaemonPprof = flag.Int("daemon-pprof", 0, "")
+	flagHostname    = flag.String("agent-hostname", "", "")
 )
 
 // EstimatedRTT is an estimate of the typical roundtrip time to
@@ -118,6 +126,20 @@ func (app *StressorApp) Populate(index int) error {
 	info := flatbuffersdata.SampleAppInfo
 
 	info.Appname = fmt.Sprintf("%s %d", info.Appname, index)
+
+	if *flagHostname != "" {
+		info.Hostname = *flagHostname
+	} else {
+		info.Hostname, _ = sysinfo.Hostname()
+	}
+
+	if userLicense := os.Getenv("NEW_RELIC_LICENSE_KEY"); userLicense != "" {
+		info.License = collector.LicenseKey(userLicense)
+	}
+	if userCollector := os.Getenv("NEW_RELIC_HOST"); userCollector != "" {
+		info.RedirectCollector = userCollector
+	}
+
 	qry, err := flatbuffersdata.MarshalAppInfo(&info)
 	if err != nil {
 		return err

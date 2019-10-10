@@ -4,7 +4,6 @@
 #include "nr_exclusive_time_private.h"
 #include "util_memory.h"
 #include "util_time.h"
-#include "util_vector.h"
 
 #include "tlib_main.h"
 
@@ -15,7 +14,7 @@ static void test_create_destroy(void) {
    * Test : Bad parameters.
    */
   tlib_pass_if_null("start time after stop time should fail to create",
-                    nr_exclusive_time_create(2, 1));
+                    nr_exclusive_time_create(0, 2, 1));
   tlib_pass_if_bool_equal("NULL exclusive time pointer should fail to destroy",
                           false, nr_exclusive_time_destroy(NULL));
   tlib_pass_if_bool_equal("NULL exclusive time should fail to destroy", false,
@@ -24,14 +23,34 @@ static void test_create_destroy(void) {
   /*
    * Test : Normal operation.
    */
-  et = nr_exclusive_time_create(1, 2);
+  et = nr_exclusive_time_create(10, 1, 2);
   tlib_pass_if_not_null("create should succeed", et);
   tlib_pass_if_time_equal("create should set the start time", 1,
                           et->start_time);
   tlib_pass_if_time_equal("create should set the stop time", 2, et->stop_time);
   tlib_pass_if_size_t_equal(
-      "create should createialise an empty transitions vector", 0,
-      nr_vector_size(&et->transitions));
+      "create should create a transitions array of the right size", 10 * 2,
+      et->transitions.capacity);
+  tlib_pass_if_size_t_equal("create should create an empty transitions array",
+                            0, et->transitions.used);
+
+  tlib_pass_if_bool_equal("destroy should succeed", true,
+                          nr_exclusive_time_destroy(&et));
+  tlib_pass_if_null("destroy should NULL out the pointer", et);
+
+  /*
+   * Test : No children.
+   */
+  et = nr_exclusive_time_create(0, 1, 2);
+  tlib_pass_if_not_null("create should succeed", et);
+  tlib_pass_if_time_equal("create should set the start time", 1,
+                          et->start_time);
+  tlib_pass_if_time_equal("create should set the stop time", 2, et->stop_time);
+  tlib_pass_if_size_t_equal(
+      "create should create a transitions array of the right size", 0,
+      et->transitions.capacity);
+  tlib_pass_if_size_t_equal("create should create an empty transitions array",
+                            0, et->transitions.used);
 
   tlib_pass_if_bool_equal("destroy should succeed", true,
                           nr_exclusive_time_destroy(&et));
@@ -42,35 +61,50 @@ static void test_add_child(void) {
   nr_exclusive_time_t* et;
   nr_exclusive_time_transition_t* trans;
 
-  et = nr_exclusive_time_create(1, 4);
-
   /*
    * Test : Bad parameters.
    */
+  et = nr_exclusive_time_create(3, 1, 4);
+
   tlib_pass_if_bool_equal("a child cannot be added to a NULL exclusive time",
                           false, nr_exclusive_time_add_child(NULL, 1, 2));
   tlib_pass_if_bool_equal(
       "a child cannot be added with a start time after its stop time", false,
       nr_exclusive_time_add_child(et, 2, 1));
 
+  nr_exclusive_time_destroy(&et);
+
+  /*
+   * Test : No children.
+   */
+  et = nr_exclusive_time_create(0, 1, 4);
+
+  tlib_pass_if_bool_equal(
+      "a child cannot be added if there were no children defined", false,
+      nr_exclusive_time_add_child(et, 1, 2));
+
+  nr_exclusive_time_destroy(&et);
+
   /*
    * Test : Normal operation.
    */
+  et = nr_exclusive_time_create(5, 1, 4);
+
   tlib_pass_if_bool_equal(
       "adding a child completely within the bounds of the parent should "
       "succeed",
       true, nr_exclusive_time_add_child(et, 2, 3));
   tlib_pass_if_size_t_equal("adding a normal child should add two transitions",
-                            2, nr_vector_size(&et->transitions));
+                            2, et->transitions.used);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 0);
+  trans = &et->transitions.transitions[0];
   tlib_pass_if_int_equal(
       "the first added transition should have the start type", (int)CHILD_START,
       (int)trans->type);
   tlib_pass_if_time_equal("the first added transition should be at time 2", 2,
                           trans->time);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 1);
+  trans = &et->transitions.transitions[1];
   tlib_pass_if_int_equal(
       "the second added transition should have the stop type", (int)CHILD_STOP,
       (int)trans->type);
@@ -81,16 +115,16 @@ static void test_add_child(void) {
       "adding a child with the exact bounds of the parent should succeed", true,
       nr_exclusive_time_add_child(et, 1, 4));
   tlib_pass_if_size_t_equal("adding a normal child should add two transitions",
-                            4, nr_vector_size(&et->transitions));
+                            4, et->transitions.used);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 2);
+  trans = &et->transitions.transitions[2];
   tlib_pass_if_int_equal(
       "the first added transition should have the start type", (int)CHILD_START,
       (int)trans->type);
   tlib_pass_if_time_equal("the first added transition should be at time 2", 1,
                           trans->time);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 3);
+  trans = &et->transitions.transitions[3];
   tlib_pass_if_int_equal(
       "the second added transition should have the stop type", (int)CHILD_STOP,
       (int)trans->type);
@@ -101,16 +135,16 @@ static void test_add_child(void) {
       "adding a child with the same start and stop time should succeed", true,
       nr_exclusive_time_add_child(et, 1, 1));
   tlib_pass_if_size_t_equal("adding a normal child should add two transitions",
-                            6, nr_vector_size(&et->transitions));
+                            6, et->transitions.used);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 4);
+  trans = &et->transitions.transitions[4];
   tlib_pass_if_int_equal(
       "the first added transition should have the start type", (int)CHILD_START,
       (int)trans->type);
   tlib_pass_if_time_equal("the first added transition should be at time 2", 1,
                           trans->time);
 
-  trans = (nr_exclusive_time_transition_t*)nr_vector_get(&et->transitions, 5);
+  trans = &et->transitions.transitions[5];
   tlib_pass_if_int_equal(
       "the second added transition should have the stop type", (int)CHILD_STOP,
       (int)trans->type);
@@ -122,21 +156,20 @@ static void test_add_child(void) {
       nr_exclusive_time_add_child(et, 0, 0));
   tlib_pass_if_size_t_equal(
       "adding an abnormal child should leave the transitions vector alone", 6,
-      nr_vector_size(&et->transitions));
+      et->transitions.used);
 
   tlib_pass_if_bool_equal(
       "adding a child after the parent should succeed, but do nothing", true,
       nr_exclusive_time_add_child(et, 5, 5));
   tlib_pass_if_size_t_equal(
       "adding an abnormal child should leave the transitions vector alone", 6,
-      nr_vector_size(&et->transitions));
+      et->transitions.used);
 
   nr_exclusive_time_destroy(&et);
 }
 
 static void test_calculate(void) {
   nr_exclusive_time_t* et;
-  nr_exclusive_time_transition_t* trans;
 
   /*
    * Test : Bad parameters.
@@ -147,7 +180,7 @@ static void test_calculate(void) {
   /*
    * Test : Empty exclusive time.
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
 
   tlib_pass_if_time_equal(
       "a segment with no children should have its entire duration attributed "
@@ -165,7 +198,7 @@ static void test_calculate(void) {
    *                     Child----->
    *                                    Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 20, 30);
   nr_exclusive_time_add_child(et, 35, 45);
 
@@ -183,7 +216,7 @@ static void test_calculate(void) {
    *                     Child----->
    *                               Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 20, 30);
   nr_exclusive_time_add_child(et, 30, 40);
 
@@ -200,7 +233,7 @@ static void test_calculate(void) {
    *                     C
    *                               C
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 20, 20);
   nr_exclusive_time_add_child(et, 30, 30);
 
@@ -217,7 +250,7 @@ static void test_calculate(void) {
    *                     Child----->
    *                          Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 20, 30);
   nr_exclusive_time_add_child(et, 25, 35);
 
@@ -236,7 +269,7 @@ static void test_calculate(void) {
    *      Child----->
    *           Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 5, 15);
   nr_exclusive_time_add_child(et, 10, 20);
 
@@ -255,7 +288,7 @@ static void test_calculate(void) {
    *                                              Child----->
    *           Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 45, 55);
   nr_exclusive_time_add_child(et, 10, 20);
 
@@ -271,7 +304,7 @@ static void test_calculate(void) {
    *           Parent---------------------------------->
    *      Child--------------------------------------------->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
   nr_exclusive_time_add_child(et, 5, 55);
 
   tlib_pass_if_time_equal("time travelling, long lived children", 0,
@@ -289,27 +322,31 @@ static void test_calculate(void) {
    * Child>
    *                                                        Child----->
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_START;
-  trans->time = 0;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_START,
+          .time = 0,
+      };
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_STOP;
-  trans->time = 5;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_STOP,
+          .time = 5,
+      };
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_START;
-  trans->time = 55;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_START,
+          .time = 55,
+      };
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_STOP;
-  trans->time = 65;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_STOP,
+          .time = 65,
+      };
 
   tlib_pass_if_time_equal("wayward children", 40,
                           nr_exclusive_time_calculate(et));
@@ -319,12 +356,13 @@ static void test_calculate(void) {
   /*
    * Test : One CHILD_START only, which should be effectively ignored.
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_START;
-  trans->time = 20;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_START,
+          .time = 20,
+      };
 
   tlib_pass_if_time_equal("mismatched CHILD_START", 40,
                           nr_exclusive_time_calculate(et));
@@ -334,12 +372,13 @@ static void test_calculate(void) {
   /*
    * Test : One CHILD_STOP only, which should be effectively ignored.
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  trans->type = CHILD_STOP;
-  trans->time = 20;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = CHILD_STOP,
+          .time = 20,
+      };
 
   tlib_pass_if_time_equal("mismatched CHILD_STOP", 40,
                           nr_exclusive_time_calculate(et));
@@ -354,12 +393,13 @@ static void test_calculate(void) {
    *        not a valid value within the enum. If we get weird behaviour when
    *        we port this to some weird mainframe, it's probably that.
    */
-  et = nr_exclusive_time_create(10, 50);
+  et = nr_exclusive_time_create(10, 10, 50);
 
-  trans = nr_malloc(sizeof(nr_exclusive_time_transition_t));
-  nr_memset(&trans->type, 0xff, sizeof(trans->type));
-  trans->time = 20;
-  nr_vector_push_back(&et->transitions, trans);
+  et->transitions.transitions[et->transitions.used++]
+      = (nr_exclusive_time_transition_t){
+          .type = 0xff,
+          .time = 20,
+      };
 
   tlib_pass_if_time_equal("not a child at all; maybe a dog", 40,
                           nr_exclusive_time_calculate(et));

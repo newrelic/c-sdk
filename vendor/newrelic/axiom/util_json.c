@@ -90,8 +90,8 @@ int nr_json_escape(char* dest, const char* json) {
            *   http://en.wikipedia.org/wiki/UTF8
            *   http://en.wikipedia.org/wiki/Json#Data_portability_issues
            */
-          int bits_in_code_point = -1; /* total bits in the code point */
-          int nbytes = -1;             /* total length of the utf8 character */
+          int bits_in_code_point; /* total bits in the code point */
+          int nbytes;             /* total length of the utf8 character */
           uint8_t lead_mask
               = 0x0; /* bits of payload in byte 0 of the utf8 character */
           uint32_t code_point = 0x0; /* the binary encoding of the code point */

@@ -653,8 +653,16 @@ func startDaemon(network, address string, securityToken string, securityPolicies
 	go func() {
 		deleteSockfile(network, address) // in case there's a stale one hanging around.
 
-		err := newrelic.ListenAndServe(network, address, newrelic.CommandsHandler{Processor: handler})
-		if nil != err {
+		list, err := newrelic.Listen(network, address)
+		if err != nil {
+			deleteSockfile(network, address)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		defer list.Close()
+
+		if err = list.Serve(newrelic.CommandsHandler{Processor: handler}); err != nil {
 			deleteSockfile(network, address)
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

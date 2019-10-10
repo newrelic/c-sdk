@@ -8,8 +8,7 @@
 #include "util_syscalls.h"
 #include "util_system.h"
 
-void nr_banner(int external_port,
-               const char* udspath,
+void nr_banner(const char* daemon_address,
                nr_daemon_startup_mode_t daemon_launch_mode,
                const char* agent_specific_info) {
   const char* stype = 0;
@@ -19,10 +18,8 @@ void nr_banner(int external_port,
   char process_information[256];
 
   daemon[0] = 0;
-  if (0 != external_port) {
-    snprintf(daemon, sizeof(daemon), "daemon=%d ", external_port);
-  } else if (udspath) {
-    snprintf(daemon, sizeof(daemon), "daemon='%s' ", udspath);
+  if (daemon_address) {
+    snprintf(daemon, sizeof(daemon), "daemon='%s' ", daemon_address);
   }
 
   process_information[0] = 0;

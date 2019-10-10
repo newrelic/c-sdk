@@ -81,6 +81,7 @@ static void test_encode_span_events(void) {
   txn.trace_strings = nr_string_pool_create();
   txn.name = nr_strdup("name");
   txn.distributed_trace = nr_distributed_trace_create();
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   nr_distributed_trace_set_priority(txn.distributed_trace, 1.2);
   nr_distributed_trace_set_sampled(txn.distributed_trace, true);
   nr_distributed_trace_set_trace_id(txn.distributed_trace, "tid");
@@ -796,6 +797,7 @@ static void test_encode_metrics(void) {
                 4.816326 * NR_TIME_DIVISOR);
 
   txn.abs_start_time = 1000;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   txn.segment_root->start_time = 0;
   txn.segment_root->stop_time = 9000;
@@ -1021,6 +1023,7 @@ static void test_encode_error_events(void) {
   nr_txn_set_guid(&txn, "abcd");
 
   txn.abs_start_time = 415 * NR_TIME_DIVISOR;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   txn.segment_root->start_time = 0;
   txn.segment_root->stop_time
@@ -1203,6 +1206,7 @@ static void test_encode_trace(void) {
 
   txn.abs_start_time = 1 * NR_TIME_DIVISOR;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   segment = nr_segment_start(&txn, txn.segment_root, NULL);
   nr_segment_end(segment);
@@ -1294,6 +1298,7 @@ static void test_encode_txn_event(void) {
   txn.type = 0;
 
   txn.abs_start_time = 123 * NR_TIME_DIVISOR;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   txn.segment_root->start_time = 0;
   txn.segment_root->stop_time
@@ -1339,12 +1344,11 @@ static void test_encode_txn_event(void) {
     goto done;
   }
 
-  did_pass
-      = tlib_pass_if_true(__func__,
-                          0
-                              != nr_flatbuffers_table_read_union(
-                                     &tbl, &tbl, TRANSACTION_FIELD_TXN_EVENT),
-                          "trace missing");
+  did_pass = tlib_pass_if_true(__func__,
+                               0
+                                   != nr_flatbuffers_table_read_union(
+                                       &tbl, &tbl, TRANSACTION_FIELD_TXN_EVENT),
+                               "trace missing");
   if (0 != did_pass) {
     goto done;
   }

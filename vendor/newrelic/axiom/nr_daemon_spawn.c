@@ -98,14 +98,10 @@ nr_argv_t* nr_daemon_args_to_argv(const char* name,
     nr_argv_append_flag(argv, "--loglevel", args->loglevel);
     nr_argv_append_flag(argv, "--auditlog", args->auditlog);
 
-    if ((0 == args->sockfile)
-        || ('/' != args->sockfile[0] && '@' != args->sockfile[0])) {
-      nr_argv_append_flag(argv, "--port", "%d", args->tcp_port);
-    } else {
-      nr_argv_append_flag(argv, "--port", "%s", args->sockfile);
+    if (0 != args->daemon_address) {
+      nr_argv_append_flag(argv, "--port", "%s", args->daemon_address);
     }
 
-    nr_argv_append(argv, "--tls");
     nr_argv_append_flag(argv, "--cafile", args->tls_cafile);
     nr_argv_append_flag(argv, "--capath", args->tls_capath);
     nr_argv_append_flag(argv, "--proxy", args->proxy);

@@ -13,7 +13,7 @@ import (
 const (
 	maxFieldValueSize = 255             // The maximum value size, in bytes.
 	providerTimeout   = 1 * time.Second // The maximum time a HTTP provider
-	                                    // may block.
+	// may block.
 )
 
 // validationError represents a response from a provider endpoint that doesn't
@@ -37,14 +37,14 @@ func normalizeValue(s string) (string, error) {
 	bytes := []byte(out)
 	if len(bytes) > maxFieldValueSize {
 		return "", validationError{fmt.Errorf(
-		"response is too long: got %d; expected <=%d",
-		len(bytes), maxFieldValueSize)}
+			"response is too long: got %d; expected <=%d",
+			len(bytes), maxFieldValueSize)}
 	}
 
 	for i, r := range out {
 		if !isAcceptableRune(r) {
 			return "", validationError{fmt.Errorf(
-			    "bad character %x at position %d in response", r, i)}
+				"bad character %x at position %d in response", r, i)}
 		}
 	}
 

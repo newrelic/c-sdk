@@ -43,19 +43,38 @@ const (
 
 var byteOrder = binary.LittleEndian
 
-func ListenAndServe(nt, addr string, h MessageHandler) error {
-	l, err := listen(nt, addr)
-	if err != nil {
-		return err
+type Listener struct {
+	listener net.Listener
+}
+
+func Listen(network, addr string) (*Listener, error) {
+	// For unix sockets, ensure the socket is accessible by all.
+	if network == "unix" || network == "unixpacket" {
+		// The result of fchmod(3) on a socket is undefined so umask(3) is the
+		// only reliable way to control the permissions on a sock file. Since
+		// it is per-process, saving and restoring the umask is racey in
+		// multithreaded programs. We rely on the fact that the daemon opens
+		// few files and hope we don't have any other threads to race.
+		defer syscall.Umask(syscall.Umask(0))
 	}
-	defer l.Close()
 
-	log.Infof("daemon listening on %s", addr)
+	listener, err := net.Listen(network, addr)
+	if err != nil {
+		return nil, err
+	}
 
+	return &Listener{listener: listener}, nil
+}
+
+func (l *Listener) Close() error {
+	return l.listener.Close()
+}
+
+func (l *Listener) Serve(h MessageHandler) error {
 	var cooldown time.Duration
 
 	for {
-		conn, err := l.Accept()
+		conn, err := l.listener.Accept()
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Temporary() {
 				// Transient error condition, stop accepting new connections
@@ -81,19 +100,6 @@ func ListenAndServe(nt, addr string, h MessageHandler) error {
 		cooldown = 0
 		go serve(conn, h)
 	}
-}
-
-func listen(network, addr string) (net.Listener, error) {
-	// For unix sockets, ensure the socket is accessible by all.
-	if network == "unix" || network == "unixpacket" {
-		// The result of fchmod(3) on a socket is undefined so umask(3) is the
-		// only reliable way to control the permissions on a sock file. Since
-		// it is per-process, saving and restoring the umask is racey in
-		// multithreaded programs. We rely on the fact that the daemon opens
-		// few files and hope we don't have any other threads to race.
-		defer syscall.Umask(syscall.Umask(0))
-	}
-	return net.Listen(network, addr)
 }
 
 // serve reads and responds to messages from the given connection until

@@ -55,8 +55,8 @@ func NewErrorHeap(max int) *ErrorHeap {
 // collection is full, replacement is performed.
 func (h *ErrorHeap) AddError(priority int, dataNeedsCopy []byte) {
 	if len(*h) == cap(*h) {
-	    // When a tie occurs sampling decisions are made by prioritizing the
-	    // events added to the heap first.
+		// When a tie occurs sampling decisions are made by prioritizing the
+		// events added to the heap first.
 		if priority <= (*h)[0].Priority {
 			return
 		}

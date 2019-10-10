@@ -105,7 +105,8 @@ static NRUNUSED void test_txn_untouched_fn(const char* testname,
                               nrm_table_size(txn->unscoped_metrics));
 
   // An empty transaction will have a root segment.
-  tlib_pass_if_size_t_equal(testname, 1, txn->segment_count);
+  tlib_pass_if_not_null(testname, txn->segment_root);
+  tlib_pass_if_size_t_equal(testname, 0, txn->segment_count);
 }
 
 static NRUNUSED void test_segment_metric_created_fn(const char* testname,

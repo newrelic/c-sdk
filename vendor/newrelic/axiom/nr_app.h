@@ -75,6 +75,7 @@ typedef struct _nrapp_t {
   char* plicense;           /* Printable license (abbreviated for security) */
   char* agent_run_id;       /* The collector's agent run ID; assigned from the
                                New Relic backend */
+  char* host_name;          /* Local host name reported to the daemon */
   time_t last_daemon_query; /* Used by agent: Last time we queried daemon about
                                this app */
   int failed_daemon_query_count; /* Used by agent: Number of times daemon query

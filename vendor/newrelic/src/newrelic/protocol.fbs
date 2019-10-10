@@ -20,6 +20,7 @@ table App {
   display_host:       string; // added in the 5.1 PHP agent release
   security_policy_token: string; // added in the 8.1 PHP agent release
   supported_security_policies: string; // added for PHP agent release 8.1
+  host:               string; // added for PHP agent release 9.2
 }
 
 enum AppStatus : byte { Unknown = 0, Disconnected = 1, InvalidLicense = 2,

@@ -342,6 +342,7 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
   char* guid;
   nr_status_t err = 0;
   nr_sampling_priority_t priority;
+  nr_slab_t* segment_slab;
 
   if (0 == app) {
     return 0;
@@ -355,11 +356,22 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
     return NULL;
   }
 
+  /*
+   * Set up the slab allocator for segments. We'll do this early so we can bail
+   * easily if there's an error.
+   */
+  segment_slab
+      = nr_slab_create(sizeof(nr_segment_t), sizeof(nr_segment_t) * 100);
+  if (nrunlikely(NULL == segment_slab)) {
+    return NULL;
+  }
+
   nt = (nrtxn_t*)nr_zalloc(sizeof(nrtxn_t));
   nt->status.path_is_frozen = 0;
   nt->status.path_type = NR_PATH_TYPE_UNKNOWN;
   nt->agent_run_id = nr_strdup(app->agent_run_id);
   nt->rnd = app->rnd;
+  nt->segment_slab = segment_slab;
 
   /*
    * Allocate the transaction-global string pools.
@@ -394,26 +406,7 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
                                    app->security_policies);
 
   /*
-   * Allocate the stacks to manage segment parenting
-   */
-  nt->parent_stacks
-      = nr_hashmap_create((nr_hashmap_dtor_func_t)nr_txn_destroy_parent_stack);
-
-  /*
-   * Install the root segment
-   */
-  nt->segment_root = nr_zalloc(sizeof(nr_segment_t));
-  nt->segment_root->txn = nt;
-  nr_segment_children_init(&nt->segment_root->children);
-  nt->segment_root->start_time = 0;
-  nt->segment_root->stop_time = 0;
-
-  nr_txn_set_current_segment(nt, nt->segment_root);
-  nt->segment_count = 1;
-
-  /*
-   * And finally set in the status member those values that can be changed
-   * during the transaction but which start out with the original option.
+   * Set the status fields to their defaults.
    */
   nt->status.ignore_apdex = 0;
   if (nt->options.cross_process_enabled) {
@@ -423,9 +416,34 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
   }
   nt->status.recording = 1;
 
-  /* Create the absolute start timestamp for this transaction.
-   * All of its segments' times are relative to this value. */
+  /*
+   * Create the absolute start timestamp for this transaction.
+   * All of its segments' times are relative to this value.
+   */
   nt->abs_start_time = nr_get_time();
+
+  /*
+   * Allocate the stacks to manage segment parenting
+   */
+  nr_stack_init(&nt->default_parent_stack, NR_STACK_DEFAULT_CAPACITY);
+  nt->parent_stacks
+      = nr_hashmap_create((nr_hashmap_dtor_func_t)nr_txn_destroy_parent_stack);
+
+  /*
+   * Install the root segment
+   */
+  nt->segment_root = nr_segment_start(nt, NULL, NULL);
+  if (nrunlikely(NULL == nt->segment_root)) {
+    // Here be dragons. This should never happen: if the slab got created OK
+    // (and we check that above), then there should always be enough memory for
+    // the first allocation.
+    nrl_error(NRL_TXN, "cannot start the segment root");
+    nr_txn_destroy_fields(nt);
+    nr_free(nt);
+
+    return NULL;
+  }
+  nt->segment_root->start_time = 0;
 
   nr_get_cpu_usage(&nt->user_cpu[NR_CPU_USAGE_START],
                    &nt->sys_cpu[NR_CPU_USAGE_START]);
@@ -603,6 +621,7 @@ static int nr_txn_should_do_url_rules(int path_type, int is_background) {
     case NR_PATH_TYPE_URI:
       return 1;
 
+    case NR_PATH_TYPE_STATUS_CODE:
     case NR_PATH_TYPE_ACTION:
     case NR_PATH_TYPE_FUNCTION:
     case NR_PATH_TYPE_UNKNOWN:
@@ -669,6 +688,14 @@ nr_status_t nr_txn_freeze_name_update_apdex(nrtxn_t* txn) {
         prefix = "OtherTransaction/php/";
       } else {
         prefix = "WebTransaction/Uri/";
+      }
+      break;
+
+    case NR_PATH_TYPE_STATUS_CODE:
+      if (nrunlikely(txn->status.background)) {
+        prefix = "OtherTransaction/StatusCode/";
+      } else {
+        prefix = "WebTransaction/StatusCode/";
       }
       break;
 
@@ -1062,6 +1089,8 @@ void nr_txn_destroy_fields(nrtxn_t* txn) {
   nr_distributed_trace_destroy(&txn->distributed_trace);
   nr_segment_destroy(txn->segment_root);
   nr_hashmap_destroy(&txn->parent_stacks);
+  nr_stack_destroy_fields(&txn->default_parent_stack);
+  nr_slab_destroy(&txn->segment_slab);
   nrm_table_destroy(&txn->unscoped_metrics);
   nrm_table_destroy(&txn->scoped_metrics);
   nr_string_pool_destroy(&txn->trace_strings);
@@ -1236,13 +1265,8 @@ void nr_txn_end(nrtxn_t* txn) {
   /*
    * Set the root segment's name and timing.
    */
-  txn->segment_root->name = nr_string_add(txn->trace_strings, txn->name);
-
-  if (0 == txn->segment_root->stop_time) {
-    /* If the transaction wasn't manually retimed, set its stop time. */
-    txn->segment_root->stop_time
-        = nr_time_duration(nr_txn_start_time(txn), nr_get_time());
-  }
+  nr_segment_set_name(txn->segment_root, txn->name);
+  nr_segment_end(txn->segment_root);
 
   /*
    * Finalise the segment tree.
@@ -2489,6 +2513,13 @@ char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn,
     goto end;
   }
 
+  if (nrunlikely(txn != segment->txn)) {
+    nrl_info(NRL_CAT,
+             "cannot create a distributed tracing payload with a segment from "
+             "a different transaction");
+    goto end;
+  }
+
   if (nr_txn_should_create_span_events(txn)) {
     /*
      * Ensure the segment has an ID, since it's required to generate the
@@ -2562,9 +2593,14 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
                                    NR_DISTRIBUTED_TRACE_CREATE_SUCCESS));
 
   if (nr_distributed_trace_inbound_is_set(txn->distributed_trace)) {
+    nrl_info(NRL_CAT,
+             "cannot accept multiple inbound distributed tracing payloads");
     nr_txn_force_single_count(txn, NR_DISTRIBUTED_TRACE_ACCEPT_MULTIPLE);
     return false;
   } else if (create_successful) {
+    nrl_info(NRL_CAT,
+             "cannot accept an inbound distributed tracing payload after an "
+             "outbound payload has been created");
     nr_txn_force_single_count(txn,
                               NR_DISTRIBUTED_TRACE_ACCEPT_CREATE_BEFORE_ACCEPT);
     return false;
@@ -2577,6 +2613,7 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
 
   // Check if payload was invalid
   if (NULL == obj_payload) {
+    nrl_info(NRL_CAT, "cannot accept an invalid distributed tracing payload");
     nr_txn_force_single_count(txn, error);
     return false;
   }
@@ -2587,6 +2624,9 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
     trusted_key = nr_distributed_trace_object_get_account_id(obj_payload);
   }
   if (0 == nr_txn_is_account_trusted_dt(txn, trusted_key)) {
+    nrl_info(NRL_CAT,
+             "cannot accept a distributed tracing payload from an untrusted "
+             "account");
     nr_txn_force_single_count(txn,
                               NR_DISTRIBUTED_TRACE_ACCEPT_UNTRUSTED_ACCOUNT);
     nro_delete(obj_payload);
@@ -2596,6 +2636,7 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
   // attempt to accept payload
   if (!nr_distributed_trace_accept_inbound_payload(
           txn->distributed_trace, obj_payload, transport_type, &error)) {
+    nrl_info(NRL_CAT, "error accepting distributed tracing payload: %s", error);
     nr_txn_force_single_count(txn, error);
     nro_delete(obj_payload);
     return false;
@@ -2632,21 +2673,21 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
 
 nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn,
                                          const char* async_context) {
-  int async_context_idx = 0;
-
   if (nrunlikely(NULL == txn)) {
     return NULL;
   }
 
   if (async_context) {
-    async_context_idx = nr_string_find(txn->trace_strings, async_context);
+    int async_context_idx = nr_string_find(txn->trace_strings, async_context);
     if (0 == async_context_idx) {
       return NULL;
     }
+
+    return nr_stack_get_top(
+        nr_hashmap_index_get(txn->parent_stacks, (uint64_t)async_context_idx));
   }
 
-  return nr_stack_get_top(
-      nr_hashmap_index_get(txn->parent_stacks, (uint64_t)async_context_idx));
+  return nr_stack_get_top(&txn->default_parent_stack);
 }
 
 void nr_txn_set_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
@@ -2657,20 +2698,25 @@ void nr_txn_set_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
     return;
   }
 
-  key = (uint64_t)segment->async_context;
-  stack = (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks, key);
-  if (NULL == stack) {
-    stack = nr_malloc(sizeof(nr_stack_t));
-    nr_stack_init(stack, NR_STACK_DEFAULT_CAPACITY);
+  if (segment->async_context) {
+    key = (uint64_t)segment->async_context;
+    stack = (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks, key);
 
-    if (NR_SUCCESS
-        != nr_hashmap_index_set(txn->parent_stacks, key, (void*)stack)) {
-      // If we can't add the stack to the hashmap, then we should free it to
-      // avoid a memory leak.
-      nr_stack_destroy_fields(stack);
-      nr_free(stack);
-      return;
+    if (NULL == stack) {
+      stack = nr_malloc(sizeof(nr_stack_t));
+      nr_stack_init(stack, NR_STACK_DEFAULT_CAPACITY);
+
+      if (NR_SUCCESS
+          != nr_hashmap_index_set(txn->parent_stacks, key, (void*)stack)) {
+        // If we can't add the stack to the hashmap, then we should free it to
+        // avoid a memory leak.
+        nr_stack_destroy_fields(stack);
+        nr_free(stack);
+        return;
+      }
     }
+  } else {
+    stack = &txn->default_parent_stack;
   }
 
   nr_stack_push(stack, (void*)segment);
@@ -2681,8 +2727,12 @@ void nr_txn_retire_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
     return;
   }
 
-  nr_stack_remove_topmost(
-      (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks,
-                                        (uint64_t)segment->async_context),
-      segment);
+  if (segment->async_context) {
+    nr_stack_remove_topmost(
+        (nr_stack_t*)nr_hashmap_index_get(txn->parent_stacks,
+                                          (uint64_t)segment->async_context),
+        segment);
+  } else {
+    nr_stack_remove_topmost(&txn->default_parent_stack, segment);
+  }
 }

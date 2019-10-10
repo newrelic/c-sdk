@@ -17,6 +17,7 @@ typedef struct _nrtxn_t nrtxn_t;
 
 #include "nr_datastore_instance.h"
 #include "nr_exclusive_time.h"
+#include "nr_segment_children.h"
 #include "nr_txn.h"
 #include "util_metrics.h"
 #include "util_minmax_heap.h"
@@ -42,6 +43,7 @@ typedef struct {
   nr_minmax_heap_t* span_heap;
   nr_minmax_heap_t* trace_heap;
   nrtime_t total_time;
+  nr_exclusive_time_t* main_context;
 } nr_segment_tree_to_heap_metadata_t;
 
 /*
@@ -74,8 +76,6 @@ typedef struct _nr_segment_external_t {
   char* library;
   char* procedure; /* Also known as method. */
 } nr_segment_external_t;
-
-typedef struct _nr_vector_t nr_segment_children_t;
 
 typedef struct _nr_segment_metric_t {
   char* name;
@@ -157,7 +157,7 @@ typedef nr_segment_iter_return_t (*nr_segment_iter_t)(nr_segment_t* segment,
                                                       void* userdata);
 
 /*
- * Purpose : Start a segment within a transaction's trace.
+ * Purpose : Allocate and start a segment within a transaction's trace.
  *
  * Params  : 1. The current transaction.
  *           2. The pointer of this segment's parent, NULL if no explicit parent
@@ -178,6 +178,33 @@ extern nr_segment_t* nr_segment_start(nrtxn_t* txn,
                                       nr_segment_t* parent,
                                       const char* async_context);
 
+/*
+ * Purpose : Start an already allocated segment.
+ *
+ * Params  : 1. The allocated segment.
+ *           2. The current transaction.
+ *           3. The pointer of this segment's parent, NULL if no explicit parent
+ *              is known at the time of this call.  A non-NULL value is typical
+ *              for API calls that support asynchronous calls.  A NULL value is
+ *              typical for instrumentation of synchronous calls.
+ *           4. The async_context to be applied to the segment, or NULL to
+ *              indicate that the segment is not asynchronous.
+ *
+ * Note    : At the time of this writing, if an explicit parent is supplied
+ *           then an async_context must also be supplied.  If parent is NULL
+ *           and async is not NULL, or vice-versa, it can lead to undefined
+ *           behavior in the agent.
+ *
+ * Warning : This function should only be used with segments that have been
+ *           previously allocated and initialized via nr_segment_start and then
+ *           de-initialized via nr_segment_deinit.
+ *
+ * Returns : false if a NULL segment was supplied, true otherwise.
+ */
+extern bool nr_segment_init(nr_segment_t* segment,
+                            nrtxn_t* txn,
+                            nr_segment_t* parent,
+                            const char* async_context);
 /*
  * Purpose : Destroy the fields within the given segment, without freeing the
  *           segment itself.
@@ -370,7 +397,7 @@ extern int nr_segment_wrapped_duration_comparator(const void* a,
  *
  * Returns : -1 if the span priority of a is less than the span priority of b.
  *            0 if the span priorities are equal.
- *            1 if the span priority of a is greater than the span priority of 
+ *            1 if the span priority of a is greater than the span priority of
  *              b.
  *
  * Note    : This is a comparison function required for creating a minmax heap
@@ -444,5 +471,23 @@ extern void nr_segment_destroy(nr_segment_t* root);
  *           A segment without a parent (a root segment) cannot be discarded.
  */
 extern bool nr_segment_discard(nr_segment_t** segment);
+
+/*
+ * Purpose : Discard a single segment without freeing it.
+ *
+ * Params  : 1. A pointer to a segment.
+ *
+ * Returns : true if the segment was successfully de-initialized.
+ *
+ * Notes   : All notes from nr_segment_discard apply.
+ *
+ *           Segments that have successfully been de-initialized are supposed
+ *           to be re-used via nr_segment_init.
+ *
+ *           This function is optimized for custom segments without metrics.
+ *           For all other cases, this function does not discard the segment
+ *           and returns false. Use nr_segment_discard for those cases.
+ */
+extern bool nr_segment_deinit(nr_segment_t* segment);
 
 #endif /* NR_SEGMENT_HDR */

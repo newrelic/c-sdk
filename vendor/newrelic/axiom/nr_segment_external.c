@@ -123,30 +123,35 @@ static bool nr_segment_external_rollup(nr_segment_t* segment) {
    * If there are more siblings for which 1-3 are true, the sibling with the
    * latest stop time is used for rollup.
    */
-  for (size_t i = 0; i < nr_vector_size(&parent->children); i++) {
-    nr_segment_t* sibling = nr_vector_get(&parent->children, i);
+  {
+    size_t i;
+    const size_t size = nr_segment_children_size(&parent->children);
 
-    if (NULL == sibling) {
-      continue;
+    for (i = 0; i < size; i++) {
+      nr_segment_t* sibling = nr_segment_children_get(&parent->children, i);
+
+      if (NULL == sibling) {
+        continue;
+      }
+
+      if (sibling == segment) {
+        continue;
+      }
+
+      if (sibling->name != segment->name) {
+        continue;
+      }
+
+      if (nr_segment_children_size(&sibling->children) > 0) {
+        continue;
+      }
+
+      if (NULL != rollup && rollup->stop_time > sibling->stop_time) {
+        continue;
+      }
+
+      rollup = sibling;
     }
-
-    if (sibling == segment) {
-      continue;
-    }
-
-    if (sibling->name != segment->name) {
-      continue;
-    }
-
-    if (nr_vector_size(&sibling->children) > 0) {
-      continue;
-    }
-
-    if (NULL != rollup && rollup->stop_time > sibling->stop_time) {
-      continue;
-    }
-
-    rollup = sibling;
   }
 
   if (NULL == rollup) {

@@ -52,7 +52,7 @@ func runWatcher(cfg *Config) {
 
 		select {
 		case status := <-supervise(worker):
-			if status != nil && status.Respawn() {
+			if status != nil && status.ShouldRespawn() {
 				log.Errorf("%v - restarting", status)
 			} else {
 				log.Infof("%v - NOT restarting", status)
@@ -107,9 +107,9 @@ func supervise(worker *exec.Cmd) chan *workerState {
 	return statusChan
 }
 
-// Respawn determines whether a worker should be respawned based on
+// ShouldRespawn determines whether a worker should be respawned based on
 // how it terminated.
-func (s *workerState) Respawn() bool {
+func (s *workerState) ShouldRespawn() bool {
 	if s.err != nil {
 		return true
 	}

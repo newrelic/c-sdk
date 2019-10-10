@@ -3,6 +3,7 @@ package newrelic
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -42,7 +43,7 @@ type MockedProcessor struct {
 
 func NewMockedProcessor(numberOfHarvestPayload int) *MockedProcessor {
 	processorHarvestChan := make(chan ProcessorHarvest)
-	clientReturn := make(chan ClientReturn)
+	clientReturn := make(chan ClientReturn, numberOfHarvestPayload)
 	clientParams := make(chan ClientParams, numberOfHarvestPayload)
 
 	client := collector.ClientFn(func(cmd collector.Cmd) ([]byte, error) {
@@ -179,6 +180,32 @@ func TestProcessorHarvestCustomEvents(t *testing.T) {
 	}
 
 	m.p.quit()
+}
+
+func TestProcessorHarvestCleanExit(t *testing.T) {
+	m := NewMockedProcessor(20)
+
+	m.DoAppInfo(t, nil, AppStateUnknown)
+
+	m.DoConnect(t, &idOne)
+	m.DoAppInfo(t, nil, AppStateConnected)
+
+	m.TxnData(t, idOne, txnCustomEventSample)
+
+	// Although only an event was inserted in this test, CleanExit triggers a path of execution
+	// that eventually makes its way to Harvest's createFinalMetrics.  In this function, various
+	// supportability and reporting metrics are added
+	m.clientReturn <- ClientReturn{} /* metrics */
+	m.clientReturn <- ClientReturn{} /* events */
+
+	m.p.CleanExit()
+
+	<-m.clientParams /* ditch metrics */
+	cp := <-m.clientParams
+
+	if string(cp.data) != `["one",{"reservoir_size":10000,"events_seen":1},[half birthday]]` {
+		t.Fatal(string(cp.data))
+	}
 }
 
 func TestProcessorHarvestErrorEvents(t *testing.T) {
@@ -617,7 +644,8 @@ func TestNoDataSavedOnErrUnsupportedMedia(t *testing.T) {
 }
 
 var (
-	id = AgentRunID("12345")
+	id      = AgentRunID("12345")
+	otherId = AgentRunID("67890")
 
 	sampleAppInfo = AppInfo{
 		License:           collector.LicenseKey("12342352345"),
@@ -629,6 +657,7 @@ var (
 		Labels:            nil,
 		RedirectCollector: "collector.newrelic.com",
 		HighSecurity:      true,
+		Hostname:          "agent-hostname",
 	}
 	connectClient = collector.ClientFn(func(cmd collector.Cmd) ([]byte, error) {
 		if cmd.Name == collector.CommandPreconnect {
@@ -739,6 +768,36 @@ func TestAppInfoRunIdOutOfDate(t *testing.T) {
 	reply = p.IncomingAppInfo(&badID, &sampleAppInfo)
 	if reply.State != AppStateConnected || string(reply.ConnectReply) != `{"agent_run_id":"12345","zip":"zap"}` ||
 		reply.RunIDValid {
+		t.Fatal(reply)
+	}
+	p.quit()
+}
+
+func TestAppInfoDifferentHostname(t *testing.T) {
+	p := NewProcessor(ProcessorConfig{Client: connectClient})
+	p.processorHarvestChan = nil
+	p.trackProgress = make(chan struct{}, 100)
+	go p.Run()
+	<-p.trackProgress // Wait for utilization
+
+	// Connect with the default sample application info.
+
+	info := sampleAppInfo
+
+	reply := p.IncomingAppInfo(&id, &info)
+	if reply.State != AppStateUnknown || reply.ConnectReply != nil || reply.RunIDValid {
+		t.Fatal(reply)
+	}
+	<-p.trackProgress // receive app info
+	<-p.trackProgress // receive connect reply
+
+	// Connect with the same application info, but a different host name.
+	// This must trigger another connect request.
+
+	info.Hostname = fmt.Sprintf("%s-2", info.Hostname)
+
+	reply = p.IncomingAppInfo(&otherId, &info)
+	if reply.State != AppStateUnknown || reply.ConnectReply != nil || reply.RunIDValid {
 		t.Fatal(reply)
 	}
 	p.quit()

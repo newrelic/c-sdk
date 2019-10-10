@@ -21,6 +21,7 @@ nrtxnfinal_t nr_segment_tree_finalise(nrtxn_t* txn,
       .trace_heap = NULL,
       .span_heap = NULL,
       .total_time = 0,
+      .main_context = NULL,
   };
   nrtime_t duration;
 
@@ -47,6 +48,15 @@ nrtxnfinal_t nr_segment_tree_finalise(nrtxn_t* txn,
   }
 
   /*
+   * We'll use an exclusive time structure to calculate how long the main
+   * context was blocked, if that was requested for this transaction.
+   */
+  if (txn->options.discount_main_context_blocking) {
+    first_pass_metadata.main_context
+        = nr_exclusive_time_create(txn->segment_count, 0, duration);
+  }
+
+  /*
    * Do the first pass over the tree: we need to generate the heaps tracking the
    * segments that will be used in any transaction trace or span event
    * reservoir and calculate the total time for the transaction.
@@ -59,11 +69,32 @@ nrtxnfinal_t nr_segment_tree_finalise(nrtxn_t* txn,
   result.total_time = first_pass_metadata.total_time;
 
   /*
+   * If the discount main context blocking option was set, then we need to
+   * remove the time the main context was blocked from the total time.
+   */
+  if (txn->options.discount_main_context_blocking) {
+    /*
+     * This looks more complicated than it should be because we're abusing the
+     * exclusive time type a little here: what it calculates normally is the
+     * time a segment was executing, whereas we actually want the time the fake
+     * segment wasn't executing. Fortunately, we can calculate that by
+     * subtracting the "exclusive time" (ie time on the main context) from the
+     * transaction duration.
+     */
+    const nrtime_t main_blocked
+        = duration
+          - nr_exclusive_time_calculate(first_pass_metadata.main_context);
+
+    result.total_time -= main_blocked;
+    nr_exclusive_time_destroy(&first_pass_metadata.main_context);
+  }
+
+  /*
    * If the caller wants an opportunity to do things to the transaction with the
    * total time before the trace or span events are generated, now is the time.
    */
   if (total_time_cb) {
-    (total_time_cb)(txn, first_pass_metadata.total_time, callback_userdata);
+    (total_time_cb)(txn, result.total_time, callback_userdata);
   }
 
   /*

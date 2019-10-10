@@ -145,114 +145,32 @@ static void test_null_daemon_args(void) {
   nr_free(argv);
 }
 
-static void test_sockfile_is_abs_path(void) {
+static void test_daemon_address(void) {
   nr_argv_t* argv;
   nr_daemon_args_t args;
 
   /*
-   * The sockfile field is used as the port if and only if it is an absolute
-   * path or abstract domain socket.
+   * The daemon address represents the address of the daemon, whether it is a
+   * port, a Unix-domain socket path, or an atted abstract socket.
    */
   nr_memset(&args, 0, sizeof(args));
-  args.sockfile = "/foo/bar.sock";
-  args.tcp_port = 9000;
+  args.daemon_address = "/foo/bar.sock";
   argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
   pass_if_flag_has_value(argv, "--port", "/foo/bar.sock");
-
   nr_argv_destroy(argv);
   nr_free(argv);
-}
 
-static void test_sockfile_is_rel_path(void) {
-  nr_argv_t* argv;
-  nr_daemon_args_t args;
-
-  /*
-   * The sockfile field is used as the port if and only if it is an absolute
-   * path or abstract domain socket.
-   */
   nr_memset(&args, 0, sizeof(args));
-  args.sockfile = "newrelic.sock";
-  args.tcp_port = 9000;
+  args.daemon_address = "@newrelic";
   argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
+  pass_if_flag_has_value(argv, "--port", "@newrelic");
+  nr_argv_destroy(argv);
+  nr_free(argv);
 
+  nr_memset(&args, 0, sizeof(args));
+  args.daemon_address = "9000";
+  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
   pass_if_flag_has_value(argv, "--port", "9000");
-
-  nr_argv_destroy(argv);
-  nr_free(argv);
-}
-
-static void test_tcp_port(void) {
-  nr_argv_t* argv;
-  nr_daemon_args_t args;
-
-  /*
-   * The sockfile field is used as the port if and only if it is an absolute
-   * path or abstract domain socket.
-   */
-  nr_memset(&args, 0, sizeof(args));
-  args.tcp_port = 9000;
-  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
-  pass_if_flag_has_value(argv, "--port", "9000");
-  nr_argv_destroy(argv);
-  nr_free(argv);
-
-  nr_memset(&args, 0, sizeof(args));
-  args.sockfile = "";
-  args.tcp_port = 9000;
-  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
-  pass_if_flag_has_value(argv, "--port", "9000");
-
-  nr_argv_destroy(argv);
-  nr_free(argv);
-}
-
-static void test_uds_port(void) {
-  nr_argv_t* argv;
-  nr_daemon_args_t args;
-
-  /* A abstract domain socket will be used for any "sockfile" starting with an
-   * '@'. */
-  nr_memset(&args, 0, sizeof(args));
-  args.sockfile = "@some-uds-socket";
-  args.tcp_port = 9000;
-  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
-  pass_if_flag_has_value(argv, "--port", "@some-uds-socket");
-
-  nr_argv_destroy(argv);
-  nr_free(argv);
-}
-
-static void test_tls_enabled(void) {
-  nr_argv_t* argv;
-  nr_daemon_args_t args;
-
-  nr_memset(&args, 0, sizeof(args));
-  args.tls_enabled = 1;
-  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
-  pass_if_argv_has_flag(argv, "--tls");
-
-  nr_argv_destroy(argv);
-  nr_free(argv);
-}
-
-static void test_tls_disabled(void) {
-  nr_argv_t* argv;
-  nr_daemon_args_t args;
-
-  nr_memset(&args, 0, sizeof(args));
-  args.tls_enabled = 0;
-  argv = nr_daemon_args_to_argv("newrelic-daemon", &args);
-
-  // Set to disabled, however TLS must be force enabled in the background
-  fail_if_argv_has_flag(argv, "--tls=false");
-  pass_if_argv_has_flag(argv, "--tls");
-
   nr_argv_destroy(argv);
   nr_free(argv);
 }
@@ -420,6 +338,7 @@ static void test_spawn_daemon(const char* fake_daemon_path) {
   args.pidfile = "/tmp/daemon_test.pid";
   args.logfile = "/tmp/daemon_test.log";
   args.loglevel = "debug";
+  args.daemon_address = "/tmp/newrelic.sock";
   args.auditlog = "/tmp/daemon_test_audit.log";
   args.proxy = "localhost:8080";
   args.tls_cafile = "/tmp/cafile";
@@ -457,12 +376,7 @@ void test_main(void* p NRUNUSED) {
   test_argv_append();
   test_argv_resize();
   test_null_daemon_args();
-  test_sockfile_is_abs_path();
-  test_sockfile_is_rel_path();
-  test_tcp_port();
-  test_uds_port();
-  test_tls_enabled();
-  test_tls_disabled();
+  test_daemon_address();
   test_integration_mode_enabled();
   test_integration_mode_disabled();
   test_app_timeout();

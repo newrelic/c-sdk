@@ -16,10 +16,10 @@ error: Variable width int                                                       
 error: Variable width int                                                                                                                                                                                                                                                              256
 error: Variable width int                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              512
 always: expect PASS 2
-info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='uds_file' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes]
-info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='uds_file' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=init]
-info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='uds_file' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=agent]
-info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon=12345 Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=agent]
+info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='daemon_location' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes]
+info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='daemon_location' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=init]
+info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [daemon='daemon_location' Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=agent]
+info: New Relic X.Y.Z.W ("NAME" - "GITSHA") [Axiom Tests pid=-1 ppid=-1 uid=-1 euid=-1 gid=-1 egid=-1 backtrace=yes startup=agent]
 always: NRL_ALWAYS should be present (2)
 error: NRL_ERROR should be present (2)
 warning: NRL_WARNING should be present (2)

@@ -141,10 +141,10 @@ static void test_logging(void) {
   /*
    * Put in a banner, with various configurations.
    */
-  nr_banner(0, "uds_file", NR_DAEMON_STARTUP_UNKOWN, "Axiom Tests");
-  nr_banner(0, "uds_file", NR_DAEMON_STARTUP_INIT, "Axiom Tests");
-  nr_banner(0, "uds_file", NR_DAEMON_STARTUP_AGENT, "Axiom Tests");
-  nr_banner(12345, 0, NR_DAEMON_STARTUP_AGENT, "Axiom Tests");
+  nr_banner("daemon_location", NR_DAEMON_STARTUP_UNKOWN, "Axiom Tests");
+  nr_banner("daemon_location", NR_DAEMON_STARTUP_INIT, "Axiom Tests");
+  nr_banner("daemon_location", NR_DAEMON_STARTUP_AGENT, "Axiom Tests");
+  nr_banner(0, NR_DAEMON_STARTUP_AGENT, "Axiom Tests");
 
   /*
    * Retest the macros with newly reopened log file.

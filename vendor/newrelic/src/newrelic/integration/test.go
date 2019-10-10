@@ -199,11 +199,11 @@ type Scrub struct {
 }
 
 var scrubs = []Scrub{
-	Scrub{re: regexp.MustCompile(`line\s+\d+`), replacement: []byte("line ??")},
-	Scrub{re: regexp.MustCompile(`php\s+\(\d+\)`), replacement: []byte("php (??)")},
-	Scrub{re: regexp.MustCompile(`php\(\d+\)`), replacement: []byte("php(??)")},
-	Scrub{re: regexp.MustCompile(`\.inc\s\(\d+\)`), replacement: []byte(".inc (??)")},
-	Scrub{re: regexp.MustCompile(`php:\d+`), replacement: []byte("php:??")},
+	{re: regexp.MustCompile(`line\s+\d+`), replacement: []byte("line ??")},
+	{re: regexp.MustCompile(`php\s+\(\d+\)`), replacement: []byte("php (??)")},
+	{re: regexp.MustCompile(`php\(\d+\)`), replacement: []byte("php(??)")},
+	{re: regexp.MustCompile(`\.inc\s\(\d+\)`), replacement: []byte(".inc (??)")},
+	{re: regexp.MustCompile(`php:\d+`), replacement: []byte("php:??")},
 }
 
 func ScrubLineNumbers(in []byte) []byte {
@@ -344,6 +344,7 @@ var (
 		regexp.MustCompile(`CPU/User/Utilization`),
 		regexp.MustCompile(`Memory/Physical`),
 		regexp.MustCompile(`Supportability/execute/user/call_count`),
+		regexp.MustCompile(`Supportability/execute/user/custom_segment_count`),
 		regexp.MustCompile(`Memory/RSS`),
 		regexp.MustCompile(`^Supportability\/Locale`),
 		regexp.MustCompile(`^Supportability\/InstrumentedFunction`),

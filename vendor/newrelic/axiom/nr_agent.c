@@ -1,5 +1,6 @@
 #include "nr_axiom.h"
 
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/un.h>
@@ -8,17 +9,20 @@
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "nr_agent.h"
 #include "util_errno.h"
 #include "util_logging.h"
 #include "util_memory.h"
+#include "util_number_converter.h"
 #include "util_sleep.h"
 #include "util_strings.h"
 #include "util_syscalls.h"
 
 typedef enum _nr_socket_type_t {
   NR_LISTEN_TYPE_TCP,
+  NR_LISTEN_TYPE_TCP6,
   NR_LISTEN_TYPE_UNIX
 } nr_socket_type_t;
 
@@ -29,12 +33,12 @@ static nrthread_mutex_t nr_agent_daemon_mutex = NRTHREAD_MUTEX_INITIALIZER;
 static int nr_agent_daemon_fd = -1;
 
 static struct sockaddr_in nr_agent_daemon_inaddr;
+static struct sockaddr_in6 nr_agent_daemon_inaddr6;
 static struct sockaddr_un nr_agent_daemon_unaddr;
 static struct sockaddr* nr_agent_daemon_sa = 0;
 static socklen_t nr_agent_daemon_sl = 0;
 
 static nr_socket_type_t nr_agent_desired_type;
-static int nr_agent_desired_external = 0;
 static char nr_agent_desired_uds[sizeof(nr_agent_daemon_unaddr.sun_path)];
 static const int nr_agent_desired_uds_max
     = sizeof(nr_agent_daemon_unaddr.sun_path) - 1;
@@ -53,68 +57,202 @@ typedef enum _nr_agent_connection_state_t {
 nr_agent_connection_state_t nr_agent_connection_state
     = NR_AGENT_CONNECTION_STATE_START;
 
-nr_status_t nr_agent_initialize_daemon_connection_parameters(
-    const char* listen_path,
-    int external_port) {
-  /*
-   * Check parameters
-   */
-  if (0 == external_port) {
-    int len;
+#define NR_AGENT_MAX_PORT_VALUE (65536)
+static bool nr_agent_is_port_out_of_bounds(int port) {
+  if ((port <= 0) || (port >= NR_AGENT_MAX_PORT_VALUE)) {
+    return true;
+  }
+  return false;
+}
 
-    if (0 == listen_path) {
-      nrl_error(
-          NRL_DAEMON,
-          "invalid daemon connection parameters: zero port and listen path");
-      return NR_FAILURE;
-    }
+static int nr_parse_port(const char* strport) {
+  int port;
+  char* endptr;
+
+  /* Parse the port and affirm it is a sensible value */
+  port = (int)strtol(strport, &endptr, 10);
+
+  if ((strport + nr_strlen(strport)) != endptr) {
+    nrl_error(NRL_DAEMON, "invalid daemon port setting: '%s' is not a number",
+              strport);
+    return -1;
+  }
+
+  if (nr_agent_is_port_out_of_bounds(port)) {
+    nrl_error(NRL_DAEMON,
+              "invalid daemon port setting: port must be between 0 and 65536"
+              "inclusive");
+    return -1;
+  }
+
+  return port;
+}
+
+static bool nr_parse_address_port(const char* address, char** host, int* port) {
+  size_t colon_idx;
+  size_t address_len;
+  int tcp_port;
+
+  if (NULL == address) {
+    return false;
+  }
+
+  address_len = nr_strlen(address);
+  colon_idx = nr_strncaseidx_last_match(address, ":", address_len);
+
+  if (0 == colon_idx) {
+    nrl_error(NRL_DAEMON,
+              "invalid daemon host:port specification: host is missing");
+    return false;
+  }
+
+  if ((address_len - 1) == colon_idx) {
+    nrl_error(NRL_DAEMON,
+              "invalid daemon host:port specification: port is missing");
+    return false;
+  }
+
+  /* Parse the port and affirm it is a sensible value */
+  tcp_port = nr_parse_port(&address[colon_idx + 1]);
+
+  if (-1 == tcp_port) {
+    return false;
+  }
+
+  if ('[' == address[0] && ']' == address[colon_idx - 1]) {
+    /* IPv6 */
+    *host = nr_strndup(address + 1, colon_idx - 2);
+  } else {
+    /* IPv4 or host name */
+    *host = nr_strndup(address, colon_idx);
+  }
+  *port = tcp_port;
+
+  return true;
+}
+
+nr_conn_params_t* nr_conn_params_init(const char* daemon_address) {
+  int tcp_port;
+  nr_conn_params_t* new_conn_params
+      = (nr_conn_params_t*)nr_zalloc(sizeof(nr_conn_params_t));
+  new_conn_params->type = NR_AGENT_CONN_UNKNOWN;
+
+  if (nrunlikely(NULL == daemon_address)) {
+    nrl_error(NRL_DAEMON,
+              "invalid daemon connection parameters: the daemon address "
+              "and port are both NULL");
+    return new_conn_params;
+  }
 
 #if NR_SYSTEM_LINUX
-    /* '@' prefix specifies a Linux abstract domain socket. */
-    if ('@' == listen_path[0]) {
-      if (0 == listen_path[1]) {
-        nrl_error(NRL_DAEMON,
-                  "invalid daemon abstract domain socket: name is missing");
-        return NR_FAILURE;
-      }
-    } else if ('/' != listen_path[0]) {
+  /*
+   * Linux Abstract Socket
+   *   There's a '@' in the address
+   */
+  if ('@' == daemon_address[0]) {
+    if (0 == daemon_address[1]) {
       nrl_error(NRL_DAEMON,
-                "invalid daemon UNIX-domain socket: path must be absolute");
-      return NR_FAILURE;
+                "invalid daemon abstract domain socket: name is missing");
+      return new_conn_params;
     }
-#else
-    if ('/' != listen_path[0]) {
-      nrl_error(NRL_DAEMON,
-                "invalid daemon UNIX-domain socket: path must be absolute");
-      return NR_FAILURE;
-    }
-#endif
 
-    len = nr_strlen(listen_path);
-    if (len > nr_agent_desired_uds_max) {
-      nrl_error(NRL_DAEMON, "invalid daemon UNIX-domain socket: too long");
-      return NR_FAILURE;
+    new_conn_params->type = NR_AGENT_CONN_ABSTRACT_SOCKET;
+    new_conn_params->location.udspath = nr_strdup(daemon_address);
+    return new_conn_params;
+  }
+#endif
+  /*
+   * IP Address, <host>:<port>
+   *    There's a ':' in the address, indicating the user has supplied host:port
+   */
+  if (-1 != nr_stridx(daemon_address, ":")) {
+    bool status = nr_parse_address_port(
+        daemon_address, &new_conn_params->location.address.host,
+        &new_conn_params->location.address.port);
+
+    if (!status) {
+      return new_conn_params;
     }
+
+    new_conn_params->type = NR_AGENT_CONN_TCP_HOST_PORT;
+
+    return new_conn_params;
+  }
+  /*
+   * Unix-Domain Socket
+   *   There's a '/' in the address, indicating the user has supplied a path.
+   */
+  if (-1 != nr_stridx(daemon_address, "/")) {
+    if ('/' != daemon_address[0]) {
+      nrl_error(NRL_DAEMON,
+                "invalid daemon UNIX-domain socket: path must be absolute");
+      return new_conn_params;
+    } else if (nr_strlen(daemon_address) > nr_agent_desired_uds_max) {
+      nrl_error(NRL_DAEMON, "invalid daemon UNIX-domain socket: too long");
+      return new_conn_params;
+    }
+
+    new_conn_params->type = NR_AGENT_CONN_UNIX_DOMAIN_SOCKET;
+    new_conn_params->location.udspath = nr_strdup(daemon_address);
+    return new_conn_params;
+  }
+
+  /*
+   * Loopback Socket
+   *   This point is reached because the string is not an abstract socket
+   *   or a Unix-domain socket.  Treat the incoming parameter as a numeric
+   *   value representing a port and validate accordingly.
+   */
+  tcp_port = nr_parse_port(daemon_address);
+
+  if (-1 == tcp_port) {
+    return new_conn_params;
+  }
+
+  new_conn_params->type = NR_AGENT_CONN_TCP_LOOPBACK;
+  new_conn_params->location.port = tcp_port;
+  return new_conn_params;
+}
+
+void nr_conn_params_free(nr_conn_params_t* params) {
+  if (nrlikely(NULL != params)) {
+    if (NR_AGENT_CONN_ABSTRACT_SOCKET == params->type
+        || NR_AGENT_CONN_UNIX_DOMAIN_SOCKET == params->type) {
+      nr_free(params->location.udspath);
+    }
+    if (NR_AGENT_CONN_TCP_HOST_PORT == params->type) {
+      nr_free(params->location.address.host);
+    }
+    nr_free(params);
+  }
+}
+
+nr_status_t nr_agent_initialize_daemon_connection_parameters(
+    nr_conn_params_t* conn_params) {
+  if (NULL == conn_params || NR_AGENT_CONN_UNKNOWN == conn_params->type) {
+    return NR_FAILURE;
   }
 
   nrt_mutex_lock(&nr_agent_daemon_mutex);
 
-  if (0 == external_port) {
+  if (conn_params->type == NR_AGENT_CONN_UNIX_DOMAIN_SOCKET
+      || conn_params->type == NR_AGENT_CONN_ABSTRACT_SOCKET) {
     /*
      * Unix Domain Socket (see unix(7))
      */
     nr_agent_desired_type = NR_LISTEN_TYPE_UNIX;
-    nr_strlcpy(nr_agent_desired_uds, listen_path, nr_agent_desired_uds_max);
+    nr_strlcpy(nr_agent_desired_uds, conn_params->location.udspath,
+               nr_agent_desired_uds_max);
 
     nr_agent_daemon_sa = (struct sockaddr*)&nr_agent_daemon_unaddr;
-    nr_agent_daemon_sl
-        = offsetof(struct sockaddr_un, sun_path) + nr_strlen(listen_path) + 1;
+    nr_agent_daemon_sl = offsetof(struct sockaddr_un, sun_path)
+                         + nr_strlen(conn_params->location.udspath) + 1;
     nr_memset(nr_agent_daemon_sa, 0, sizeof(nr_agent_daemon_sa));
 
     nr_agent_daemon_unaddr.sun_family = AF_UNIX;
-    nr_strlcpy(nr_agent_daemon_unaddr.sun_path, listen_path,
+    nr_strlcpy(nr_agent_daemon_unaddr.sun_path, conn_params->location.udspath,
                sizeof(nr_agent_daemon_unaddr.sun_path));
-    if ('@' == nr_agent_daemon_unaddr.sun_path[0]) {
+    if (NR_AGENT_CONN_ABSTRACT_SOCKET == conn_params->type) {
       /* A leading zero specifies an abstract socket to the kernel. */
       nr_agent_daemon_unaddr.sun_path[0] = '\0';
 
@@ -124,25 +262,65 @@ nr_status_t nr_agent_initialize_daemon_connection_parameters(
 
     nr_agent_connect_method_msg[0] = '\0';
     snprintf(nr_agent_connect_method_msg, sizeof(nr_agent_connect_method_msg),
-             "uds=%s", listen_path);
-  } else {
+             "uds=%s", conn_params->location.udspath);
+  } else if (NR_AGENT_CONN_TCP_LOOPBACK == conn_params->type) {
     /*
-     * Use a TCP connection.
+     * Use a loopback TCP connection.
      */
     nr_agent_desired_type = NR_LISTEN_TYPE_TCP;
-    nr_agent_desired_external = external_port;
 
     nr_agent_daemon_sa = (struct sockaddr*)&nr_agent_daemon_inaddr;
     nr_agent_daemon_sl = sizeof(nr_agent_daemon_inaddr);
     nr_memset(nr_agent_daemon_sa, 0, (int)nr_agent_daemon_sl);
 
     nr_agent_daemon_inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    nr_agent_daemon_inaddr.sin_port = htons((uint16_t)external_port);
+    nr_agent_daemon_inaddr.sin_port
+        = htons((uint16_t)conn_params->location.port);
     nr_agent_daemon_inaddr.sin_family = AF_INET;
 
     nr_agent_connect_method_msg[0] = '\0';
     snprintf(nr_agent_connect_method_msg, sizeof(nr_agent_connect_method_msg),
-             "port=%d", external_port);
+             "port=%d", conn_params->location.port);
+  } else {
+    /*
+     * Use a TCP connection
+     */
+    struct addrinfo hints, *addr_res;
+    int addr_status;
+    char port[6];
+
+    nr_memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    nr_itoa(port, sizeof(port), conn_params->location.address.port);
+    addr_status = getaddrinfo(conn_params->location.address.host, port, &hints,
+                              &addr_res);
+    if (addr_status != 0 || addr_res == NULL) {
+      nrl_error(NRL_DAEMON,
+                "could not resolve daemon address [host=%s, port=%d]: %s",
+                conn_params->location.address.host,
+                conn_params->location.address.port, gai_strerror(addr_status));
+      return NR_FAILURE;
+    }
+
+    if (AF_INET6 == addr_res->ai_family) {
+      nr_agent_desired_type = NR_LISTEN_TYPE_TCP6;
+      nr_agent_daemon_sa = (struct sockaddr*)&nr_agent_daemon_inaddr6;
+      nr_agent_daemon_sl = sizeof(nr_agent_daemon_inaddr6);
+    } else {
+      nr_agent_desired_type = NR_LISTEN_TYPE_TCP;
+      nr_agent_daemon_sa = (struct sockaddr*)&nr_agent_daemon_inaddr;
+      nr_agent_daemon_sl = sizeof(nr_agent_daemon_inaddr);
+    }
+
+    nr_memcpy(nr_agent_daemon_sa, addr_res->ai_addr, nr_agent_daemon_sl);
+    freeaddrinfo(addr_res);
+
+    nr_agent_connect_method_msg[0] = '\0';
+    snprintf(nr_agent_connect_method_msg, sizeof(nr_agent_connect_method_msg),
+             "host=%s, port=%d", conn_params->location.address.host,
+             conn_params->location.address.port);
   }
 
   nrt_mutex_unlock(&nr_agent_daemon_mutex);
@@ -159,6 +337,11 @@ static int nr_agent_create_socket(nr_socket_type_t listen_type) {
     int on = 1;
 
     fd = nr_socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+    nr_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
+  } else if (NR_LISTEN_TYPE_TCP6 == listen_type) {
+    int on = 1;
+
+    fd = nr_socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
     nr_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
   } else {
     fd = nr_socket(PF_UNIX, SOCK_STREAM, 0);

@@ -97,6 +97,7 @@ OBJS := \
 	nr_rules.o \
 	nr_rum.o \
 	nr_segment.o \
+	nr_segment_children.o \
 	nr_segment_datastore.o \
 	nr_segment_external.o \
 	nr_segment_private.o \
@@ -133,6 +134,7 @@ OBJS := \
 	util_serialize.o \
 	util_set.o \
 	util_signals.o \
+	util_slab.o \
 	util_sleep.o \
 	util_sort.o \
 	util_sql.o \

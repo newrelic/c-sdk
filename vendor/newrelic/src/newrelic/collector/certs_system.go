@@ -16,4 +16,8 @@ func init() {
 	}
 
 	DefaultCertPool = pool
+
+	// We'll never warn about missing system certificates here, even if they are
+	// missing, since we can't communicate with New Relic anyway.
+	CertPoolState = SystemCertPoolIgnored
 }

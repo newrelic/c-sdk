@@ -20,7 +20,6 @@ var (
 			return []byte(actualData), nil
 		}),
 	}
-
 )
 
 func TestLicenseInvalid(t *testing.T) {

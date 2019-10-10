@@ -146,7 +146,11 @@ static void nr_segment_traces_stot_iterator_post_callback(
   nr_segment_t* current_span_segment;
 
   if (nrunlikely(NULL == segment || NULL == userdata)) {
-    userdata->success = -1;
+    nrl_warning(
+        NRL_SEGMENT,
+        "Invalid inputs to the segment iterator: segment=%p; userdata=%p",
+        segment, userdata);
+    userdata->success = false;
     return;
   }
 
@@ -388,14 +392,23 @@ nr_segment_iter_return_t nr_segment_traces_stot_iterator_callback(
   }
 
   /*
+   * For VERY fast segments, the start time can equal the stop time.
+   * Such segments are skipped, as zero duration segments don't make
+   * sense.
+   */
+  if (segment->start_time == segment->stop_time) {
+    return NR_SEGMENT_NO_POST_ITERATION_CALLBACK;
+  }
+
+  /*
    * Sanity check, the segment should have started before it stopped.
    */
-  if (segment->start_time >= segment->stop_time) {
-    nrl_error(NRL_SEGMENT,
-              "Invalid segment '%s': start time (" NR_TIME_FMT
-              ") after stop time (" NR_TIME_FMT ")\n",
-              segment_name, segment->start_time, segment->stop_time);
-    userdata->success = -1;
+  if (segment->start_time > segment->stop_time) {
+    nrl_warning(NRL_SEGMENT,
+                "Invalid segment '%s': start time (" NR_TIME_FMT
+                ") after stop time (" NR_TIME_FMT ")",
+                segment_name, segment->start_time, segment->stop_time);
+    userdata->success = false;
     return NR_SEGMENT_NO_POST_ITERATION_CALLBACK;
   }
 
@@ -422,31 +435,31 @@ nr_segment_iter_return_t nr_segment_traces_stot_iterator_callback(
       .userdata = userdata});
 }
 
-int nr_segment_traces_json_print_segments(nrbuf_t* buf,
-                                          nr_vector_t* span_events,
-                                          nr_set_t* trace_set,
-                                          nr_set_t* span_set,
-                                          const nrtxn_t* txn,
-                                          nr_segment_t* root,
-                                          nrpool_t* segment_names) {
+bool nr_segment_traces_json_print_segments(nrbuf_t* buf,
+                                           nr_vector_t* span_events,
+                                           nr_set_t* trace_set,
+                                           nr_set_t* span_set,
+                                           const nrtxn_t* txn,
+                                           nr_segment_t* root,
+                                           nrpool_t* segment_names) {
   nr_segment_userdata_t* userdata;
 
   if (NULL == buf && NULL == span_events) {
     /* The trace output buffer and the span output vector are not given.
      * In that case, there's no work to do.
      */
-    return -1;
+    return false;
   }
 
   if ((NULL == txn) || (NULL == segment_names) || (NULL == root)) {
-    return -1;
+    return false;
   }
 
   /* Construct the userdata to be supplied to the callback */
   userdata = &(nr_segment_userdata_t){
          .txn = txn,
          .segment_names = segment_names,
-         .success = 0,
+         .success = true,
          .trace = {
            .buf = buf,
            .sample = trace_set,
@@ -483,8 +496,8 @@ void nr_segment_traces_create_data(
     bool create_trace,
     bool create_spans) {
   nrbuf_t* buf = NULL;
+  bool print_success;
   nr_vector_t* span_events = NULL;
-  int rv;
   nrpool_t* segment_names;
 
   if ((NULL == txn) || (0 == txn->segment_count) || (0 == duration)
@@ -532,11 +545,14 @@ void nr_segment_traces_create_data(
   nr_buffer_add(buf, ",", 1);
   nr_buffer_add(buf, "[", 1);
 
-  rv = nr_segment_traces_json_print_segments(
+  print_success = nr_segment_traces_json_print_segments(
       buf, span_events, metadata->trace_set, metadata->span_set, txn,
       txn->segment_root, segment_names);
 
-  if (rv < 0) {
+  if (!print_success) {
+    nrl_warning(NRL_SEGMENT,
+                "Segment iteration failed; no trace or span events will be "
+                "generated for this transaction");
     nr_string_pool_destroy(&segment_names);
     nr_buffer_destroy(&buf);
     return;

@@ -8,6 +8,69 @@
 #include "nr_app.h"
 
 /*
+ * The means by which the agent and the daemon connect.
+ */
+typedef enum _nr_agent_daemon_conn_t {
+  NR_AGENT_CONN_UNKNOWN = 0,
+  NR_AGENT_CONN_UNIX_DOMAIN_SOCKET = 1,
+  NR_AGENT_CONN_ABSTRACT_SOCKET = 2,
+  NR_AGENT_CONN_TCP_LOOPBACK = 3,
+  NR_AGENT_CONN_TCP_HOST_PORT = 4
+} nr_agent_daemon_conn_t;
+
+/*
+ * To represent the means by which the agent and the daemon connect,
+ * there's a type along with a single field that represents the
+ * particular kind of daemon address */
+typedef struct _nr_conn_params_t {
+  nr_agent_daemon_conn_t type;
+  int port;
+
+  /*
+   * Type specific fields.
+   *
+   * The union type can only hold one field at a time. This ensures that we
+   * will not reserve memory for fields that are not applicable for this type
+   * of connection. Example: An NR_AGENT_CONN_TCP_HOST_PORT connection only sets
+   * the address field.
+   *
+   * You must check the nr_agent_daemon_conn_t to determine which field is being
+   * used.   */
+  union _location {
+    char* udspath; /* NR_AGENT_CONN_UNIX_DOMAIN_SOCKET
+                      NR_AGENT_CONN_ABSTRACT_SOCKET */
+    int port;      /* NR_AGENT_CONN_TCP_LOOPBACK */
+    struct {
+      char* host;
+      int port;
+    } address; /* NR_AGENT_CONN_TCP_HOST_PORT */
+  } location;
+} nr_conn_params_t;
+
+/*
+ * Purpose   : Using the supplied daemon_address, parse the string and
+ *             initialize a nr_conn_params_t structure to prepare for
+ *             connecting with the daemon.
+ *
+ * Parameter : A string representing a daemon's address any of an absolute path
+ *             for a Unix-domain socket, an atted path for an abstract socket
+ *             or a numeric port.
+ *
+ * Returns   : A newly allocated nr_conns_param_t.  When the string is not
+ *             a well-formed location, the nr_conns_param_t type is
+ *             NR_AGENT_CONN_UNKNOWN.
+ */
+nr_conn_params_t* nr_conn_params_init(const char* daemon_address);
+
+/*
+ * Purpose   : Free an nr_conns_params_t
+ *
+ * Parameter : An allocated nr_conns_params_t
+ *
+ */
+void nr_conn_params_free(nr_conn_params_t* params);
+
+/*
  * Purpose : This is the agent's global applist.
  *
  * Note    : There is no locking around this application list.  Therefore
@@ -16,9 +79,31 @@
  */
 extern nrapplist_t* nr_agent_applist;
 
-extern nr_status_t nr_agent_initialize_daemon_connection_parameters(
-    const char* listen_path,
-    int external_port);
+/*
+ * Purpose : Using a configuration value representing the daemon location
+ *           derive the intended communication connection for the agent
+ *           and daemon.
+ *
+ * Params  : 1. The daemon's address: a string representing
+ *              a Unix domain socket, abstract socket, or port.
+ *
+ * Returns : The type of connection, one of nr_agent_daemon_conn_t enum
+ *           including NR_AGENT_CONN_UNKNOWN for ill-formed parameters.
+ *
+ */
+extern nr_agent_daemon_conn_t nr_agent_derive_connection_type(
+    const char* daemon_address);
+
+/*
+ * Purpose : Using a string representing the daemon's address
+ *           initialize the communication structures necessary to
+ *           establish a channel of communication to the daemon.
+ *
+ * Params  : 1. The daemon's connection parameters comprising
+ *              the connection type and daemon address.
+ */
+nr_status_t nr_agent_initialize_daemon_connection_parameters(
+    nr_conn_params_t* conn_params);
 
 /*
  * Purpose : Returns the file descriptor used to communicate with the daemon.

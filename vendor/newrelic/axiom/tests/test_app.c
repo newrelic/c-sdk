@@ -12,6 +12,7 @@
 #include "util_metrics.h"
 #include "util_reply.h"
 #include "util_strings.h"
+#include "util_system.h"
 
 #include "tlib_main.h"
 
@@ -141,6 +142,7 @@ static void test_find_or_add_app(void) {
   nr_app_info_t info;
   char* appname;
   char* license;
+  char* system_host_name = nr_system_get_hostname();
 
   license = nr_strdup("1234500000000000000000000000000000006789");
   appname = nr_strdup("test-app");
@@ -203,6 +205,7 @@ static void test_find_or_add_app(void) {
                              app->info.host_display_name);
       tlib_pass_if_str_equal("new app", info.redirect_collector,
                              app->info.redirect_collector);
+      tlib_pass_if_str_equal("new app", system_host_name, app->host_name);
       nrt_mutex_unlock(&app->app_lock);
     }
   }
@@ -247,6 +250,7 @@ static void test_find_or_add_app(void) {
                              app->info.host_display_name);
       tlib_pass_if_str_equal("new app", info.redirect_collector,
                              app->info.redirect_collector);
+      tlib_pass_if_str_equal("new app", system_host_name, app->host_name);
       nrt_mutex_unlock(&app->app_lock);
     }
   }
@@ -255,6 +259,7 @@ static void test_find_or_add_app(void) {
   info.license = license;
   appname = NULL;
   license = NULL;
+  nr_free(system_host_name);
   nr_app_info_destroy_fields(&info);
   nr_applist_destroy(&applist);
 }
@@ -418,6 +423,7 @@ static void test_agent_find_or_add_app(void) {
   nrapp_t* app;
   nr_app_info_t info;
   nrapplist_t* applist = nr_applist_create();
+  char* system_host_name = nr_system_get_hostname();
 
   nr_memset(&info, 0, sizeof(info));
   info.version = nr_strdup("my_version");
@@ -474,6 +480,7 @@ static void test_agent_find_or_add_app(void) {
     test_obj_as_json("new app", app->info.labels, TEST_LABELS_JSON);
     tlib_pass_if_str_equal("new app", info.redirect_collector,
                            app->info.redirect_collector);
+    tlib_pass_if_str_equal("new app", system_host_name, app->host_name);
 
     /* No unlock here because the app actually came in unlocked from the
      * applist. */
@@ -578,11 +585,14 @@ static void test_agent_find_or_add_app(void) {
                          0);
   tlib_pass_if_str_equal("new app test HSM and LASP",
                          app->info.security_policies_token, "any_token");
+  tlib_pass_if_str_equal("new app test HSM and LASP", system_host_name,
+                         app->host_name);
 
   nrt_mutex_unlock(&app->app_lock);
 
   nr_free(info.appname);
   nr_free(info.security_policies_token);
+  nr_free(system_host_name);
   nr_app_info_destroy_fields(&info);
   nr_applist_destroy(&applist);
 }

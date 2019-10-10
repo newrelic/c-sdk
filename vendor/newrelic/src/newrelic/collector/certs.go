@@ -6,8 +6,24 @@ import (
 	"path/filepath"
 )
 
+type SystemCertPoolState int
+
+// Constants related to the system certificate pool behaviour.
+const (
+	// The system certificate pool is missing, and should generate a warning.
+	SystemCertPoolMissing SystemCertPoolState = iota
+
+	// The system certificate pool is available.
+	SystemCertPoolAvailable
+
+	// The daemon was not built in a way where the system certificate pool is
+	// relevant, and we should not warn or generate any supportability metrics.
+	SystemCertPoolIgnored
+)
+
 var (
 	DefaultCertPool *x509.CertPool
+	CertPoolState   SystemCertPoolState
 )
 
 func newCertPoolFromFiles(files []string) (*x509.CertPool, error) {

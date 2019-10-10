@@ -18,6 +18,7 @@ var (
 		HighSecurity:      false,
 		Labels:            newrelic.JSONString(`[]`),
 		RedirectCollector: "collector.newrelic.com",
+		Hostname:          "agent-hostname",
 	}
 	SampleTxn = Txn{
 		Name:             "WebTransaction/Action/heyo",

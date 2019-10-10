@@ -102,9 +102,11 @@
  *   dill                    17Oct2018 (8.4) (Tanya and Amanda)
  *   eggplant                01Dec2018 (8.5) (Alan)
  *   flax                    21Dec2018 (8.6) (Alan)
- *   gin                     29Mar2019 (8.7) (Johannes)
+ *   gin                     29Mar2019 (8.7/9.0) (Johannes)
+ *   heliotrope              09Aug2019 (9.1) (Tanya)
+ *   iceberg                 04Sep2019 (9.2) (Tanya)
  */
-#define NR_CODENAME "gin"
+#define NR_CODENAME "iceberg"
 
 const char* nr_version(void) {
   return NR_STR2(NR_VERSION);

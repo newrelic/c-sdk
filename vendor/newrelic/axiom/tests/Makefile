@@ -113,6 +113,7 @@ all: tests
 # file name must start with test_.
 #
 TESTS := \
+  test_agent \
   test_analytics_events \
   test_apdex \
   test_app \
@@ -157,6 +158,7 @@ TESTS := \
   test_rum \
   test_sampling \
   test_segment \
+  test_segment_children \
   test_segment_datastore \
   test_segment_external \
   test_segment_private \
@@ -166,6 +168,7 @@ TESTS := \
   test_serialize \
   test_set \
   test_signals \
+  test_slab \
   test_slowsqls \
   test_sort \
   test_span_event \

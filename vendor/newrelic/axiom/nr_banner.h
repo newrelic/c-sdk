@@ -14,10 +14,9 @@ typedef enum _nr_daemon_startup_mode_t {
  * Purpose : Emit a banner containing the agent version and other pertinent
  *           information, usually to the log file.
  *
- * Params  : 1. The external port for a daemon (if any)
- *           2. The listening UDS endpoint (if any)
- *           3. The daemon startup mode.
- *           4. A string containing extra information about the language or
+ * Params  : 1. The daemon's location (e.g., port or udspath), if any.
+ *           2. The daemon startup mode.
+ *           3. A string containing extra information about the language or
  *              environment that axiom is supporting.  For PHP, this is the
  *              PHP version, the SAPI version, the zts flavor, and Apache
  *              information.  This string is optional.
@@ -28,8 +27,7 @@ typedef enum _nr_daemon_startup_mode_t {
  *           not both (there is no such daemon mode that uses both workers and
  *           and external daemon).
  */
-extern void nr_banner(int external_port,
-                      const char* udspath,
+extern void nr_banner(const char* daemon_location,
                       nr_daemon_startup_mode_t daemon_launch_mode,
                       const char* agent_specific_info);
 

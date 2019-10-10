@@ -66,7 +66,7 @@ func (cmd *Cmd) userAgent() string {
 		}
 
 		cmd.ua = fmt.Sprintf("NewRelic-%s-Agent/%s NewRelic-GoDaemon/%s", lang,
-		                      ver, version.Number)
+			ver, version.Number)
 	}
 
 	return cmd.ua
@@ -245,7 +245,7 @@ func (c *clientImpl) perform(url string, data []byte, userAgent string) ([]byte,
 		// If the response code is not 200, then the collector may not return
 		// valid JSON
 		return nil, fmt.Errorf("unexpected collector HTTP status code: %d",
-		                        resp.StatusCode)
+			resp.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
@@ -259,7 +259,7 @@ func (c *clientImpl) Execute(cmd Cmd) ([]byte, error) {
 	data, err := cmd.Collectible.CollectorJSON(false)
 	if nil != err {
 		return nil, fmt.Errorf("unable to create json payload for '%s': %s",
-		                        cmd.Name, err)
+			cmd.Name, err)
 	}
 
 	var audit []byte

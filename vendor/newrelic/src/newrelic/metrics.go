@@ -60,10 +60,10 @@ type MetricTable struct {
 	metricPeriodStart time.Time
 	failedHarvests    int
 	maxTableSize      int // After this max is reached, only forced metrics are
-	                      // added
-	count             int // The total number of metrics stored
-	numDropped        int // Number of unforced metrics dropped due to full
-	                      // table
+	// added
+	count      int // The total number of metrics stored
+	numDropped int // Number of unforced metrics dropped due to full
+	// table
 	// Metrics are uniquely identified by their name and scope.  Rather than
 	// use a map which is indexed by a struct containing the name and scope,
 	// we use a nested map approach to allow for looking up metrics without
@@ -104,7 +104,7 @@ func (data *metricData) aggregate(src *metricData) {
 }
 
 func (mt *MetricTable) mergeMetric(nameSlice []byte, nameString, scope string,
-                                   m *metric) {
+	m *metric) {
 	var s map[string]*metric
 	if nil == nameSlice {
 		s = mt.metrics[nameString]
@@ -172,15 +172,15 @@ func (mt *MetricTable) Merge(from *MetricTable) {
 }
 
 func (mt *MetricTable) add(nameSlice []byte, nameString, scope string,
-                           data metricData, force MetricForce) {
+	data metricData, force MetricForce) {
 	mt.mergeMetric(nameSlice, nameString, scope,
-	               &metric{data: data, forced: force})
+		&metric{data: data, forced: force})
 }
 
 // AddRaw adds a metric to mt. If mt is full, and the metric is unforced,
 // the metric will not be added.
 func (mt *MetricTable) AddRaw(nameSlice []byte, nameString, scope string,
-                              data [6]float64, force MetricForce) {
+	data [6]float64, force MetricForce) {
 	d := metricData{
 		countSatisfied:  data[0],
 		totalTolerated:  data[1],
@@ -195,14 +195,14 @@ func (mt *MetricTable) AddRaw(nameSlice []byte, nameString, scope string,
 // AddCount adds a metric with the given call count to mt. If mt is
 // full, and the metric is unforced, the metric will not be added.
 func (mt *MetricTable) AddCount(name, scope string, count float64,
-                                force MetricForce) {
+	force MetricForce) {
 	mt.add(nil, name, scope, metricData{countSatisfied: count}, force)
 }
 
 // AddValue adds a metric with the given duration to mt. If mt is
 // full, and the metric is unforced, the metric will not be added.
 func (mt *MetricTable) AddValue(name, scope string, value float64,
-                                force MetricForce) {
+	force MetricForce) {
 	data := metricData{
 		countSatisfied:  1,
 		totalTolerated:  value,
@@ -258,7 +258,7 @@ func (data *metricData) collectorData() [6]float64 {
 // CollectorJSON marshals the metric table to JSON according to the
 // schema expected by the collector.
 func (mt *MetricTable) CollectorJSON(id AgentRunID, now time.Time) ([]byte,
-        error) {
+	error) {
 	estimatedLen := mt.count * 128 /* bytes per metric */
 	buf := bytes.NewBuffer(make([]byte, 0, estimatedLen))
 	buf.WriteByte('[')
@@ -313,7 +313,7 @@ func (mt *MetricTable) CollectorJSON(id AgentRunID, now time.Time) ([]byte,
 // the schema expected by the collector. The metrics are ordered by
 // name and scope.
 func (mt *MetricTable) CollectorJSONSorted(id AgentRunID,
-        now time.Time) ([]byte, error) {
+	now time.Time) ([]byte, error) {
 	d, err := mt.CollectorJSON(id, now)
 	if nil != err {
 		return nil, err
@@ -329,7 +329,7 @@ func (mt *MetricTable) Empty() bool {
 // Data marshals the collection to JSON according to the schema expected
 // by the collector.
 func (mt *MetricTable) Data(id AgentRunID, harvestStart time.Time) ([]byte,
-        error) {
+	error) {
 	return mt.CollectorJSON(id, harvestStart)
 }
 
@@ -337,7 +337,7 @@ func (mt *MetricTable) Data(id AgentRunID, harvestStart time.Time) ([]byte,
 // expected by the audit log. For metrics, the audit schema is the
 // same as the schema expected by the collector.
 func (mt *MetricTable) Audit(id AgentRunID, harvestStart time.Time) ([]byte,
-        error) {
+	error) {
 	return nil, nil // Use data
 }
 
@@ -414,7 +414,7 @@ func (mt *MetricTable) DebugJSON() string {
 }
 
 func parseCollectorMetrics(data interface{},
-        scrub []*regexp.Regexp) collectorMetrics {
+	scrub []*regexp.Regexp) collectorMetrics {
 	metricArr, ok := data.([]interface{})
 	if !ok {
 		return nil

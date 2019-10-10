@@ -126,8 +126,16 @@ func (rcv *App) SupportedSecurityPolicies() []byte {
 	return nil
 }
 
+func (rcv *App) Host() []byte {
+	o := flatbuffers.UOffsetT(rcv._tab.Offset(28))
+	if o != 0 {
+		return rcv._tab.ByteVector(o + rcv._tab.Pos)
+	}
+	return nil
+}
+
 func AppStart(builder *flatbuffers.Builder) {
-	builder.StartObject(12)
+	builder.StartObject(13)
 }
 func AppAddLicense(builder *flatbuffers.Builder, license flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(0, flatbuffers.UOffsetT(license), 0)
@@ -164,6 +172,9 @@ func AppAddSecurityPolicyToken(builder *flatbuffers.Builder, securityPolicyToken
 }
 func AppAddSupportedSecurityPolicies(builder *flatbuffers.Builder, supportedSecurityPolicies flatbuffers.UOffsetT) {
 	builder.PrependUOffsetTSlot(11, flatbuffers.UOffsetT(supportedSecurityPolicies), 0)
+}
+func AppAddHost(builder *flatbuffers.Builder, host flatbuffers.UOffsetT) {
+	builder.PrependUOffsetTSlot(12, flatbuffers.UOffsetT(host), 0)
 }
 func AppEnd(builder *flatbuffers.Builder) flatbuffers.UOffsetT {
 	return builder.EndObject()

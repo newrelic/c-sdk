@@ -27,6 +27,7 @@
 #include "util_json.h"
 #include "util_metrics.h"
 #include "util_sampling.h"
+#include "util_slab.h"
 #include "util_stack.h"
 #include "util_string_pool.h"
 
@@ -79,9 +80,13 @@ typedef struct _nrtxnopt_t {
   int distributed_tracing_enabled; /* Whether distributed tracing functionality
                                       is enabled */
   int span_events_enabled;         /* Whether span events are enabled */
-  size_t
-      max_span_events; /* The maximum number of span events per transaction.
-                          When set to 0, NR_MAX_SPAN_EVENTS is used. */
+  size_t max_span_events; /* The maximum number of span events per transaction.
+                             When set to 0, NR_MAX_SPAN_EVENTS is used. */
+  bool discount_main_context_blocking; /* If enabled, the main context is
+                                          assumed to be blocked when
+                                          asynchronous contexts are executing,
+                                          and the total time is adjusted
+                                          accordingly. */
 } nrtxnopt_t;
 
 typedef enum _nrtxnstatus_cross_process_t {
@@ -101,9 +106,10 @@ typedef enum _nrtxnstatus_cross_process_t {
 typedef enum _nr_path_type_t {
   NR_PATH_TYPE_UNKNOWN = 0,
   NR_PATH_TYPE_URI = 1,
-  NR_PATH_TYPE_ACTION = 2,
-  NR_PATH_TYPE_FUNCTION = 3,
-  NR_PATH_TYPE_CUSTOM = 4
+  NR_PATH_TYPE_STATUS_CODE = 2,
+  NR_PATH_TYPE_ACTION = 3,
+  NR_PATH_TYPE_FUNCTION = 4,
+  NR_PATH_TYPE_CUSTOM = 5
 } nr_path_type_t;
 
 typedef struct _nrtxncat_t {
@@ -189,11 +195,15 @@ typedef struct _nrtxn_t {
   nrtxncat_t cat;       /* Incoming CAT fields */
   nr_random_t* rnd;     /* Random number generator, owned by the application. */
 
-  nr_hashmap_t* parent_stacks; /* A hashmap of stacks to track the current
-                                  parent in a tree of segments, keyed by async
-                                  context */
+  nr_stack_t default_parent_stack; /* A stack to track the current parent in a
+                                      tree of segments, for segments that are
+                                      not on an async context */
+  nr_hashmap_t* parent_stacks;     /* A hashmap of stacks to track the current
+                                      parent in a tree of segments, keyed by async
+                                      context */
   size_t segment_count; /* A count of segments for this transaction, maintained
                            throughout the life of this transaction */
+  nr_slab_t* segment_slab;    /* The slab allocator used to allocate segments */
   nr_segment_t* segment_root; /* The root pointer to the tree of segments */
   nrtime_t abs_start_time; /* The absolute start timestamp for this transaction;
                             * all segment start and end times are relative to

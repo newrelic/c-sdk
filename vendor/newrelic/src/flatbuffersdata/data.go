@@ -25,6 +25,7 @@ func MarshalAppInfo(info *newrelic.AppInfo) ([]byte, error) {
 	settings := buf.CreateString(string(settingsJSON))
 	env := buf.CreateString(string(envJSON))
 	labels := buf.CreateString(string(labelsJSON))
+	host := buf.CreateString(string(info.Hostname))
 
 	protocol.AppStart(buf)
 	protocol.AppAddAgentLanguage(buf, lang)
@@ -35,6 +36,7 @@ func MarshalAppInfo(info *newrelic.AppInfo) ([]byte, error) {
 	protocol.AppAddEnvironment(buf, env)
 	protocol.AppAddLabels(buf, labels)
 	protocol.AppAddSettings(buf, settings)
+	protocol.AppAddHost(buf, host)
 
 	if info.HighSecurity {
 		protocol.AppAddHighSecurity(buf, 1)

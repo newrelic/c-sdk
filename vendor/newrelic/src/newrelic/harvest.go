@@ -89,6 +89,13 @@ func (h *Harvest) createFinalMetrics() {
 	// Span Events Supportability Metrics
 	h.Metrics.AddCount("Supportability/SpanEvent/TotalEventsSeen", "", h.SpanEvents.analyticsEvents.NumSeen(), Forced)
 	h.Metrics.AddCount("Supportability/SpanEvent/TotalEventsSent", "", h.SpanEvents.analyticsEvents.NumSaved(), Forced)
+
+	// Certificate supportability metrics.
+	if collector.CertPoolState == collector.SystemCertPoolMissing {
+		h.Metrics.AddCount("Supportability/PHP/SystemCertificates/Unavailable", "", float64(1), Forced)
+	} else if collector.CertPoolState == collector.SystemCertPoolAvailable {
+		h.Metrics.AddCount("Supportability/PHP/SystemCertificates/Available", "", float64(1), Forced)
+	}
 }
 
 type FailedHarvestSaver interface {

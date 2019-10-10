@@ -101,6 +101,7 @@ static uint32_t nr_appinfo_prepend_env(const nr_app_info_t* info,
 }
 
 nr_flatbuffer_t* nr_appinfo_create_query(const char* agent_run_id,
+                                         const char* system_host_name,
                                          const nr_app_info_t* info) {
   nr_flatbuffer_t* fb;
   uint32_t display_host;
@@ -117,6 +118,7 @@ nr_flatbuffer_t* nr_appinfo_create_query(const char* agent_run_id,
   uint32_t message;
   uint32_t security_policy_token;
   uint32_t supported_security_policies;
+  uint32_t host_name;
   char* json_supported_security_policies;
 
   fb = nr_flatbuffers_create(0);
@@ -132,6 +134,7 @@ nr_flatbuffer_t* nr_appinfo_create_query(const char* agent_run_id,
   license = nr_flatbuffers_prepend_string(fb, info->license);
   security_policy_token
       = nr_flatbuffers_prepend_string(fb, info->security_policies_token);
+  host_name = nr_flatbuffers_prepend_string(fb, system_host_name);
 
   json_supported_security_policies
       = nro_to_json(info->supported_security_policies);
@@ -139,6 +142,7 @@ nr_flatbuffer_t* nr_appinfo_create_query(const char* agent_run_id,
       = nr_flatbuffers_prepend_string(fb, json_supported_security_policies);
 
   nr_flatbuffers_object_begin(fb, APP_NUM_FIELDS);
+  nr_flatbuffers_object_prepend_uoffset(fb, APP_HOST, host_name, 0);
   nr_flatbuffers_object_prepend_uoffset(fb, APP_SUPPORTED_SECURITY_POLICIES,
                                         supported_security_policies, 0);
   nr_flatbuffers_object_prepend_uoffset(fb, APP_SECURITY_POLICY_TOKEN,
@@ -369,7 +373,8 @@ nr_status_t nr_cmd_appinfo_tx(int daemon_fd, nrapp_t* app) {
   nrl_verbosedebug(NRL_DAEMON, "querying app=" NRP_FMT " from parent=%d",
                    NRP_APPNAME(app->info.appname), daemon_fd);
 
-  query = nr_appinfo_create_query(app->agent_run_id, &app->info);
+  query
+      = nr_appinfo_create_query(app->agent_run_id, app->host_name, &app->info);
   querylen = nr_flatbuffers_len(query);
 
   nrl_verbosedebug(NRL_DAEMON, "sending appinfo message, len=%zu", querylen);

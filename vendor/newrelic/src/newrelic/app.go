@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"newrelic/collector"
+	"newrelic/log"
+	"newrelic/sysinfo"
 	"newrelic/utilization"
 )
 
@@ -38,6 +40,7 @@ type AppKey struct {
 	HighSecurity      bool
 	AgentLanguage     string
 	AgentPolicies     string
+	AgentHostname     string
 }
 
 // AppInfo encapsulates information provided by an agent about an
@@ -56,6 +59,7 @@ type AppInfo struct {
 	RedirectCollector         string
 	SecurityPolicyToken       string
 	SupportedSecurityPolicies AgentPolicies
+	Hostname                  string
 }
 
 func (info *AppInfo) String() string {
@@ -70,6 +74,7 @@ type SecurityPolicy struct {
 
 type RawPreconnectPayload struct {
 	SecurityPolicyToken string `json:"security_policies_token,omitempty"`
+	HighSecurity        bool   `json:"high_security"`
 }
 
 type RawConnectPayload struct {
@@ -135,6 +140,7 @@ func (info *AppInfo) Key() AppKey {
 		HighSecurity:      info.HighSecurity,
 		AgentLanguage:     info.AgentLanguage,
 		AgentPolicies:     info.SupportedSecurityPolicies.getSupportedPoliciesHash(),
+		AgentHostname:     info.Hostname,
 	}
 }
 
@@ -173,19 +179,11 @@ func EncodePayload(payload interface{}) ([]byte, error) {
 }
 
 func (info *AppInfo) ConnectPayloadInternal(pid int, util *utilization.Data) *RawConnectPayload {
-	// Per spec, the hostname we send up in ConnectPayload MUST be the same as the
-	// hostname we send up in Utilization.
-
-	var hostname string
-	if util != nil {
-		hostname = util.Hostname
-	}
-
 	data := &RawConnectPayload{
 		Pid:             pid,
 		Language:        info.AgentLanguage,
 		Version:         info.AgentVersion,
-		Host:            hostname,
+		Host:            info.Hostname,
 		HostDisplayName: stringLengthByteLimit(info.HostDisplayName, HostLengthByteLimit),
 		Settings:        info.Settings,
 		AppName:         strings.Split(info.Appname, ";"),
@@ -199,7 +197,30 @@ func (info *AppInfo) ConnectPayloadInternal(pid int, util *utilization.Data) *Ra
 		// Providing the identifier below works around this issue and allows users
 		// more flexibility in using application rollups.
 		Identifier: info.Appname,
-		Util:       util,
+	}
+
+	// Fallback solution: if no host name was provided with the application
+	// info, then the daemon host name is used.
+	if data.Host == "" {
+		hostname, err := sysinfo.Hostname()
+		if err == nil {
+			log.Debugf("Host name not specified in application info. Using daemon host name %s", hostname)
+
+			data.Host = hostname
+		} else {
+			log.Errorf("Cannot determine host name: %s", err)
+		}
+	}
+
+	// Utilization data is copied for each connect payload, as the host
+	// name differs for applications connecting from different hosts.
+	//
+	// Per spec, the host name sent up in the connect payload MUST be the
+	// same as the host name sent up in utilization.
+	if util != nil {
+		utilCopy := *util
+		data.Util = &utilCopy
+		data.Util.Hostname = data.Host
 	}
 
 	if len(info.Labels) > 0 {

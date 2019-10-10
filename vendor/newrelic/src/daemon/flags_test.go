@@ -4,22 +4,30 @@ import (
 	"flag"
 	"reflect"
 	"testing"
+	"time"
 
+	"newrelic"
 	"newrelic/config"
 )
+
+var defaultConfig = &Config{
+	WaitForPort: 3 * time.Second,
+	BindAddr:    newrelic.DefaultListenSocket,
+}
 
 func TestParseFlagsWithAll(t *testing.T) {
 	cfg := &Config{}
 
 	cfgExpected := &Config{
 		BindAddr:        "30",
+		BindPort:        "30",
 		Proxy:           "collector.newrelic.com",
 		Pidfile:         "pid.file",
 		NoPidfile:       true,
 		LogFile:         "log.log",
 		LogLevel:        3,
 		AuditFile:       "audit.log",
-		ConfigFile:      "file.config",
+		ConfigFile:      "../newrelic/sample_config/config1.cfg",
 		Foreground:      true,
 		Role:            0,
 		Agent:           true,
@@ -27,10 +35,11 @@ func TestParseFlagsWithAll(t *testing.T) {
 		CAPath:          "ca.path",
 		CAFile:          "ca.file",
 		IntegrationMode: true,
+		WaitForPort:     2 * time.Second,
 	}
 
 	args := []string{
-		"-c", "file.config",
+		"-c", "../newrelic/sample_config/config1.cfg",
 		"-port", "30",
 		"-proxy", "collector.newrelic.com",
 		"-pidfile", "pid.file",
@@ -45,9 +54,10 @@ func TestParseFlagsWithAll(t *testing.T) {
 		"-capath", "ca.path",
 		"-integration",
 		"-pprof", "1",
+		"-wait-for-port", "2s",
 	}
 
-	flagSet := createFlagSet(cfg)
+	flagSet := createDaemonFlagSet(cfg)
 	flagSet.Parse(args)
 
 	if !reflect.DeepEqual(cfg, cfgExpected) {
@@ -55,13 +65,84 @@ func TestParseFlagsWithAll(t *testing.T) {
 	}
 }
 
+func TestParseFlagsPortAddress(t *testing.T) {
+
+	// None given.
+	expected := newrelic.DefaultListenSocket
+	cfg := &Config{}
+	args := []string{}
+
+	flagSet := createDaemonFlagSet(cfg)
+	err := flagSet.Parse(args)
+
+	if err != nil {
+		t.Errorf("Invalid return value. No error expected. \nActual: %#v", err)
+	}
+
+	actual := flagSet.Lookup("address").Value.String()
+	if actual != expected {
+		t.Errorf("Address not set correctly. \nActual: %#v \nExpected: %#v", actual, expected)
+	}
+
+	// Address given.
+	expected = "90"
+	cfg = &Config{}
+	args = []string{"-address", expected}
+
+	flagSet = createDaemonFlagSet(cfg)
+	err = flagSet.Parse(args)
+
+	if err != nil {
+		t.Errorf("Invalid return value. No error expected. \nActual: %#v", err)
+	}
+
+	actual = flagSet.Lookup("address").Value.String()
+	if actual != expected {
+		t.Errorf("Address not set correctly. \nActual: %#v \nExpected: %#v", actual, expected)
+	}
+
+	// Port given.
+	expected = "90"
+	cfg = &Config{}
+	args = []string{"-port", expected}
+
+	flagSet = createDaemonFlagSet(cfg)
+	err = flagSet.Parse(args)
+
+	if err != nil {
+		t.Errorf("Invalid return value. No error expected. \nActual: %#v", err)
+	}
+
+	actual = flagSet.Lookup("address").Value.String()
+	if actual != expected {
+		t.Errorf("Address not set correctly. \nActual: %#v \nExpected: %#v", actual, expected)
+	}
+
+	// Address and port given.
+	expected = "host:90"
+	cfg = &Config{}
+	args = []string{"-address", expected, "-port", "90"}
+
+	flagSet = createDaemonFlagSet(cfg)
+	err = flagSet.Parse(args)
+
+	if err == nil {
+		t.Errorf("Invalid return value. Error expected. \nActual: %#v", err)
+	}
+
+	actual = flagSet.Lookup("address").Value.String()
+	if actual != expected {
+		t.Errorf("Address not set correctly. \nActual: %#v \nExpected: %#v", actual, expected)
+	}
+}
+
 func TestParseFlagsWithNone(t *testing.T) {
 	cfg := &Config{}
 
-	cfgExpected := &Config{}
+	cfgExpected := defaultConfig
 
 	args := []string{""}
-	flagSet := createFlagSet(cfg)
+	flagSet := createDaemonFlagSet(cfg)
 	flagSet.Parse(args)
 
 	if !reflect.DeepEqual(cfg, cfgExpected) {
@@ -72,17 +153,15 @@ func TestParseFlagsWithNone(t *testing.T) {
 func TestParseFlagsWithBad(t *testing.T) {
 	cfg := &Config{}
 
-	cfgExpected := &Config{}
-
 	args := []string{
 		"-q",
 		"-cafile",
 	}
-	flagSet := createFlagSet(cfg)
-	flagSet.Parse(args)
+	flagSet := createDaemonFlagSet(cfg)
+	err := flagSet.Parse(args)
 
-	if !reflect.DeepEqual(cfg, cfgExpected) {
-		t.Errorf("Actual: %#v \nExpected: %#v", cfg, cfgExpected)
+	if err == nil {
+		t.Errorf("Invalid return value. Error expected. \nActual: %#v", err)
 	}
 }
 
@@ -116,9 +195,11 @@ func TestParseCommandLineTakesPrecedence(t *testing.T) {
 	}
 
 	cfgExpected := &Config{
-		ConfigFile: "../newrelic/sample_config/config1.cfg",
-		LogFile:    "foo.log",
-		LogLevel:   1,
+		BindAddr:    newrelic.DefaultListenSocket,
+		ConfigFile:  "../newrelic/sample_config/config1.cfg",
+		LogFile:     "foo.log",
+		LogLevel:    1,
+		WaitForPort: 3 * time.Second,
 	}
 
 	args := []string{
@@ -126,7 +207,7 @@ func TestParseCommandLineTakesPrecedence(t *testing.T) {
 		"-logfile", "foo.log",
 	}
 
-	flagSet := createFlagSet(cfg)
+	flagSet := createDaemonFlagSet(cfg)
 	flagSet.Parse(args)
 
 	if err := parseConfigFile(cfg); err != nil {
@@ -178,7 +259,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 
 	// basic test
 	args := []string{"--define", "pidfile=/distinctively/insi.pid"}
-	flagSet := createFlagSet(cfg)
+	flagSet := createDaemonFlagSet(cfg)
 	err := flagSet.Parse(args)
 	if err != nil {
 		t.Errorf("Error parsing flags: %s", err)
@@ -195,7 +276,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 		"--foreground", // why not
 		"-define", "port= 1123",
 	}
-	flagSet = createFlagSet(cfg)
+	flagSet = createDaemonFlagSet(cfg)
 	err = flagSet.Parse(args)
 	if err != nil {
 		t.Errorf("Error parsing flags: %s", err)
@@ -204,7 +285,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 	if cfg.Pidfile != "fizz.pid" {
 		t.Error("Failed to set pidfile with --define")
 	}
-	if cfg.BindAddr != "1123" {
+	if cfg.BindPort != "1123" {
 		t.Error("Failed to set port with -define")
 	}
 	if !cfg.Foreground {
@@ -218,7 +299,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 		"--logfile", "/whoo/far/zazz",
 		"--define", "logfile=/foo/bar/baz",
 	}
-	flagSet = createFlagSet(cfg)
+	flagSet = createDaemonFlagSet(cfg)
 	err = flagSet.Parse(args)
 	if err != nil {
 		t.Errorf("Error parsing flags: %s", err)
@@ -236,7 +317,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 		`--define=foreground='true'`,
 		`--define=proxy="doctorevil:correcthorsebatterystaple@proxy-server.bad.domain"`,
 	}
-	flagSet = createFlagSet(cfg)
+	flagSet = createDaemonFlagSet(cfg)
 	err = flagSet.Parse(args)
 	if err != nil {
 		t.Errorf("Error parsing flags: %s", err)
@@ -258,7 +339,7 @@ func TestDefineShimHighlevel(t *testing.T) {
 	args = []string{
 		`--define="foreground=true"`,
 	}
-	flagSet = createFlagSet(cfg)
+	flagSet = createDaemonFlagSet(cfg)
 	err = flagSet.Parse(args)
 	if err == nil {
 		t.Error(`We can parse --define="a=b" now! Yippee!`)

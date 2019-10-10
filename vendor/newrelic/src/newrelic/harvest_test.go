@@ -3,6 +3,8 @@ package newrelic
 import (
 	"testing"
 	"time"
+
+	"newrelic/collector"
 )
 
 func TestCreateFinalMetricsWithLotsOfMetrics(t *testing.T) {
@@ -31,6 +33,7 @@ func TestCreateFinalMetricsWithLotsOfMetrics(t *testing.T) {
 	harvest.SpanEvents.AddEvent(AnalyticsEvent{data: []byte(`[{"w":7},{},{}]`), priority: SamplingPriority(0.8)})
 	harvest.SpanEvents.AddEvent(AnalyticsEvent{data: []byte(`[{"w":7},{},{}]`), priority: SamplingPriority(0.8)})
 
+	collector.CertPoolState = collector.SystemCertPoolIgnored
 	harvest.createFinalMetrics()
 
 	var expectedJSON = `["12345",1447203720,1417136520,` +

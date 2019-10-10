@@ -9,6 +9,7 @@
 #include "util_logging.h"
 #include "util_memory.h"
 #include "util_strings.h"
+#include "util_system.h"
 
 /*
  * These mutex-unprotected global variables are
@@ -108,6 +109,7 @@ void nr_app_destroy(nrapp_t** app_ptr) {
 
   nr_free(app->agent_run_id);
   nr_free(app->plicense);
+  nr_free(app->host_name);
   nr_rules_destroy(&app->url_rules);
   nr_rules_destroy(&app->txn_rules);
   nr_segment_terms_destroy(&app->segment_terms);
@@ -244,6 +246,7 @@ static nrapp_t* create_new_app(const nr_app_info_t* info) {
   app->info.license = nr_strdup(info->license);
   app->plicense = nr_app_create_printable_license(info->license);
   app->state = NR_APP_UNKNOWN;
+  app->host_name = nr_system_get_hostname();
   app->info.appname = nr_strdup(info->appname);
   app->info.lang = nr_strdup(info->lang);
   app->info.version = nr_strdup(info->version);

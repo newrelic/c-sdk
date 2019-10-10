@@ -160,10 +160,10 @@ agent-valgrind: agent/Makefile
 #
 .PHONY: go-minimum-version
 go-minimum-version:
-	@if $(GO) version | awk '/go1.[01234][\. ]/ { exit 1 }'; then \
+	@if $(GO) version | awk '/go1.[0123456][\. ]/ { exit 1 }'; then \
 		true; \
 	else \
-		echo -n 'Go 1.5 or newer required; found '; $(GO) version; false; \
+		echo -n 'Go 1.7 or newer required; found '; $(GO) version; false; \
 	fi
 
 DAEMON_TARGETS := $(addprefix bin/,client daemon integration_runner stressor)
@@ -179,6 +179,12 @@ DAEMON_TARGETS := $(addprefix bin/,client daemon integration_runner stressor)
 daemon: go-minimum-version Makefile | bin/
 	@rm -rf $(DAEMON_TARGETS)
 	$(GO) install $(GOFLAGS) ./...
+
+# The -race flag enables the inegrated Go race detector. Output to stderr
+.PHONY: daemon_race
+daemon_race: go-minimum-version Makefile | bin/
+	@rm -rf $(DAEMON_TARGETS)
+	$(GO) install -race $(GOFLAGS) ./...
 
 .PHONY: daemon_test
 daemon_test: go-minimum-version

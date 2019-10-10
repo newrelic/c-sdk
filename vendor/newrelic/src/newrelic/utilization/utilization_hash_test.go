@@ -93,14 +93,14 @@ func TestJSONMarshalling(t *testing.T) {
 // Smoke test the Gather method and JSON marshalling.
 func TestUtilizationHash(t *testing.T) {
 	configs := []Config{
-		Config{
+		{
 			DetectAWS:    true,
 			DetectAzure:  true,
 			DetectGCP:    true,
 			DetectPCF:    true,
 			DetectDocker: true,
 		},
-		Config{
+		{
 			DetectAWS:    false,
 			DetectAzure:  false,
 			DetectGCP:    false,
@@ -120,8 +120,7 @@ func TestUtilizationHash(t *testing.T) {
 			t.Errorf("Marshalling failed and shouldn't: %s", err)
 		}
 		if u.MetadataVersion == 0 || nil == u.LogicalProcessors ||
-			0 == *u.LogicalProcessors || u.RamMiB == nil || *u.RamMiB == 0 ||
-			u.Hostname == "" {
+			0 == *u.LogicalProcessors || u.RamMiB == nil || *u.RamMiB == 0 {
 			t.Errorf("Emptiness in utilization hash: %s", j)
 		}
 

@@ -16,9 +16,8 @@ typedef struct _nr_daemon_args_t {
   /*
    * Options affecting communication with the daemon.
    */
-  const char* sockfile; /* path to the listener socket file (implies UDS) */
-  int tcp_port;         /* TCP port number for the listener */
-
+  const char* daemon_address; /* address of the daemon; a string representing
+                                 UDS, abstract socket, or port. */
   /*
    * Options affecting how the daemon connects to and communicates with New
    * Relic.

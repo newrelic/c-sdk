@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	ds "daemon/signal"
 	"newrelic"
 	"newrelic/config"
 	"newrelic/log"
@@ -122,7 +123,9 @@ func runWorker(cfg *Config) {
 			}
 		}
 	case caught := <-signalChan:
-		log.Infof("worker received signal %d - exiting", caught)
+		log.Infof("worker received signal %d - sending remaining data", caught)
+		p.CleanExit()
+		log.Infof("worker sent remaining data, now exiting")
 	}
 }
 
@@ -153,7 +156,7 @@ func listenAndServe(address string, errorChan chan<- error, p *newrelic.Processo
 			}
 		}
 
-		err = newrelic.ListenAndServe(addr.Network(), addr.String(), newrelic.CommandsHandler{Processor: p})
+		list, err := newrelic.Listen(addr.Network(), addr.String())
 		if err != nil {
 			respawn := true
 
@@ -171,6 +174,23 @@ func listenAndServe(address string, errorChan chan<- error, p *newrelic.Processo
 			errorChan <- &workerError{
 				Component: "listener",
 				Respawn:   respawn,
+				Err:       err,
+			}
+
+			return
+		}
+
+		defer list.Close()
+		log.Infof("daemon listening on %s", addr)
+
+		if err := ds.SendReady(); err != nil {
+			log.Debugf("error sending signal to the progenitor process that the worker is ready: %v", err)
+		}
+
+		if err = list.Serve(newrelic.CommandsHandler{Processor: p}); err != nil {
+			errorChan <- &workerError{
+				Component: "server",
+				Respawn:   true,
 				Err:       err,
 			}
 
@@ -233,13 +253,27 @@ func parseBindAddr(s string) (address net.Addr, err error) {
 		return &net.UnixAddr{Name: s, Net: "unix"}, nil
 	}
 
-	// For TCP, we only support binding to the loopback address.
-	port, err := strconv.Atoi(s)
-	if err != nil || port < 1 || port > 65534 {
-		return nil, fmt.Errorf("invalid port %q - must be between 1 and 65534", s)
+	// For TCP, the supplied address string, s, is one of a port, a :port, or a host:port.
+	ip, port := net.IPv4(127, 0, 0, 1), 0
+
+	if strings.Contains(s, ":") {
+		host, portString, err := net.SplitHostPort(s)
+		if err != nil {
+			return nil, fmt.Errorf("invalid addr %q - must be provided as host:port", s)
+		}
+		if host != "" {
+			ip = net.ParseIP(host)
+		}
+
+		port, err = strconv.Atoi(portString)
+	} else {
+		port, err = strconv.Atoi(s)
 	}
 
-	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port}, nil
+	if err != nil || port < 1 || port > 65534 {
+		return nil, fmt.Errorf("invalid port %d - must be between 1 and 65534", port)
+	}
+	return &net.TCPAddr{IP: ip, Port: port}, nil
 }
 
 // raiseFileLimit attempts to raise the soft limit for open file

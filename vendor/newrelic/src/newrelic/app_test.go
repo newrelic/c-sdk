@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"newrelic/sysinfo"
 	"newrelic/utilization"
 )
 
@@ -15,7 +16,6 @@ func TestConnectPayloadInternal(t *testing.T) {
 		MetadataVersion:   1,
 		LogicalProcessors: &processors,
 		RamMiB:            ramInitializer,
-		Hostname:          "some_host",
 	}
 	info := &AppInfo{
 		License:           "the_license",
@@ -28,6 +28,7 @@ func TestConnectPayloadInternal(t *testing.T) {
 		HighSecurity:      false,
 		Labels:            JSONString(`[{"label_type":"c","label_value":"d"}]`),
 		RedirectCollector: "collector.newrelic.com",
+		Hostname:          "some_host",
 	}
 
 	expected := &RawConnectPayload{
@@ -44,6 +45,8 @@ func TestConnectPayloadInternal(t *testing.T) {
 		Identifier:      "one;two",
 		Util:            util,
 	}
+
+	expected.Util.Hostname = info.Hostname
 
 	pid := 123
 	b := info.ConnectPayloadInternal(pid, util)
@@ -79,6 +82,129 @@ func TestConnectPayloadInternal(t *testing.T) {
 	}
 }
 
+func TestConnectPayloadInternalHostname(t *testing.T) {
+	daemonHostName, _ := sysinfo.Hostname()
+	agentHostName := "agent-acquired-hostname"
+	utilizationHostName := ""
+
+	util := &utilization.Data{}
+	info := &AppInfo{}
+
+	// No host name in AppInfo, nil utilization data
+	info.Hostname = ""
+
+	b := info.ConnectPayloadInternal(1, nil)
+
+	if b.Host != daemonHostName {
+		t.Errorf("expected: %s\nactual: %s", daemonHostName, b.Host)
+	}
+	if b.Util != nil {
+		t.Errorf("expected: %v\nactual: %v", nil, b.Util)
+	}
+
+	// No host name in AppInfo, no host name in utilization data
+	info.Hostname = ""
+	util.Hostname = ""
+
+	b = info.ConnectPayloadInternal(1, util)
+
+	if b.Host != daemonHostName {
+		t.Errorf("expected: %s\nactual: %s", daemonHostName, b.Host)
+	}
+	if b.Util.Hostname != daemonHostName {
+		t.Errorf("expected: %s\nactual: %s", daemonHostName, b.Util.Hostname)
+	}
+
+	// No host name in AppInfo, host name in utilization data
+	//
+	// The host name in the utilization hash shouldn't be overwritten.
+	info.Hostname = ""
+	util.Hostname = utilizationHostName
+
+	b = info.ConnectPayloadInternal(1, util)
+
+	if b.Host != daemonHostName {
+		t.Errorf("expected: %s\nactual: %s", daemonHostName, b.Host)
+	}
+	if b.Util.Hostname != daemonHostName {
+		t.Errorf("expected: %s\nactual: %s", daemonHostName, b.Util.Hostname)
+	}
+	if util.Hostname != utilizationHostName {
+		t.Errorf("expected: %s\nactual: %s", utilizationHostName, util.Hostname)
+	}
+
+	// Host name in AppInfo, nil utilization data
+	info.Hostname = agentHostName
+
+	b = info.ConnectPayloadInternal(1, nil)
+
+	if b.Host != agentHostName {
+		t.Errorf("expected: %s\nactual: %s", agentHostName, b.Host)
+	}
+	if b.Util != nil {
+		t.Errorf("expected: %v\nactual: %v", nil, b.Util)
+	}
+
+	// Host name in AppInfo, no host name in utilization data
+	info.Hostname = agentHostName
+	util.Hostname = ""
+
+	b = info.ConnectPayloadInternal(1, util)
+
+	if b.Host != agentHostName {
+		t.Errorf("expected: %s\nactual: %s", agentHostName, b.Host)
+	}
+	if b.Util.Hostname != agentHostName {
+		t.Errorf("expected: %s\nactual: %s", agentHostName, b.Util.Hostname)
+	}
+
+	// Host name in AppInfo, host name in utilization data
+	info.Hostname = agentHostName
+	util.Hostname = utilizationHostName
+
+	b = info.ConnectPayloadInternal(1, util)
+
+	if b.Host != agentHostName {
+		t.Errorf("expected: %s\nactual: %s", agentHostName, b.Host)
+	}
+	if b.Util.Hostname != agentHostName {
+		t.Errorf("expected: %s\nactual: %s", agentHostName, b.Util.Hostname)
+	}
+}
+
+func TestPreconnectPayloadEncoded(t *testing.T) {
+
+	preconnectPayload := &RawPreconnectPayload{SecurityPolicyToken: "ffff-eeee-eeee-dddd", HighSecurity: false}
+	expected := `[` +
+		`{` +
+		`"security_policies_token":"ffff-eeee-eeee-dddd",` +
+		`"high_security":false` +
+		`}` +
+		`]`
+
+	b, err := EncodePayload(preconnectPayload)
+	if err != nil {
+		t.Error(err)
+	} else if string(b) != expected {
+		t.Errorf("expected: %s\nactual: %s", expected, string(b))
+	}
+
+	// Verify that security_policies_token's omitempty is respected
+	preconnectPayloadEmpty := &RawPreconnectPayload{}
+	expected = `[` +
+		`{` +
+		`"high_security":false` +
+		`}` +
+		`]`
+
+	b, err = EncodePayload(preconnectPayloadEmpty)
+	if err != nil {
+		t.Error(err)
+	} else if string(b) != expected {
+		t.Errorf("expected: %s\nactual: %s", expected, string(b))
+	}
+}
+
 func TestConnectPayloadEncoded(t *testing.T) {
 	ramInitializer := new(uint64)
 	*ramInitializer = 1000
@@ -87,7 +213,6 @@ func TestConnectPayloadEncoded(t *testing.T) {
 		MetadataVersion:   1,
 		LogicalProcessors: &processors,
 		RamMiB:            ramInitializer,
-		Hostname:          "some_host",
 	}
 	info := &AppInfo{
 		License:           "the_license",
@@ -100,6 +225,7 @@ func TestConnectPayloadEncoded(t *testing.T) {
 		HighSecurity:      false,
 		Labels:            JSONString(`[{"label_type":"c","label_value":"d"}]`),
 		RedirectCollector: "collector.newrelic.com",
+		Hostname:          "some_host",
 	}
 
 	pid := 123
@@ -186,5 +312,65 @@ func TestNeedsConnectAttempt(t *testing.T) {
 	app.lastConnectAttempt = now.Add(-AppConnectAttemptBackoff)
 	if app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
+	}
+}
+
+func TestAppKeyEquals(t *testing.T) {
+	info := AppInfo{
+		License:           "the_license",
+		Appname:           "one;two",
+		RedirectCollector: "collector.newrelic.com",
+		HighSecurity:      false,
+		AgentLanguage:     "agent-language",
+		Hostname:          "agent-hostname",
+	}
+
+	otherInfo := info
+
+	if info.Key() != otherInfo.Key() {
+		t.Errorf("Key for application info must match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.License = "other_license"
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.Appname = "other_appname"
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.RedirectCollector = "other_collector"
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.HighSecurity = true
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.AgentLanguage = "other_language"
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.SupportedSecurityPolicies.Policies = make(map[string]SecurityPolicyAgent)
+	otherInfo.SupportedSecurityPolicies.Policies["policy-1"] = SecurityPolicyAgent{true, true}
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
+	}
+
+	otherInfo = info
+	otherInfo.Hostname = "other_hostname"
+	if info.Key() == otherInfo.Key() {
+		t.Errorf("Key for application info must not match: %v and %v", info, otherInfo)
 	}
 }

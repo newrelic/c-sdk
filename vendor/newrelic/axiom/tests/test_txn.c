@@ -266,10 +266,8 @@ static void test_key_txns_fn(const char* testname,
 }
 
 static void test_txn_cmp_options(void) {
-  nrtxnopt_t o1 = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  nrtxnopt_t o2 = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  nrtxnopt_t o1 = {.custom_events_enabled = 1};
+  nrtxnopt_t o2 = {.custom_events_enabled = 1};
 
   bool rv = false;
 
@@ -405,6 +403,38 @@ static void test_freeze_name_update_apdex(void) {
                    "OtherTransaction/php/ok.php");
   test_freeze_name("URI BG txn_rule ignore", NR_PATH_TYPE_URI, 1,
                    "/ignore_txn.php", test_rules, 0, 0);
+
+  /*
+   * Test : Status code web transaction naming.
+   */
+  test_freeze_name("STATUS WT", NR_PATH_TYPE_STATUS_CODE, 0, "/404", 0, 0,
+                   "WebTransaction/StatusCode/404");
+  test_freeze_name("STATUS WT url_rule no change", NR_PATH_TYPE_STATUS_CODE, 0,
+                   "/404", test_rules, 0, "WebTransaction/StatusCode/404");
+  test_freeze_name("STATUS WT url_rule no ignore", NR_PATH_TYPE_STATUS_CODE, 0,
+                   "/ignore_path", test_rules, 0,
+                   "WebTransaction/StatusCode/ignore_path");
+  test_freeze_name("STATUS WT txn_rule change", NR_PATH_TYPE_STATUS_CODE, 0,
+                   "/rename_txn", test_rules, 0,
+                   "WebTransaction/StatusCode/ok");
+  test_freeze_name("STATUS WT txn_rule ignore", NR_PATH_TYPE_STATUS_CODE, 0,
+                   "/ignore_txn", test_rules, 0, 0);
+
+  /*
+   * Test : Status code background transaction naming.
+   */
+  test_freeze_name("STATUS WT", NR_PATH_TYPE_STATUS_CODE, 1, "/404", 0, 0,
+                   "OtherTransaction/StatusCode/404");
+  test_freeze_name("STATUS WT url_rule no change", NR_PATH_TYPE_STATUS_CODE, 1,
+                   "/404", test_rules, 0, "OtherTransaction/StatusCode/404");
+  test_freeze_name("STATUS WT url_rule no ignore", NR_PATH_TYPE_STATUS_CODE, 1,
+                   "/ignore_path", test_rules, 0,
+                   "OtherTransaction/StatusCode/ignore_path");
+  test_freeze_name("STATUS WT txn_rule change", NR_PATH_TYPE_STATUS_CODE, 1,
+                   "/rename_txn", test_rules, 0,
+                   "OtherTransaction/StatusCode/ok");
+  test_freeze_name("STATUS WT txn_rule ignore", NR_PATH_TYPE_STATUS_CODE, 1,
+                   "/ignore_txn", test_rules, 0, 0);
 
   /*
    * Test : ACTION Web Transaction Naming
@@ -787,11 +817,12 @@ static void test_create_duration_metrics(void) {
   txn->status.background = 0;
   txn->unscoped_metrics = 0;
   txn->status.recording = 1;
+  txn->segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
 
   txn->segment_root = nr_segment_start(txn, NULL, NULL);
   txn->segment_root->start_time = 0;
   txn->segment_root->stop_time = duration;
-  txn->segment_root->exclusive_time = nr_exclusive_time_create(0, duration);
+  txn->segment_root->exclusive_time = nr_exclusive_time_create(16, 0, duration);
 
   /*
    * Test : Bad Params.  Should not blow up.
@@ -871,7 +902,7 @@ static void test_create_duration_metrics(void) {
    * Background Task
    */
   nr_exclusive_time_destroy(&txn->segment_root->exclusive_time);
-  txn->segment_root->exclusive_time = nr_exclusive_time_create(0, duration);
+  txn->segment_root->exclusive_time = nr_exclusive_time_create(16, 0, duration);
   nr_exclusive_time_add_child(txn->segment_root->exclusive_time, 0, 111);
   txn->status.background = 1;
   txn->name = "WebTransaction/Action/not_words";
@@ -928,6 +959,8 @@ static void test_create_duration_metrics(void) {
 
   nr_segment_destroy(txn->segment_root);
   nr_hashmap_destroy(&txn->parent_stacks);
+  nr_stack_destroy_fields(&txn->default_parent_stack);
+  nr_slab_destroy(&txn->segment_slab);
 }
 
 static void test_create_queue_metric(void) {
@@ -1325,6 +1358,11 @@ static void test_created_txn_fn(const char* testname,
   tlib_pass_if_not_null(testname, rv->segment_root);
   tlib_pass_if_time_equal(testname, 0, rv->segment_root->start_time);
   tlib_pass_if_int_equal(testname, 0, rv->segment_root->async_context);
+
+  /*
+   * Test : Segment slab allocator.
+   */
+  tlib_pass_if_not_null(testname, rv->segment_slab);
 
   /*
    * Test : Structures allocated
@@ -1789,8 +1827,7 @@ static nrtxn_t* create_full_txn_and_reset(nrapp_t* app) {
     seg->typed_attributes.external.uri = nr_strdup("newrelic.com");
   }
 
-  tlib_pass_if_true("four segments added", 5 == txn->segment_count,
-                    "txn->segment_count=%zu", txn->segment_count);
+  tlib_pass_if_size_t_equal("four segments added", 4, txn->segment_count);
 
   /*
    * Set the Path
@@ -4389,7 +4426,7 @@ static void test_txn_dt_cross_agent_testcase(nrapp_t* app,
   size = nro_getsize(outbound_payloads);
   for (int i = 1; i <= size; i++) {
     const nrobj_t* spec = nro_get_array_hash(outbound_payloads, i, NULL);
-    nr_segment_t segment = {.id = NULL};
+    nr_segment_t segment = {.id = NULL, .txn = txn};
     char* payload = nr_txn_create_distributed_trace_payload(txn, &segment);
     nrobj_t* json_payload = nro_create_from_json(payload);
     const nrobj_t* json_payload_d = nro_get_hash_value(json_payload, "d", NULL);
@@ -4410,6 +4447,7 @@ static void test_txn_dt_cross_agent_testcase(nrapp_t* app,
 
   txn->segment_root->start_time = 1000;
   txn->segment_root->stop_time = 2000;
+  txn->segment_count++;
   txn->final_data = nr_segment_tree_finalise(txn, NR_MAX_SEGMENTS,
                                              NR_MAX_SPAN_EVENTS, NULL, NULL);
 
@@ -5072,6 +5110,7 @@ static void test_create_distributed_trace_payload(void) {
   txn.distributed_trace = nr_distributed_trace_create();
   txn.rnd = nr_random_create();
   txn.status.recording = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
 
   /*
@@ -5097,6 +5136,7 @@ static void test_create_distributed_trace_payload(void) {
                      2, 0, 0, 0, 0, 0);
 
   txn.options.distributed_tracing_enabled = true;
+
   /*
    * Test : Distributed tracing pointer is NULL.
    */
@@ -5193,6 +5233,15 @@ static void test_create_distributed_trace_payload(void) {
                      0, 0, 0, 0, 0);
   nr_free(text);
 
+  /*
+   * Test : Segment with a different transaction.
+   */
+  current_segment->txn = NULL;
+  tlib_pass_if_null(
+      "a different segment transaction should fail",
+      nr_txn_create_distributed_trace_payload(&txn, current_segment));
+  current_segment->txn = &txn;
+
   nr_random_destroy(&txn.rnd);
   nr_distributed_trace_destroy(&txn.distributed_trace);
   nr_hashmap_destroy(&txn.parent_stacks);
@@ -5225,6 +5274,7 @@ static void test_accept_before_create_distributed_tracing(void) {
   txn.app_connect_reply
       = nro_create_from_json("{\"trusted_account_key\":\"9123\"}");
   txn.status.recording = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
   txn.unscoped_metrics = nrm_table_create(0);
 
@@ -5336,8 +5386,9 @@ static void test_txn_accept_distributed_trace_payload_metrics(void) {
   txn.status.background = true;
   txn.status.recording = true;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
-  txn.segment_root->exclusive_time = nr_exclusive_time_create(0, 999);
+  txn.segment_root->exclusive_time = nr_exclusive_time_create(16, 0, 999);
 
   txn.unscoped_metrics = nrm_table_create(2);
   txn.distributed_trace = nr_distributed_trace_create();
@@ -5409,6 +5460,8 @@ static void test_txn_accept_distributed_trace_payload_metrics(void) {
   nr_distributed_trace_destroy(&txn.distributed_trace);
   nr_segment_destroy(txn.segment_root);
   nr_hashmap_destroy(&txn.parent_stacks);
+  nr_stack_destroy_fields(&txn.default_parent_stack);
+  nr_slab_destroy(&txn.segment_slab);
   nro_delete(txn.app_connect_reply);
   nrm_table_destroy(&txn.unscoped_metrics);
 }
@@ -5471,6 +5524,7 @@ static void test_txn_accept_distributed_trace_payload(void) {
   txn.unscoped_metrics = nrm_table_create(0);
   txn.app_connect_reply = nro_new_hash();
   txn.status.recording = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_root = nr_segment_start(&txn, NULL, NULL);
 
   /*

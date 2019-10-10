@@ -121,14 +121,22 @@ nrobj_t* nr_distributed_trace_convert_payload_to_object(const char* payload,
 
   // Version missing
   if (NULL == obj_payload_version) {
+    nrl_debug(NRL_CAT,
+              "Inbound distributed tracing payload invalid. Missing version.");
     nro_delete(obj_payload);
     *error = NR_DISTRIBUTED_TRACE_ACCEPT_PARSE_EXCEPTION;
-    return false;
+    return NULL;
   }
 
   // Compare version major
   if (nro_get_array_int(obj_payload_version, 1, NULL)
       > NR_DISTRIBUTED_TRACE_VERSION_MAJOR) {
+    nrl_debug(
+        NRL_CAT,
+        "Inbound distributed tracing payload invalid. Unexpected version: the "
+        "maximum version supported is %d, but the payload has version %d.",
+        NR_DISTRIBUTED_TRACE_VERSION_MAJOR,
+        nro_get_array_int(obj_payload_version, 1, NULL));
     nro_delete(obj_payload);
     *error = NR_DISTRIBUTED_TRACE_ACCEPT_MAJOR_VERSION;
     return NULL;
@@ -157,10 +165,10 @@ nrobj_t* nr_distributed_trace_convert_payload_to_object(const char* payload,
     if (NR_FAILURE == err) {
       nro_get_hash_long(obj_payload_data, required_data_fields[i], &err);
       if (NR_FAILURE == err) {
-        nrl_info(NRL_CAT,
-                 "Inbound distributed tracing payload format invalid.  Missing "
-                 "field '%s'",
-                 required_data_fields[i]);
+        nrl_debug(NRL_CAT,
+                  "Inbound distributed tracing payload format invalid. "
+                  "Missing field '%s'",
+                  required_data_fields[i]);
         *error = NR_DISTRIBUTED_TRACE_ACCEPT_PARSE_EXCEPTION;
         nro_delete(obj_payload);
         return NULL;

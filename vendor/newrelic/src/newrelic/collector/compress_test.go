@@ -10,9 +10,9 @@ type CompressEncodeTestcase struct {
 }
 
 var testcases = [...]CompressEncodeTestcase{
-	CompressEncodeTestcase{decoded: "compress me",
+	{decoded: "compress me",
 		encoded: "eJxKzs8tKEotLlbITQUEAAD//xsdBF8="},
-	CompressEncodeTestcase{
+	{
 		decoded: "zipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzip" +
 			"zipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzipzip",
 		encoded: "eJyqyiygMwIEAAD//0/+MlM="},

@@ -105,7 +105,6 @@ func Gather(config Config) *Data {
 	// System things we gather no matter what.
 	goGather(GatherBootID, uDat)
 	goGather(GatherCPU, uDat)
-	goGather(GatherHostname, uDat)
 	goGather(GatherMemory, uDat)
 
 	// Now things the user can turn off.
@@ -170,17 +169,6 @@ func GatherDockerID(util *Data) error {
 		}
 	} else {
 		util.Vendors.Docker = &docker{ID: id}
-	}
-
-	return nil
-}
-
-func GatherHostname(util *Data) error {
-	hostname, err := sysinfo.Hostname()
-	if nil == err {
-		util.Hostname = hostname
-	} else {
-		return fmt.Errorf("Could not find hostname: %s", err)
 	}
 
 	return nil

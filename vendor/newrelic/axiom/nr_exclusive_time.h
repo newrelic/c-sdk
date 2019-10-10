@@ -6,21 +6,23 @@
 #define NR_EXCLUSIVE_TIME_HDR
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include "util_time.h"
-#include "util_vector.h"
 
 typedef struct _nr_exclusive_time_t nr_exclusive_time_t;
 
 /*
  * Purpose : Create an exclusive time structure.
  *
- * Params  : 1. The start time of the parent segment.
- *           2. The stop time of the parent segment.
+ * Params  : 1. The number of child segments within the parent segment.
+ *           2. The start time of the parent segment.
+ *           3. The stop time of the parent segment.
  *
  * Returns : A pointer to the exclusive time structure, or NULL on error.
  */
-extern nr_exclusive_time_t* nr_exclusive_time_create(nrtime_t start_time,
+extern nr_exclusive_time_t* nr_exclusive_time_create(size_t child_segments,
+                                                     nrtime_t start_time,
                                                      nrtime_t stop_time);
 
 /*

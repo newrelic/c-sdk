@@ -49,7 +49,7 @@ typedef struct _nr_segment_userdata_t {
   const nrtxn_t* txn;      /* The transaction, its string pool, and its pointer
                               to the root segment */
   nrpool_t* segment_names; /* The string pool for the transaction trace */
-  int success; /* Was the call successful?  0 if successful, -1 if not. */
+  bool success;            /* Was the call successful? */
   nr_segment_userdata_trace_t trace; /* Data relevant for trace generation */
   nr_segment_userdata_spans_t
       spans; /* Data relevant for span event generation */
@@ -103,15 +103,15 @@ void nr_segment_traces_create_data(
  *              pool is included in the data json after the nodes:  It is used
  *              to minimize the size of the JSON.
  *
- * Returns : -1 if error, 0 otherwise.
+ * Returns : True on success; false otherwise.
  */
-int nr_segment_traces_json_print_segments(nrbuf_t* buf,
-                                          nr_vector_t* span_events,
-                                          nr_set_t* trace_set,
-                                          nr_set_t* span_set,
-                                          const nrtxn_t* txn,
-                                          nr_segment_t* root,
-                                          nrpool_t* segment_names);
+bool nr_segment_traces_json_print_segments(nrbuf_t* buf,
+                                           nr_vector_t* span_events,
+                                           nr_set_t* trace_set,
+                                           nr_set_t* span_set,
+                                           const nrtxn_t* txn,
+                                           nr_segment_t* root,
+                                           nrpool_t* segment_names);
 
 /*
  * Purpose : Place an nr_segment_t pointer into a buffer.

@@ -35,8 +35,7 @@ func (reply *ConnectReply) isHarvestAll() bool {
 
 // A convenience function to create a harvest trigger function which triggers
 // a harvest event of type t once every duration.
-func triggerBuilder(t HarvestType, duration time.Duration) func(
-        chan HarvestType, chan bool) {
+func triggerBuilder(t HarvestType, duration time.Duration) HarvestTriggerFunc {
 	return func(trigger chan HarvestType, cancel chan bool) {
 		ticker := time.NewTicker(duration)
 		for {
@@ -60,8 +59,7 @@ func triggerBuilder(t HarvestType, duration time.Duration) func(
 // - Starts the goroutine.
 // - Returns the newly-created cancel channel so that it may be added to a
 //   broadcast group.
-func startGroupMember(f func(chan HarvestType, chan bool), trigger chan
-                      HarvestType) chan bool {
+func startGroupMember(f HarvestTriggerFunc, trigger chan HarvestType) chan bool {
 	cancel := make(chan bool)
 	go f(trigger, cancel)
 	return cancel
@@ -71,7 +69,7 @@ func startGroupMember(f func(chan HarvestType, chan bool), trigger chan
 // periods.  In such cases, build the comprehensive harvest trigger that adheres
 // to such a configuration.
 func customTriggerBuilder(reply *ConnectReply, reportPeriod int,
-                          units time.Duration) func(chan HarvestType, chan bool) {
+	units time.Duration) HarvestTriggerFunc {
 	methods := reply.DataMethods
 
 	defaultTrigger := triggerBuilder(HarvestDefaultData,
@@ -89,15 +87,15 @@ func customTriggerBuilder(reply *ConnectReply, reportPeriod int,
 		broadcastGroup := make([]chan bool, 0)
 
 		broadcastGroup = append(broadcastGroup, startGroupMember(
-		                            defaultTrigger, trigger))
+			defaultTrigger, trigger))
 		broadcastGroup = append(broadcastGroup, startGroupMember(
-		                            analyticTrigger, trigger))
+			analyticTrigger, trigger))
 		broadcastGroup = append(broadcastGroup, startGroupMember(
-		                            customTrigger, trigger))
+			customTrigger, trigger))
 		broadcastGroup = append(broadcastGroup, startGroupMember(
-		                            errorTrigger, trigger))
+			errorTrigger, trigger))
 		broadcastGroup = append(broadcastGroup, startGroupMember(
-		                            spanTrigger, trigger))
+			spanTrigger, trigger))
 
 		// This function listens for the cancel message and then broadcasts it
 		// to all members of the broadcastGroup.
@@ -141,7 +139,7 @@ func fasterHarvestWhitelistReplyBuilder(seconds int) *ConnectReply {
 // in via the reportPeriod paramater.
 func getCustomLicenseHarvestTrigger(key collector.LicenseKey, reportPeriod int) HarvestTriggerFunc {
 	// The whitelist is injected via make variables in make/secrets.mk
-	if whiteListStruct == nil {
+	if whiteListStruct == nil && secrets.WhiteList != "" {
 		jsonWhiteList := secrets.WhiteList
 		err := json.Unmarshal([]byte(jsonWhiteList), &whiteListStruct)
 		if err != nil {
@@ -163,11 +161,11 @@ func getCustomLicenseHarvestTrigger(key collector.LicenseKey, reportPeriod int) 
 //   2. Or it creates a default harvest trigger, harvesting all data at the
 //      default period.
 func getHarvestTrigger(key collector.LicenseKey,
-        reply *ConnectReply) HarvestTriggerFunc {
+	reply *ConnectReply) HarvestTriggerFunc {
 	// First, check the whitelist for faster harvest, passing the the default
 	// report period
 	trigger := getCustomLicenseHarvestTrigger(key,
-	                                          collector.DefaultReportPeriod)
+		collector.DefaultReportPeriod)
 
 	// If not on the whitelist, build a trigger from the server-side collector
 	// configuration.
@@ -178,7 +176,7 @@ func getHarvestTrigger(key collector.LicenseKey,
 				time.Duration(collector.DefaultReportPeriod)*time.Second)
 		} else {
 			trigger = customTriggerBuilder(reply, collector.DefaultReportPeriod,
-			                               time.Second)
+				time.Second)
 		}
 	}
 

@@ -787,6 +787,7 @@ static void test_outbound_request(void) {
   txn->synthetics = NULL;
   txn->type = NR_TXN_TYPE_CAT_INBOUND;
   txn->unscoped_metrics = nrm_table_create(2);
+  txn->segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn->segment_root = nr_segment_start(txn, NULL, NULL);
 
   txn->distributed_trace = nr_distributed_trace_create();
@@ -1012,6 +1013,7 @@ static void test_outbound_request(void) {
   nr_synthetics_destroy(&txn->synthetics);
   nr_distributed_trace_destroy(&txn->distributed_trace);
   nrm_table_destroy(&txn->unscoped_metrics);
+  nr_slab_destroy(&txn->segment_slab);
 }
 
 static void test_lifecycle(void) {
@@ -1056,6 +1058,7 @@ static void test_lifecycle(void) {
   client_txn->special_flags.debug_cat = 0;
   client_txn->status.recording = 1;
   client_txn->synthetics = NULL;
+  client_txn->segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   client_txn->segment_root = nr_segment_start(client_txn, NULL, NULL);
 
   external_txn->app_connect_reply = shared_app_connect_reply;
@@ -1103,6 +1106,7 @@ static void test_lifecycle(void) {
   tlib_pass_if_str_equal("full lifecycle", external_guid, "EXTERNAL_GUID");
 
   nr_segment_destroy(client_txn->segment_root);
+  nr_slab_destroy(&client_txn->segment_slab);
   nr_free(external_txn->cat.client_cross_process_id);
   nr_free(external_txn->cat.inbound_guid);
   nr_free(external_txn->cat.referring_path_hash);

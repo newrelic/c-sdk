@@ -54,20 +54,21 @@ static void test_finalise_span_priority(void) {
   txn.options.span_events_enabled = true;
 
   txn.segment_count = 1;
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.options.tt_threshold = 5000;
 
   /* Mock up a long custom segment */
-  long_seg = nr_zalloc(sizeof(nr_segment_t));
+  long_seg = nr_slab_next(txn.segment_slab);
   long_seg->name = nr_string_add(txn.trace_strings, "Long");
   long_seg->txn = &txn;
   long_seg->start_time = 2000;
   long_seg->stop_time = 20000;
 
   /* Mock up the external segment */
-  external = nr_zalloc(sizeof(nr_segment_t));
+  external = nr_slab_next(txn.segment_slab);
   external->name = nr_string_add(txn.trace_strings, "External");
   external->txn = &txn;
   external->start_time = 2000;
@@ -75,7 +76,7 @@ static void test_finalise_span_priority(void) {
   external->id = nr_strdup("id");
 
   /* Mock up the custom segment */
-  custom = nr_zalloc(sizeof(nr_segment_t));
+  custom = nr_slab_next(txn.segment_slab);
   custom->name = nr_string_add(txn.trace_strings, "Custom");
   custom->txn = &txn;
   custom->start_time = 1000;
@@ -84,7 +85,7 @@ static void test_finalise_span_priority(void) {
   nr_segment_add_child(custom, external);
 
   /* Mock up the root segment */
-  root = nr_zalloc(sizeof(nr_segment_t));
+  root = nr_slab_next(txn.segment_slab);
   root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
   root->txn = &txn;
   root->start_time = 0;
@@ -164,23 +165,25 @@ static void test_finalise_one_only_with_metrics(void) {
   nrtxnfinal_t result;
   nrobj_t* obj;
 
-  nr_segment_t* root = nr_zalloc(sizeof(nr_segment_t));
-
-  root->txn = &txn;
-  root->start_time = 0;
-  root->stop_time = 3000;
+  nr_segment_t* root;
 
   /* Mock up the transaction */
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.segment_count = 1;
-  txn.segment_root = root;
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
 
   /* Mock up the segment */
+  root = nr_slab_next(txn.segment_slab);
+  root->txn = &txn;
+  root->start_time = 0;
+  root->stop_time = 3000;
   root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
   nr_segment_add_metric(root, "Custom/Unscoped", false);
   nr_segment_add_metric(root, "Custom/Scoped", true);
+
+  txn.segment_root = root;
 
   txn.options.tt_threshold = 5000;
 
@@ -273,6 +276,7 @@ static void test_finalise_one_only_with_metrics(void) {
   nr_string_pool_destroy(&txn.trace_strings);
 
   nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 #define NR_TEST_SEGMENT_TREE_SIZE 4
@@ -291,12 +295,14 @@ static void test_finalise(void) {
   char* segment_names[NR_TEST_SEGMENT_TREE_SIZE];
 
   nrtxnfinal_t result;
-  nr_segment_t* root = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* root;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
 
+  root = nr_slab_next(txn.segment_slab);
   root->txn = &txn;
   root->start_time = start_time;
   root->stop_time = stop_time;
@@ -306,7 +312,7 @@ static void test_finalise(void) {
   current = root;
 
   for (i = 0; i < NR_TEST_SEGMENT_TREE_SIZE; i++) {
-    nr_segment_t* segment = nr_zalloc(sizeof(nr_segment_t));
+    nr_segment_t* segment = nr_slab_next(txn.segment_slab);
 
     segment_names[i] = nr_alloca(5 * sizeof(char));
     nr_itoa(segment_names[i], 5, i);
@@ -372,6 +378,7 @@ static void test_finalise(void) {
   nr_string_pool_destroy(&txn.trace_strings);
 
   nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 typedef struct {
@@ -407,14 +414,16 @@ static void test_finalise_total_time(void) {
   size_t span_limit = 0;
 
   nrtxnfinal_t result;
-  nr_segment_t* root = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* root;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.options.tt_threshold = 0;
   txn.status.recording = 1;
 
+  root = nr_slab_next(txn.segment_slab);
   root->txn = &txn;
   root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
 
@@ -513,6 +522,241 @@ static void test_finalise_total_time(void) {
   nr_string_pool_destroy(&txn.trace_strings);
 
   nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
+}
+
+static void test_finalise_total_time_discounted_async(void) {
+  nrobj_t* obj;
+  nr_segment_t *a, *b, *c, *d;
+  test_finalise_callback_expected_t cb_userdata = {.call_count = 0};
+
+  nrtxn_t txn = {.abs_start_time = 1000};
+
+  size_t trace_limit = 10;
+  size_t span_limit = 0;
+
+  nrtxnfinal_t result;
+  nr_segment_t* root;
+
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
+  txn.trace_strings = nr_string_pool_create();
+  txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.options.tt_threshold = 0;
+  txn.options.discount_main_context_blocking = true;
+  txn.status.recording = 1;
+
+  root = nr_slab_next(txn.segment_slab);
+  root->txn = &txn;
+  root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
+
+  txn.segment_root = root;
+
+  /*
+   * In order to exercise the total and exclusive time calculation, we're going
+   * to set up a basic async structure:
+   *
+   * time (ms): 0    10    20    30    40    50
+   *            ROOT------------------------->
+   *                 a (ctx 1)--------->
+   *                       b (ctx 1)--->
+   *                 c (ctx 2)--------->
+   *                             d (ctx 2)--->
+   *
+   * On the main context, there is only the ROOT segment, which lasts 50 ms.
+   *
+   * Context 1 has two segments, which sum to an exclusive time of 30 ms: a has
+   * an exclusive time of 10 ms, and b has an exclusive time of 20 ms.
+   *
+   * Context 2 has two segments, which also sum to an exclusive time of 40 ms: c
+   * has an exclusive time of 20 ms, and d has an exclusive time of 20 ms.
+   *
+   * Finally, we have enabled main context discounting above, which means that
+   * the time spent off the main context should be subtracted from the total
+   * time. The sum of all exclusive times is 120 ms, and the total time spent
+   * off the main context is 40 ms, so the total time should be 80 ms, with a
+   * duration of 50 ms.
+   */
+  nr_segment_set_timing(root, 0, 50 * NR_TIME_DIVISOR_MS);
+
+  a = nr_segment_start(&txn, root, "1");
+  nr_segment_set_name(a, "a");
+  nr_segment_set_timing(a, 10 * NR_TIME_DIVISOR_MS, 30 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(a);
+  b = nr_segment_start(&txn, a, "1");
+  nr_segment_set_name(b, "b");
+  nr_segment_set_timing(b, 20 * NR_TIME_DIVISOR_MS, 20 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(b);
+  c = nr_segment_start(&txn, root, "2");
+  nr_segment_set_name(c, "c");
+  nr_segment_set_timing(c, 10 * NR_TIME_DIVISOR_MS, 30 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(c);
+  d = nr_segment_start(&txn, c, "2");
+  nr_segment_set_name(d, "d");
+  nr_segment_set_timing(d, 30 * NR_TIME_DIVISOR_MS, 20 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(d);
+
+  nr_segment_end(root);
+
+  cb_userdata.txn = &txn;
+  cb_userdata.total_time = 80 * NR_TIME_DIVISOR_MS;
+  result = nr_segment_tree_finalise(&txn, trace_limit, span_limit,
+                                    test_finalise_callback, &cb_userdata);
+  tlib_pass_if_size_t_equal(
+      "Traversing the segments of a should-sample transaction must invoke the "
+      "finalise callback",
+      1, cb_userdata.call_count);
+  tlib_pass_if_not_null(
+      "Traversing the segments of a should-sample transaction must populate a "
+      "result",
+      result.trace_json);
+
+  tlib_pass_if_str_equal(
+      "Traversing the segments of a should-trace transaction must create "
+      "expected trace JSON with all "
+      "segments",
+      result.trace_json,
+      // clang-format off
+      "["
+        "[0,{},{},"
+          "[0,50,\"ROOT\",{},["
+            "[0,50,\"`0\",{},["
+              "[10,40,\"`1\",{\"async_context\":\"`2\"},["
+                "[20,40,\"`3\",{\"async_context\":\"`2\"},[]]"
+              "]],"
+              "[10,40,\"`4\",{\"async_context\":\"`5\"},["
+                "[30,50,\"`6\",{\"async_context\":\"`5\"},[]]"
+              "]]"
+            "]]"
+          "]]"
+        ",{}]"
+        ","
+        "[\"WebTransaction\\/*\",\"a\",\"1\",\"b\",\"c\",\"2\",\"d\"]"
+      "]"
+      // clang-format on
+  );
+
+  obj = nro_create_from_json(result.trace_json);
+  tlib_pass_if_not_null(
+      "Traversing the segments of a should-trace transaction must create valid "
+      "JSON",
+      obj);
+
+  nro_delete(obj);
+  nr_txn_final_destroy_fields(&result);
+  nrm_table_destroy(&txn.scoped_metrics);
+  nrm_table_destroy(&txn.unscoped_metrics);
+  nr_string_pool_destroy(&txn.trace_strings);
+
+  nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
+}
+
+static void test_finalise_total_time_discounted_sync(void) {
+  nrobj_t* obj;
+  nr_segment_t *a, *b;
+  test_finalise_callback_expected_t cb_userdata = {.call_count = 0};
+
+  nrtxn_t txn = {.abs_start_time = 1000};
+
+  size_t trace_limit = 10;
+  size_t span_limit = 0;
+
+  nrtxnfinal_t result;
+  nr_segment_t* root;
+
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
+  txn.trace_strings = nr_string_pool_create();
+  txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
+  txn.options.tt_threshold = 0;
+  txn.options.discount_main_context_blocking = true;
+  txn.status.recording = 1;
+
+  root = nr_slab_next(txn.segment_slab);
+  root->txn = &txn;
+  root->name = nr_string_add(txn.trace_strings, "WebTransaction/*");
+
+  txn.segment_root = root;
+
+  /*
+   * In order to exercise the total and exclusive time calculation, we're going
+   * to set up a basic structure of synchronous segments:
+   *
+   * time (ms): 0    10    20    30    40    50
+   *            ROOT------------------------->
+   *                 a----------------->
+   *                       b----------->
+   *
+   * On the main context, there is only the ROOT segment, which lasts 50 ms.
+   *
+   * We have enabled main context discounting above, which means that the time
+   * spent off the main context should be subtracted from the total time. Since
+   * this transaction is synchronous, there is no time off the main context, so
+   * the total time should remain 50 ms.
+   */
+  nr_segment_set_timing(root, 0, 50 * NR_TIME_DIVISOR_MS);
+
+  a = nr_segment_start(&txn, root, NULL);
+  nr_segment_set_name(a, "a");
+  nr_segment_set_timing(a, 10 * NR_TIME_DIVISOR_MS, 30 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(a);
+  b = nr_segment_start(&txn, a, NULL);
+  nr_segment_set_name(b, "b");
+  nr_segment_set_timing(b, 20 * NR_TIME_DIVISOR_MS, 20 * NR_TIME_DIVISOR_MS);
+  nr_segment_end(b);
+
+  nr_segment_end(root);
+
+  cb_userdata.txn = &txn;
+  cb_userdata.total_time = 50 * NR_TIME_DIVISOR_MS;
+  result = nr_segment_tree_finalise(&txn, trace_limit, span_limit,
+                                    test_finalise_callback, &cb_userdata);
+  tlib_pass_if_size_t_equal(
+      "Traversing the segments of a should-sample transaction must invoke the "
+      "finalise callback",
+      1, cb_userdata.call_count);
+  tlib_pass_if_not_null(
+      "Traversing the segments of a should-sample transaction must populate a "
+      "result",
+      result.trace_json);
+
+  tlib_pass_if_str_equal(
+      "Traversing the segments of a should-trace transaction must create "
+      "expected trace JSON with all "
+      "segments",
+      result.trace_json,
+      // clang-format off
+      "["
+        "[0,{},{},"
+          "[0,50,\"ROOT\",{},["
+            "[0,50,\"`0\",{},["
+              "[10,40,\"`1\",{},["
+                "[20,40,\"`2\",{},[]]"
+              "]]"
+            "]]"
+          "]]"
+        ",{}]"
+        ","
+        "[\"WebTransaction\\/*\",\"a\",\"b\"]"
+      "]"
+      // clang-format on
+  );
+
+  obj = nro_create_from_json(result.trace_json);
+  tlib_pass_if_not_null(
+      "Traversing the segments of a should-trace transaction must create valid "
+      "JSON",
+      obj);
+
+  nro_delete(obj);
+  nr_txn_final_destroy_fields(&result);
+  nrm_table_destroy(&txn.scoped_metrics);
+  nrm_table_destroy(&txn.unscoped_metrics);
+  nr_string_pool_destroy(&txn.trace_strings);
+
+  nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 static void test_finalise_with_sampling(void) {
@@ -530,12 +774,14 @@ static void test_finalise_with_sampling(void) {
   char* segment_names[NR_TEST_SEGMENT_TREE_SIZE];
 
   nrtxnfinal_t result;
-  nr_segment_t* root = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* root;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
 
+  root = nr_slab_next(txn.segment_slab);
   root->txn = &txn;
   root->start_time = start_time;
   root->stop_time = stop_time;
@@ -545,7 +791,7 @@ static void test_finalise_with_sampling(void) {
   current = root;
 
   for (i = 0; i < NR_TEST_SEGMENT_TREE_SIZE; i++) {
-    nr_segment_t* segment = nr_zalloc(sizeof(nr_segment_t));
+    nr_segment_t* segment = nr_slab_next(txn.segment_slab);
 
     segment_names[i] = nr_alloca(5 * sizeof(char));
     nr_itoa(segment_names[i], 5, i);
@@ -614,6 +860,7 @@ static void test_finalise_with_sampling(void) {
   nr_string_pool_destroy(&txn.trace_strings);
 
   nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 #define NR_TEST_SEGMENT_EXTENDED_TREE_SIZE 3000
@@ -627,12 +874,14 @@ static void test_finalise_with_extended_sampling(void) {
   nr_segment_t* current;
   char* segment_names[NR_TEST_SEGMENT_EXTENDED_TREE_SIZE];
 
-  nr_segment_t* root = nr_zalloc(sizeof(nr_segment_t));
+  nr_segment_t* root;
 
+  txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
   txn.trace_strings = nr_string_pool_create();
   txn.scoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
   txn.unscoped_metrics = nrm_table_create(NR_METRIC_DEFAULT_LIMIT);
 
+  root = nr_slab_next(txn.segment_slab);
   root->txn = &txn;
   root->start_time = 0;
   root->stop_time = 34000;
@@ -642,7 +891,7 @@ static void test_finalise_with_extended_sampling(void) {
   current = root;
 
   for (i = 0; i < NR_TEST_SEGMENT_EXTENDED_TREE_SIZE; i++) {
-    nr_segment_t* segment = nr_zalloc(sizeof(nr_segment_t));
+    nr_segment_t* segment = nr_slab_next(txn.segment_slab);
 
     segment_names[i] = nr_alloca(5 * sizeof(char));
     nr_itoa(segment_names[i], 5, i);
@@ -705,6 +954,7 @@ static void test_finalise_with_extended_sampling(void) {
   nr_string_pool_destroy(&txn.trace_strings);
 
   nr_segment_destroy(root);
+  nr_slab_destroy(&txn.segment_slab);
 }
 
 static void test_nearest_sampled_ancestor(void) {
@@ -764,11 +1014,11 @@ static void test_nearest_sampled_ancestor(void) {
                          ancestor);
 
   nr_set_destroy(&set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -825,11 +1075,11 @@ static void test_nearest_sampled_ancestor_cycle(void) {
   tlib_pass_if_ptr_equal("The returned ancestor should be A", &A, ancestor);
 
   nr_set_destroy(&set);
-  nr_segment_children_destroy_fields(&root.children);
+  nr_segment_children_deinit(&root.children);
   nr_segment_destroy_fields(&root);
 
-  nr_segment_children_destroy_fields(&A.children);
-  nr_segment_children_destroy_fields(&B.children);
+  nr_segment_children_deinit(&A.children);
+  nr_segment_children_deinit(&B.children);
 
   nr_segment_destroy_fields(&A);
   nr_segment_destroy_fields(&B);
@@ -843,6 +1093,8 @@ void test_main(void* p NRUNUSED) {
   test_finalise_one_only_with_metrics();
   test_finalise();
   test_finalise_total_time();
+  test_finalise_total_time_discounted_async();
+  test_finalise_total_time_discounted_sync();
   test_finalise_with_sampling();
   test_finalise_with_extended_sampling();
   test_finalise_span_priority();
