@@ -27,6 +27,10 @@ for community discussions about the C SDK.
 
 * Use your preferred search engine to find other New Relic resources.
 
+## Come work with us! 
+
+We’re hiring a software engineer to join us in shaping the future of the PHP Agent and the C SDK.  If you’re a C developer interested in the Agent Engineering world, apply [here](https://newrelic.com/about/careers?p=job%2FoQNhbfwP).
+
 ## Contributing
 
 We'd love to get your contributions to improve the C SDK! Keep in mind when you 
