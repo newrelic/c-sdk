@@ -11,17 +11,17 @@
 
 #include "test.h"
 
-static int nr_check_params(const nr_conn_params_t* params,
-                           const nr_conn_params_t* expected) {
+static int nr_check_params(const uintptr_t params, const uintptr_t expected) {
   if (params == expected) {
     return 1;
   }
 
-  if (NULL == params || NULL == expected) {
+  if (0 == params || 0 == expected) {
     return 0;
   }
 
-  if (params->type != expected->type) {
+  if (((const nr_conn_params_t*)params)->type
+      != ((const nr_conn_params_t*)expected)->type) {
     return 0;
   }
 

@@ -1,5 +1,9 @@
 # New Relic C Agent Release Notes #
 
+### Internal Changes ###
+
+- An error when compiling the test suite with GCC 9.2 was fixed.
+
 ## Contents ##
 
 | Release Number | Release Date |
