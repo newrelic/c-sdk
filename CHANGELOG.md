@@ -1,5 +1,10 @@
 # New Relic C Agent Release Notes #
 
+### Bug Fixes ###
+
+- A default configuration created with `newrelic_create_app_config()` will now
+  work as expected with licence keys for non-US accounts.
+
 ## Contents ##
 
 | Release Number | Release Date |
