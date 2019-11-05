@@ -46,7 +46,10 @@ newrelic_app_t* newrelic_create_app(const newrelic_app_config_t* given_config,
   if (0 < nr_strlen(given_config->redirect_collector)) {
     app_info->redirect_collector = nr_strdup(given_config->redirect_collector);
   } else {
-    app_info->redirect_collector = nr_strdup("collector.newrelic.com");
+    /* Setting redirect_collector to an empty string means that the daemon will
+     * use preconnect host calculation instead, which is required for non-US
+     * licence keys to work. */
+    app_info->redirect_collector = nr_strdup("");
   }
 
   app_info->appname = nr_strdup(given_config->app_name);

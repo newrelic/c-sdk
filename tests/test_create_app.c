@@ -151,6 +151,13 @@ static void test_create_app_newrelic_app_correctly_populated(
   assert_memory_equal(&tt_config, &app->config->transaction_tracer,
                       sizeof(tt_config));
 
+  assert_string_equal("", app->app_info->redirect_collector);
+  assert_string_equal(app->config->app_name, app->app_info->appname);
+  assert_string_equal(app->config->license_key, app->app_info->license);
+  assert_string_equal("c", app->app_info->lang);
+  assert_non_null(app->app_info->environment);
+  assert_string_equal(newrelic_version(), app->app_info->version);
+
   newrelic_destroy_app(&app);
 }
 
