@@ -171,24 +171,24 @@ and `database_name_reporting` both set to true. All the fields of
 ### Distributed Tracing
 
 Distributed tracing allows you to monitor requests across a distributed system.
-When the multiple services of your distributed system are instrumented with 
-New Relic agents or SDKs, you can trace the path of a request as it travels 
-across a complex system. For the C SDK, you can use the distributed tracing 
-payload APIs to instrument the calling service and/or the called service. For 
-services instrumented with the C SDK, the calling service uses the API call 
-`newrelic_create_distributed_trace_payload()` to generate a payload. This 
-payload is accepted by the called service, 
-`newrelic_accept_distributed_trace_payload()`. [You can read more about 
+When the multiple services of your distributed system are instrumented with
+New Relic agents or SDKs, you can trace the path of a request as it travels
+across a complex system. For the C SDK, you can use the distributed tracing
+payload APIs to instrument the calling service and/or the called service. For
+services instrumented with the C SDK, the calling service uses the API call
+`newrelic_create_distributed_trace_payload()` to generate a payload. This
+payload is accepted by the called service,
+`newrelic_accept_distributed_trace_payload()`. [You can read more about
 distributed tracing here](https://docs.newrelic.com/docs/apm/distributed-tracing/getting-started/introduction-distributed-tracing).
 
-**This feature is turned off by default. To turn it on you must 
-set `config->distributed_tracing.enabled` to true.** Span events 
-are turned on by default, to disable them you must set 
+**This feature is turned off by default. To turn it on you must
+set `config->distributed_tracing.enabled` to true.** Span events
+are turned on by default, to disable them you must set
 `config->span_events.enabled` to false.
 
-Example: 
+Example:
 
-```c 
+```c
   /* start an external segment, this segment will be the connection between applications */
   segment = newrelic_start_external_segment(txn, &params);
 
@@ -206,7 +206,7 @@ Example:
 
 An example application can be used as reference [here](https://github.com/newrelic/c-dt-example).
 
-Detailed descriptions of all the create and accept payload functions are located 
+Detailed descriptions of all the create and accept payload functions are located
 [here](https://newrelic.github.io/c-sdk/libnewrelic_8h.html).
 
 <div align="right">
@@ -405,9 +405,9 @@ When recording an error using `newrelic_notice_error()`, callers must supply fou
 parameters to the function, as indicated in `libnewrelic.h`. Among these
 parameters are `priority` and `errclass`.
 
-The SDK is capped at reporting 100 error traces per minute. Supposing that over
-100 errors are noticed during a single minute, the total number of errors are
-reported in New Relic metrics; only 100 would be available at the Error Analytic's
+The SDK is capped at reporting 100 error traces per harvest period. Supposing that over
+100 errors are noticed during a single harvest period, the total number of errors are
+reported in New Relic metrics; only 100 would be available at the Error Analytics
 dashboard. That said, in the pool of errors collected by the SDK, the `priority`
 of an error indicates which errors should be saved in the event that the cap has
 been exceeded. Higher values take priority over lower values.
