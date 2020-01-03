@@ -13,7 +13,7 @@ Record custom events in different threads.
   "?? agent run id",
   {
     "reservoir_size": "??",
-    "events_seen": 10000
+    "events_seen": 833
   },
   "?? events"
 ]

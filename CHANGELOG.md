@@ -5,6 +5,16 @@
 - A default configuration created with `newrelic_create_app_config()` will now
   work as expected with licence keys for non-US accounts.
 
+### New Features ###
+
+- Event data is now sent to New Relic every five seconds, instead of every
+  minute. As a result, transaction, custom, and error events will appear in
+  near-realtime within APM and Insights.
+
+  Note that the overall limits on how many events can be sent per minute have
+  not changed. Also, metric and trace data is unaffected, and will still be
+  sent every minute.o
+
 ### Internal Changes ###
 
 - An error when compiling the test suite with GCC 9.2 was fixed.
