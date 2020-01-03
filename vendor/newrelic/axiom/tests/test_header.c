@@ -63,6 +63,10 @@ int nr_txn_is_account_trusted(const nrtxn_t* txn, int account_id NRUNUSED) {
   return ((const mock_txn*)txn)->fake_trusted;
 }
 
+bool nr_txn_should_create_span_events(const nrtxn_t* txn NRUNUSED) {
+  return true;
+}
+
 nrtime_t nr_txn_unfinished_duration(const nrtxn_t* txn) {
   return ((const mock_txn*)txn)->unfinished_duration;
 }

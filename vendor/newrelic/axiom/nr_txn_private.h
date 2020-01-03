@@ -71,16 +71,6 @@ extern char* nr_txn_current_path_hash(const nrtxn_t* txn);
 extern char* nr_txn_get_alternate_path_hashes(const nrtxn_t* txn);
 
 /*
- * Purpose : Return the primary app name, given an app name string that may
- *           include rollups.
- *
- * Params  : 1. The app name(s) string.
- *
- * Returns : A newly allocated string containing the primary app name.
- */
-extern char* nr_txn_get_primary_app_name(const char* appname);
-
-/*
  * Purpose : Set the GUID for the given transaction.
  *
  * Params  : 1. The transaction.

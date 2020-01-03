@@ -81,7 +81,8 @@ typedef struct _nrtxnopt_t {
                                       is enabled */
   int span_events_enabled;         /* Whether span events are enabled */
   size_t max_span_events; /* The maximum number of span events per transaction.
-                             When set to 0, NR_MAX_SPAN_EVENTS is used. */
+                             When set to 0, the app harvest's span event limit
+                             is used. */
   bool discount_main_context_blocking; /* If enabled, the main context is
                                           assumed to be blocked when
                                           asynchronous contexts are executing,
@@ -209,7 +210,6 @@ typedef struct _nrtxn_t {
                             * all segment start and end times are relative to
                             * this field */
 
-  int stamp;                    /* Node stamp counter */
   nr_error_t* error;            /* Captured error */
   nr_slowsqls_t* slowsqls;      /* Slow SQL statements */
   nrpool_t* datastore_products; /* Datastore products seen */
@@ -238,6 +238,7 @@ typedef struct _nrtxn_t {
 
   nrobj_t* app_connect_reply; /* Contents of application collector connect
                                  command reply */
+  nr_app_limits_t app_limits; /* Application data limits */
   char* primary_app_name; /* The primary app name in use (ie the first rollup
                              entry) */
   nr_synthetics_t* synthetics; /* Synthetics metadata for the transaction */
@@ -515,11 +516,13 @@ typedef struct _nr_txn_attribute_t nr_txn_attribute_t;
  * Purpose : Create attributes with the correct names and destinations.
  *           For relevant links see the comment above the definitions.
  */
+extern const nr_txn_attribute_t* nr_txn_request_uri;
 extern const nr_txn_attribute_t* nr_txn_request_accept_header;
 extern const nr_txn_attribute_t* nr_txn_request_content_type;
 extern const nr_txn_attribute_t* nr_txn_request_content_length;
 extern const nr_txn_attribute_t* nr_txn_request_host;
 extern const nr_txn_attribute_t* nr_txn_request_method;
+extern const nr_txn_attribute_t* nr_txn_request_user_agent_deprecated;
 extern const nr_txn_attribute_t* nr_txn_request_user_agent;
 extern const nr_txn_attribute_t* nr_txn_server_name;
 extern const nr_txn_attribute_t* nr_txn_response_content_type;
@@ -649,6 +652,19 @@ extern int nr_txn_event_should_add_guid(const nrtxn_t* txn);
  * Returns : The recording level.
  */
 extern nr_tt_recordsql_t nr_txn_sql_recording_level(const nrtxn_t* txn);
+
+/*
+ * Purpose : Returns whether or not the transaction is being sampled in a
+ *           distributed tracing context.  Returns false if distributed
+ *           tracing is disabled.
+ *
+ * Params  : 1. The transaction.
+ *
+ * Returns : true if distributed tracing is enabled and the transaction is
+ *           sampled, false if the transaction is not sanpled or distributed
+ *           tracing is disabled
+ */
+extern bool nr_txn_is_sampled(const nrtxn_t* txn);
 
 /*
  * Purpose : Adds CAT intrinsics to the analytics event parameters.
@@ -906,5 +922,40 @@ extern void nr_txn_retire_current_segment(nrtxn_t* txn, nr_segment_t* segment);
  * Params  : 1. A pointer to the nrtxnfinal_t to destroy.
  */
 extern void nr_txn_final_destroy_fields(nrtxnfinal_t* tf);
+
+/*
+ * Purpose : Return the trace ID for the given transaction.
+ *
+ * Params  : 1. The transaction.
+ *
+ * Note    : The string returned has to be freed by the caller.
+ *
+ * Returns : Trace ID if distributed tracing is enabled, otherwise NULL.
+ */
+extern char* nr_txn_get_current_trace_id(nrtxn_t* txn);
+
+/*
+ * Purpose : Return the current span ID or create it if doesn't have one yet.
+ *
+ * Params  : 1. The transaction.
+ *
+ * Note    : The string returned has to be freed by the caller.
+ *
+ * Returns : current span ID if the segment is valid, otherwise NULL.
+ */
+extern char* nr_txn_get_current_span_id(nrtxn_t* txn);
+
+/*
+ * Purpose : End all currently active segments.
+ *
+ *           All segments in the parent stacks maintained by the transaction
+ *           will be ended and removed from the parent stacks.
+ *
+ * Params  : 1. The transaction.
+ *
+ * Note    : This function should not be used when manual segment parenting and
+ *           timing was used.
+ */
+extern void nr_txn_finalize_parent_stacks(nrtxn_t* txn);
 
 #endif /* NR_TXN_HDR */

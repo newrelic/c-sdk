@@ -201,7 +201,7 @@ extern bool nr_vector_remove(nr_vector_t* v, size_t pos, void** element_ptr);
  * Returns : The element, or NULL on error.
  */
 static inline void* nr_vector_get(nr_vector_t* v, size_t pos) {
-  if (NULL == v || pos > v->used) {
+  if (NULL == v || pos >= v->used) {
     return NULL;
   }
 

@@ -15,18 +15,31 @@ func TestHarvestTriggerCustomBuilder(t *testing.T) {
 
 	reply := &ConnectReply{}
 
-	methods := &collector.DataMethods{
-		ErrorEventData:    &collector.ReportPeriod{InSeconds: 1},
-		AnalyticEventData: &collector.ReportPeriod{InSeconds: 1},
-		CustomEventData:   &collector.ReportPeriod{InSeconds: 1},
-		SpanEventData:     &collector.ReportPeriod{InSeconds: 1},
-	}
+	errorEventData := 100
+	txnEventData := 10000
+	customEventData := 10000
+	spanEventData := 1000
 
-	reply.DataMethods = methods
+	reply.EventHarvestConfig = collector.EventHarvestConfig{
+		ReportPeriod: 60000,
+		EventConfigs: collector.EventConfigs{
+			ErrorEventConfig:    collector.Event{
+				Limit: errorEventData,
+			},
+			AnalyticEventConfig: collector.Event{
+				Limit: txnEventData,
+			},
+			CustomEventConfig:   collector.Event{
+				Limit: customEventData,
+			},
+			SpanEventConfig:     collector.Event{
+				Limit: spanEventData,
+			},
+		}}
 
 	triggerChannel := make(chan HarvestType)
 	cancelChannel := make(chan bool)
-	customTrigger := customTriggerBuilder(reply, collector.MinimumReportPeriod, time.Millisecond)
+	customTrigger := customTriggerBuilder(reply)
 
 	go customTrigger(triggerChannel, cancelChannel)
 
@@ -47,25 +60,9 @@ func TestHarvestTriggerCustomBuilder(t *testing.T) {
 	for {
 		event := <-triggerChannel
 		m[event] = m[event] + 1
-		if len(m) >= 5 {
+		if len(m) >= 3 {
 			break
 		}
-	}
-
-	if m[HarvestErrorEvents] < 1 {
-		t.Fatal("HarvestErrorEvents event did not occur")
-	}
-
-	if m[HarvestTxnEvents] < 1 {
-		t.Fatal("HarvestTxnEvents event did not occur")
-	}
-
-	if m[HarvestCustomEvents] < 1 {
-		t.Fatal("HarvestCustomEvents event did not occur")
-	}
-
-	if m[HarvestSpanEvents] < 1 {
-		t.Fatal("HarvestSpanEvents event did not occur")
 	}
 
 	if m[HarvestDefaultData] < 1 {
@@ -90,7 +87,7 @@ Outer:
 	// sent to the trigger channel after cancellation has been confirmed.
 	<-cancelChannel
 
-	timer := time.NewTimer(time.Duration(2*collector.MinimumReportPeriod) * time.Millisecond)
+	timer := time.NewTimer(time.Duration(2*5) * time.Millisecond)
 	select {
 	case <-timer.C:
 		// Excellent; we didn't receive anything on triggerChannel.

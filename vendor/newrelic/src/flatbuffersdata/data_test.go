@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"newrelic"
+	"newrelic/collector"
+	"newrelic/limits"
 	"newrelic/protocol"
 
 	"github.com/google/flatbuffers/go"
@@ -18,7 +20,7 @@ func BenchmarkAggregateTxn(b *testing.B) {
 	}
 
 	ag := newrelic.FlatTxn(data)
-	harvest := newrelic.NewHarvest(time.Now())
+	harvest := newrelic.NewHarvest(time.Now(), collector.NewHarvestLimits())
 
 	// Add the metrics, so we are only doing lookups in the loop
 	ag.AggregateInto(harvest)
@@ -124,7 +126,7 @@ func TestFlatbuffersTxnData(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
-	harvest := newrelic.NewHarvest(time.Now())
+	harvest := newrelic.NewHarvest(time.Now(), collector.NewHarvestLimits())
 	ag := newrelic.FlatTxn(data)
 	ag.AggregateInto(harvest)
 	id := newrelic.AgentRunID("12345")
@@ -192,7 +194,7 @@ func TestMinimumFlatbufferSize(t *testing.T) {
 	buf.Finish(protocol.MessageEnd(buf))
 
 	minLen := len(buf.Bytes[buf.Head():])
-	if minLen != newrelic.MinFlatbufferSize {
+	if minLen != limits.MinFlatbufferSize {
 		t.Fatalf("Unexpected minimum flatbuffer size: %d", minLen)
 	}
 }

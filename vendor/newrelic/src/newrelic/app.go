@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"newrelic/collector"
+	"newrelic/limits"
 	"newrelic/log"
 	"newrelic/sysinfo"
 	"newrelic/utilization"
@@ -78,19 +79,20 @@ type RawPreconnectPayload struct {
 }
 
 type RawConnectPayload struct {
-	Pid              int                       `json:"pid"`
-	Language         string                    `json:"language"`
-	Version          string                    `json:"agent_version"`
-	Host             string                    `json:"host"`
-	HostDisplayName  string                    `json:"display_host,omitempty"`
-	Settings         map[string]interface{}    `json:"settings"`
-	AppName          []string                  `json:"app_name"`
-	HighSecurity     bool                      `json:"high_security"`
-	Labels           JSONString                `json:"labels"`
-	Environment      JSONString                `json:"environment"`
-	Identifier       string                    `json:"identifier"`
-	Util             *utilization.Data         `json:"utilization,omitempty"`
-	SecurityPolicies map[string]SecurityPolicy `json:"security_policies,omitempty"`
+	Pid                int                            `json:"pid"`
+	Language           string                         `json:"language"`
+	Version            string                         `json:"agent_version"`
+	Host               string                         `json:"host"`
+	HostDisplayName    string                         `json:"display_host,omitempty"`
+	Settings           map[string]interface{}         `json:"settings"`
+	AppName            []string                       `json:"app_name"`
+	HighSecurity       bool                           `json:"high_security"`
+	Labels             JSONString                     `json:"labels"`
+	Environment        JSONString                     `json:"environment"`
+	Identifier         string                         `json:"identifier"`
+	Util               *utilization.Data           	  `json:"utilization,omitempty"`
+	SecurityPolicies   map[string]SecurityPolicy      `json:"security_policies,omitempty"`
+	EventHarvestConfig collector.EventHarvestConfig   `json:"event_harvest_config"`
 }
 
 // PreconnectReply contains all of the fields from the app preconnect command reply
@@ -104,11 +106,11 @@ type PreconnectReply struct {
 // that are used in the daemon.  The reply contains many more fields, but most
 // of them are used in the agent.
 type ConnectReply struct {
-	ID                *AgentRunID            `json:"agent_run_id"`
-	MetricRules       MetricRules            `json:"metric_name_rules"`
-	DataMethods       *collector.DataMethods `json:"data_methods"`
-	SamplingFrequency int                    `json:"sampling_target_period_in_seconds"`
-	SamplingTarget    int                    `json:"sampling_target"`
+	ID                 *AgentRunID                  `json:"agent_run_id"`
+	MetricRules        MetricRules                  `json:"metric_name_rules"`
+	SamplingFrequency  int                          `json:"sampling_target_period_in_seconds"`
+	SamplingTarget     int                          `json:"sampling_target"`
+	EventHarvestConfig collector.EventHarvestConfig `json:"event_harvest_config"`
 }
 
 // An App represents the state of an application.
@@ -184,7 +186,7 @@ func (info *AppInfo) ConnectPayloadInternal(pid int, util *utilization.Data) *Ra
 		Language:        info.AgentLanguage,
 		Version:         info.AgentVersion,
 		Host:            info.Hostname,
-		HostDisplayName: stringLengthByteLimit(info.HostDisplayName, HostLengthByteLimit),
+		HostDisplayName: stringLengthByteLimit(info.HostDisplayName, limits.HostLengthByteLimit),
 		Settings:        info.Settings,
 		AppName:         strings.Split(info.Appname, ";"),
 		HighSecurity:    info.HighSecurity,
@@ -196,7 +198,8 @@ func (info *AppInfo) ConnectPayloadInternal(pid int, util *utilization.Data) *Ra
 		//
 		// Providing the identifier below works around this issue and allows users
 		// more flexibility in using application rollups.
-		Identifier: info.Appname,
+		Identifier:         info.Appname,
+		EventHarvestConfig: collector.NewEventHarvestConfig(),
 	}
 
 	// Fallback solution: if no host name was provided with the application
@@ -274,6 +277,7 @@ func parseConnectReply(rawConnectReply []byte) (*ConnectReply, error) {
 	if nil == c.ID {
 		return nil, errors.New("missing agent run id")
 	}
+
 	return &c, nil
 }
 

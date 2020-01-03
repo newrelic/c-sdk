@@ -22,8 +22,9 @@
   "{\"Data Center\":\"US-East\",\"Server Color\":\"Beige\"}"
 
 typedef struct _test_app_state_t {
-  int cmd_appinfo_succeed;
+  bool cmd_appinfo_succeed;
   int cmd_appinfo_called;
+  bool last_daemon_query_reset;
 } test_app_state_t;
 
 int nr_get_daemon_fd(void) {
@@ -175,14 +176,16 @@ static void test_find_or_add_app(void) {
    * Fill up applist
    */
   for (i = 0; i < NR_APP_LIMIT; i++) {
-    char name[64];
+    char entity_name[64];
+    char app_name[80];
     char lic[64];
 
     /* License must be 40 characters for plicense creation. */
     snprintf(lic, 41, "12345%05d000000000000000000000000006789", i);
-    snprintf(name, 32, "appname%d", i);
+    snprintf(entity_name, 64, "appname%d", i);
+    snprintf(app_name, 80, "%s;OtherApp", entity_name);
 
-    info.appname = name;
+    info.appname = app_name;
     info.license = lic;
 
     app = nr_app_find_or_add_app(applist, &info);
@@ -190,7 +193,8 @@ static void test_find_or_add_app(void) {
     tlib_pass_if_not_null("new app", app);
     tlib_pass_if_int_equal("new app", i + 1, applist->num_apps);
     if (0 != app) {
-      tlib_pass_if_str_equal("new app", name, app->info.appname);
+      tlib_pass_if_str_equal("new app", app_name, app->info.appname);
+      tlib_pass_if_str_equal("new app", entity_name, app->entity_name);
       tlib_pass_if_str_equal("new app", lic, app->info.license);
       tlib_pass_if_str_equal("new app", info.version, app->info.version);
       tlib_pass_if_str_equal("new app", info.lang, app->info.lang);
@@ -222,20 +226,23 @@ static void test_find_or_add_app(void) {
    * Find those apps
    */
   for (i = 0; i < NR_APP_LIMIT; i++) {
-    char name[64];
+    char entity_name[64];
+    char app_name[80];
     char lic[64];
 
     snprintf(lic, 41, "12345%05d000000000000000000000000006789", i);
-    snprintf(name, 32, "appname%d", i);
+    snprintf(entity_name, 64, "appname%d", i);
+    snprintf(app_name, 80, "%s;OtherApp", entity_name);
 
-    info.appname = name;
+    info.appname = app_name;
     info.license = lic;
 
     app = nr_app_find_or_add_app(applist, &info);
 
     tlib_pass_if_not_null("find app", app);
     if (0 != app) {
-      tlib_pass_if_str_equal("find app", name, app->info.appname);
+      tlib_pass_if_str_equal("new app", app_name, app->info.appname);
+      tlib_pass_if_str_equal("new app", entity_name, app->entity_name);
       tlib_pass_if_str_equal("find app", lic, app->info.license);
       tlib_pass_if_str_equal("find app", info.version, app->info.version);
       tlib_pass_if_str_equal("find app", info.lang, app->info.lang);
@@ -354,6 +361,10 @@ nr_status_t nr_cmd_appinfo_tx(int daemon_fd NRUNUSED, nrapp_t* app) {
 
   p->cmd_appinfo_called += 1;
 
+  if (p->last_daemon_query_reset) {
+    app->last_daemon_query = 0;
+  }
+
   if (p->cmd_appinfo_succeed) {
     app->state = (int)nr_cmd_appinfo_tx_state;
     return NR_SUCCESS;
@@ -423,6 +434,7 @@ static void test_agent_find_or_add_app(void) {
   nrapp_t* app;
   nr_app_info_t info;
   nrapplist_t* applist = nr_applist_create();
+  nrapptype_t original_state;
   char* system_host_name = nr_system_get_hostname();
 
   nr_memset(&info, 0, sizeof(info));
@@ -442,24 +454,24 @@ static void test_agent_find_or_add_app(void) {
   /*
    * Test : Bad Parameters
    */
-  app = nr_agent_find_or_add_app(NULL, NULL, settings_callback_fn);
+  app = nr_agent_find_or_add_app(NULL, NULL, settings_callback_fn, 0);
   tlib_pass_if_null("zero params", app)
       tlib_pass_if_int_equal("zero params", 0, applist->num_apps);
 
-  app = nr_agent_find_or_add_app(applist, NULL, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, NULL, settings_callback_fn, 0);
   tlib_pass_if_null("NULL info", app)
       tlib_pass_if_int_equal("NULL info", 0, applist->num_apps);
 
-  app = nr_agent_find_or_add_app(NULL, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(NULL, &info, settings_callback_fn, 0);
   tlib_pass_if_null("NULL applist", app)
       tlib_pass_if_int_equal("NULL applist", 0, applist->num_apps);
 
   /*
    * Test : Application added, queried, but unknown and not returned
    */
-  p->cmd_appinfo_succeed = 0;
+  p->cmd_appinfo_succeed = false;
   p->cmd_appinfo_called = 0;
-  app = nr_agent_find_or_add_app(applist, &info, NULL);
+  app = nr_agent_find_or_add_app(applist, &info, NULL, 0);
   tlib_pass_if_null("new app", app);
   tlib_pass_if_int_equal("new app", 1, applist->num_apps);
   tlib_pass_if_int_equal("new app", 1, p->cmd_appinfo_called);
@@ -489,9 +501,9 @@ static void test_agent_find_or_add_app(void) {
   /*
    * Test : Same app, but no cmd appinfo, since it is too soon. Settings added.
    */
-  p->cmd_appinfo_succeed = 0;
+  p->cmd_appinfo_succeed = false;
   p->cmd_appinfo_called = 0;
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_null("find app no appinfo", app);
   tlib_pass_if_int_equal("find app no appinfo", 1, applist->num_apps);
   tlib_pass_if_int_equal("find app no appinfo", 0, p->cmd_appinfo_called);
@@ -507,18 +519,56 @@ static void test_agent_find_or_add_app(void) {
   }
 
   /*
+   * Test : No multiple appinfo calls on failure, despite timeout
+   */
+
+  original_state = nr_cmd_appinfo_tx_state;
+  nr_cmd_appinfo_tx_state = NR_APP_INVALID;
+
+  p->cmd_appinfo_succeed = true;
+  p->cmd_appinfo_called = 0;
+  p->last_daemon_query_reset = true;
+  app = applist->apps[0];
+  if (0 != app) {
+    app->last_daemon_query = 0;
+    app->failed_daemon_query_count = 0;
+  }
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn,
+                                 100 * NR_TIME_DIVISOR_MS);
+  tlib_pass_if_not_null("no multiple calls on invalid app", app);
+  tlib_pass_if_int_equal("no multiple calls on invalid app",
+                         p->cmd_appinfo_called, 1);
+
+  nr_cmd_appinfo_tx_state = original_state;
+
+  /*
+   * Test : Timeout enforces multiple appinfo calls
+   */
+  nr_free(info.appname);
+  info.appname = nr_strdup("appname_multiple_calls");
+  p->cmd_appinfo_succeed = false;
+  p->cmd_appinfo_called = 0;
+  p->last_daemon_query_reset = true;
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn,
+                                 100 * NR_TIME_DIVISOR_MS);
+  tlib_pass_if_null("fail after timeout", app);
+  tlib_pass_if_true("fail after timeout", p->cmd_appinfo_called > 1,
+                    "multiple appinfo calls expected, got %d",
+                    p->cmd_appinfo_called);
+
+  /*
    * Test : Command appinfo succeeds
    */
-  p->cmd_appinfo_succeed = 1;
+  p->cmd_appinfo_succeed = true;
   p->cmd_appinfo_called = 0;
-  app = applist->apps[0];
+  app = applist->apps[1];
   if (0 != app) {
     app->last_daemon_query = 0;
     app->failed_daemon_query_count = 1;
   }
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_not_null("app with appinfo", app);
-  tlib_pass_if_int_equal("app with appinfo", 1, applist->num_apps);
+  tlib_pass_if_int_equal("app with appinfo", 2, applist->num_apps);
   tlib_pass_if_int_equal("app with appinfo", 1, p->cmd_appinfo_called);
   if (0 != app) {
     tlib_pass_if_int_equal("app with appinfo", (int)NR_APP_OK, (int)app->state);
@@ -530,16 +580,16 @@ static void test_agent_find_or_add_app(void) {
   /*
    * Test : New app, but null labels
    */
-  p->cmd_appinfo_succeed = 0;
+  p->cmd_appinfo_succeed = false;
   p->cmd_appinfo_called = 0;
   nr_free(info.appname);
   info.appname = nr_strdup("appname_null_labels");
   nro_delete(info.labels);
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_null("new app NULL labels", app);
-  tlib_pass_if_int_equal("new app NULL labels", 2, applist->num_apps);
+  tlib_pass_if_int_equal("new app NULL labels", 3, applist->num_apps);
   tlib_pass_if_int_equal("new app NULL labels", 1, p->cmd_appinfo_called);
-  app = applist->apps[1];
+  app = applist->apps[2];
   tlib_pass_if_not_null("new app NULL labels", app);
   if (0 != app) {
     test_obj_as_json("new app NULL labels", app->info.labels, "null");
@@ -551,12 +601,12 @@ static void test_agent_find_or_add_app(void) {
   /*
    * Test : Unable to add application due to full applist.
    */
-  p->cmd_appinfo_succeed = 0;
+  p->cmd_appinfo_succeed = false;
   p->cmd_appinfo_called = 0;
   applist->num_apps = NR_APP_LIMIT;
   nr_free(info.appname);
   info.appname = nr_strdup("other_appname");
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_null("full applist", app);
   tlib_pass_if_int_equal("full applist", 0, p->cmd_appinfo_called);
 
@@ -565,20 +615,20 @@ static void test_agent_find_or_add_app(void) {
    * First try to add app when both HSM and LASP are set, expect
    * failure. Then turn off HSM and try again, expecting success.
    */
-  p->cmd_appinfo_succeed = 1;
+  p->cmd_appinfo_succeed = true;
   p->cmd_appinfo_called = 0;
-  applist->num_apps = 2;
+  applist->num_apps = 3;
   nr_free(info.appname);
   info.appname = nr_strdup("appname_security");
   info.high_security = 1;
   nr_free(info.security_policies_token);
   info.security_policies_token = nr_strdup("any_token");
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_null("new app test HSM and LASP", app);
   tlib_pass_if_int_equal("new app test HSM and LASP", 0, p->cmd_appinfo_called);
   // Turn HSM off and try again, expecting a success
   info.high_security = 0;
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_pass_if_not_null("new app test HSM and LASP", app);
   tlib_pass_if_int_equal("new app test HSM and LASP", 1, p->cmd_appinfo_called);
   tlib_pass_if_int_equal("new app test HSM and LASP", app->info.high_security,
@@ -621,7 +671,7 @@ static void test_verify_id(void) {
   /*
    * Add an app and connect it.
    */
-  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn);
+  app = nr_agent_find_or_add_app(applist, &info, settings_callback_fn, 0);
   tlib_fail_if_null("new app", app);
   applist->apps[0]->state = NR_APP_OK;
   applist->apps[0]->agent_run_id = nr_strdup(TEST_AGENT_RUN_ID);
@@ -765,6 +815,100 @@ static void test_app_consider_appinfo_failure(void) {
   nr_cmd_appinfo_tx_state = original_state;
 }
 
+static void test_get_primary_app_name(void) {
+  char* result;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_null("NULL appname", nr_app_get_primary_app_name(NULL));
+  tlib_pass_if_null("empty appname", nr_app_get_primary_app_name(""));
+
+  /*
+   * Test : No rollup.
+   */
+  result = nr_app_get_primary_app_name("App Name");
+  tlib_pass_if_str_equal("no rollup", "App Name", result);
+  nr_free(result);
+
+  /*
+   * Test : Rollup.
+   */
+  result = nr_app_get_primary_app_name("App Name;Foo;Bar");
+  tlib_pass_if_str_equal("rollup", "App Name", result);
+  nr_free(result);
+}
+
+static void test_app_entity_type_get(void) {
+  nrapp_t app;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_null("NULL app", nr_app_get_entity_type(NULL));
+
+  /*
+   * Test : Constant string "SERVICE" returned
+   */
+  tlib_pass_if_str_equal("static entity type", "SERVICE",
+                         nr_app_get_entity_type(&app));
+}
+
+static void test_app_entity_name_get(void) {
+  nrapp_t app;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_null("NULL app", nr_app_get_entity_name(NULL));
+
+  /*
+   * Test : Entity name (primary app name) returned.
+   *
+   * Correct initialization of entity_name is tested in
+   * test_find_or_add_app.
+   */
+  app.entity_name = "A";
+  tlib_pass_if_str_equal("entity name", "A", nr_app_get_entity_name(&app));
+}
+
+static void test_app_host_name_get(void) {
+  nrapp_t app;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_null("NULL app", nr_app_get_host_name(NULL));
+
+  /*
+   * Test : Host name returned
+   *
+   * Correct initialization of host_name is tested in
+   * test_find_or_add_app.
+   */
+  app.host_name = "host.com";
+  tlib_pass_if_str_equal("entity name", "host.com", nr_app_get_host_name(&app));
+}
+
+static void test_app_entity_guid_get(void) {
+  nrapp_t app;
+
+  /*
+   * Test : Bad parameters.
+   */
+  tlib_pass_if_null("NULL app", nr_app_get_entity_guid(NULL));
+
+  /*
+   * Test : Entity guid returned
+   *
+   * Correct initialization of the entity guid is tested in
+   * test_cmd_appinfo.c/test_process_connected_app.
+   */
+  app.entity_guid = "00112233445566778899aa";
+  tlib_pass_if_str_equal("entity name", "00112233445566778899aa",
+                         nr_app_get_entity_guid(&app));
+}
+
 tlib_parallel_info_t parallel_info
     = {.suggested_nthreads = 4, .state_size = sizeof(test_app_state_t)};
 
@@ -779,4 +923,9 @@ void test_main(void* p NRUNUSED) {
   test_verify_id();
   test_app_consider_appinfo();
   test_app_consider_appinfo_failure();
+  test_get_primary_app_name();
+  test_app_entity_name_get();
+  test_app_entity_type_get();
+  test_app_host_name_get();
+  test_app_entity_guid_get();
 }

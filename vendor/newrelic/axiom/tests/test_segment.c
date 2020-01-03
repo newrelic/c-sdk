@@ -54,6 +54,21 @@ static nr_segment_iter_return_t test_iterator_callback(nr_segment_t* segment,
   return NR_SEGMENT_NO_POST_ITERATION_CALLBACK;
 }
 
+static int test_segment_priority_comparator(const void* ptr1,
+                                            const void* ptr2,
+                                            void* userdata NRUNUSED) {
+  const nr_segment_t* seg1 = (const nr_segment_t*)ptr1;
+  const nr_segment_t* seg2 = (const nr_segment_t*)ptr2;
+
+  if (seg1->priority > seg2->priority) {
+    return 1;
+  } else if (seg1->priority < seg2->priority) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
 static void test_segment_new_txn_with_segment_root(void) {
   nrtxn_t* txn = new_txn(0);
 
@@ -1745,58 +1760,183 @@ static void test_segment_no_recording(void) {
   nr_segment_destroy(seg);
 }
 
+static void test_segment_span_comparator_null(void) {
+  nr_segment_t seg = {0};
+  nr_vector_t* segments = nr_vector_create(2, NULL, NULL);
+
+  /*
+   * Verify the comparator doesn't crash on NULL elements.
+   */
+  nr_vector_push_back(segments, &seg);
+  nr_vector_push_back(segments, NULL);
+
+  nr_vector_sort(segments, nr_segment_wrapped_span_priority_comparator, NULL);
+
+  tlib_pass_if_ptr_equal("valid segment after NULL", nr_vector_get(segments, 0),
+                         NULL);
+  tlib_pass_if_ptr_equal("valid segment after NULL", nr_vector_get(segments, 1),
+                         &seg);
+
+  nr_vector_destroy(&segments);
+}
+
 static void test_segment_span_comparator(void) {
-  nr_segment_t root = {.parent = NULL};
-  nr_segment_t external = {.parent = &root, .id = "id"};
+  nr_segment_t root = {.parent = NULL, .priority = NR_SEGMENT_PRIORITY_ROOT};
+  nr_segment_t external = {.parent = &root,
+                           .start_time = 0,
+                           .stop_time = 10,
+                           .type = NR_SEGMENT_EXTERNAL};
+  nr_segment_t external_dt = {.parent = &root,
+                              .start_time = 0,
+                              .stop_time = 10,
+                              .type = NR_SEGMENT_EXTERNAL,
+                              .priority = NR_SEGMENT_PRIORITY_DT,
+                              .id = "id1"};
+  nr_segment_t external_dt_long = {.parent = &root,
+                                   .start_time = 10,
+                                   .stop_time = 30,
+                                   .type = NR_SEGMENT_EXTERNAL,
+                                   .priority = NR_SEGMENT_PRIORITY_DT,
+                                   .id = "id2"};
+  nr_segment_t external_dt_log
+      = {.parent = &root,
+         .start_time = 0,
+         .stop_time = 10,
+         .type = NR_SEGMENT_EXTERNAL,
+         .priority = NR_SEGMENT_PRIORITY_DT | NR_SEGMENT_PRIORITY_LOG,
+         .id = "id3"};
+  nr_segment_t custom = {.parent = &root, .start_time = 0, .stop_time = 20};
   nr_segment_t custom_long
       = {.parent = &root, .start_time = 0, .stop_time = 1000};
-  nr_segment_t custom_short
-      = {.parent = &root, .start_time = 0, .stop_time = 10};
+  nr_segment_t custom_log = {.parent = &root,
+                             .start_time = 0,
+                             .stop_time = 10,
+                             .id = "id4",
+                             .priority = NR_SEGMENT_PRIORITY_LOG};
+  nr_segment_t custom_log_long = {.parent = &root,
+                                  .start_time = 10,
+                                  .stop_time = 30,
+                                  .id = "id5",
+                                  .priority = NR_SEGMENT_PRIORITY_LOG};
+  nr_vector_t* segments = nr_vector_create(12, NULL, NULL);
 
-  tlib_pass_if_int_equal("The root segment always has priority",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&root, (void*)&external, NULL),
-                         1);
+  /*
+   * The comparator function is tested by using it to sort a vector of
+   * segments. In this way, all necessary test cases are covered.
+   *
+   * The comparator first compares a segment's priority, which is a bit
+   * field with bits set according to NR_SEGEMENT_PRIORITY_* flags. The
+   * priority with the higher numerical value is considered higher.
+   *
+   * If the priorities of two segments are the same, the comparator
+   * compares the segments' duration. The longer duration is considered
+   * higher.
+   *
+   * The table below shows the final ordering and the respective values
+   * that are considered by the comparator function.
+   *
+   * Position | Segment          | Priority            | Duration
+   * ---------+------------------+---------------------+----------
+   * 8        | root             | 0b10000000000000000 | 10
+   * 7        | external_dt_log  | 0b01100000000000000 | 10
+   * 6        | external_dt_long | 0b01000000000000000 | 20
+   * 5        | external_dt      | 0b01000000000000000 | 10
+   * 4        | custom_log_long  | 0b00100000000000000 | 20
+   * 3        | custom_log       | 0b00100000000000000 | 10
+   * 2        | custom_long      | 0b00000000000000000 | 1000
+   * 1        | custom           | 0b00000000000000000 | 20
+   * 0        | external         | 0b00000000000000000 | 10
+   */
 
-  tlib_pass_if_int_equal("The root segment always has priority",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&external, (void*)&root, NULL),
-                         -1);
+  nr_vector_push_back(segments, &root);
+  nr_vector_push_back(segments, &external);
+  nr_vector_push_back(segments, &external_dt);
+  nr_vector_push_back(segments, &external_dt_long);
+  nr_vector_push_back(segments, &external_dt_log);
+  nr_vector_push_back(segments, &custom);
+  nr_vector_push_back(segments, &custom_long);
+  nr_vector_push_back(segments, &custom_log);
+  nr_vector_push_back(segments, &custom_log_long);
 
-  tlib_pass_if_int_equal("external have priority over non-root segments",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&external, (void*)&custom_long, NULL),
-                         1);
+  nr_vector_sort(segments, nr_segment_wrapped_span_priority_comparator, NULL);
 
-  tlib_pass_if_int_equal("external have priority over non-root segments",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&custom_long, (void*)&external, NULL),
-                         -1);
+  tlib_pass_if_ptr_equal("1. root segment", nr_vector_get(segments, 8), &root);
+  tlib_pass_if_ptr_equal("2. external DT and logs", nr_vector_get(segments, 7),
+                         &external_dt_log);
+  tlib_pass_if_ptr_equal("3. external DT long", nr_vector_get(segments, 6),
+                         &external_dt_long);
+  tlib_pass_if_ptr_equal("4. external DT", nr_vector_get(segments, 5),
+                         &external_dt);
+  tlib_pass_if_ptr_equal("5. custom long and logs", nr_vector_get(segments, 4),
+                         &custom_log_long);
+  tlib_pass_if_ptr_equal("6. custom log", nr_vector_get(segments, 3),
+                         &custom_log);
+  tlib_pass_if_ptr_equal("7. custom long", nr_vector_get(segments, 2),
+                         &custom_long);
+  tlib_pass_if_ptr_equal("8. custom", nr_vector_get(segments, 1), &custom);
+  tlib_pass_if_ptr_equal("9. external", nr_vector_get(segments, 0), &external);
 
-  tlib_pass_if_int_equal("duration fallback",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&custom_long, (void*)&custom_short, NULL),
-                         1);
+  nr_vector_destroy(&segments);
+}
 
-  tlib_pass_if_int_equal("duration fallback",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&custom_short, (void*)&custom_long, NULL),
-                         -1);
+static void test_segment_set_priority_flag(void) {
+  nr_segment_t no_priority = {0};
+  nr_segment_t root = {0};
+  nr_segment_t dt = {0};
+  nr_segment_t log = {0};
+  nr_segment_t dt_log = {0};
 
-  tlib_pass_if_int_equal("equal segments",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&external, (void*)&external, NULL),
-                         0);
+  nr_vector_t* segments = nr_vector_create(5, NULL, NULL);
 
-  tlib_pass_if_int_equal("equal segments",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&custom_long, (void*)&custom_long, NULL),
-                         0);
+  /*
+   * Don't blow up when passed a NULL segment.
+   */
+  nr_segment_set_priority_flag(NULL, NR_SEGMENT_PRIORITY_ROOT);
 
-  tlib_pass_if_int_equal("equal segments",
-                         nr_segment_wrapped_span_priority_comparator(
-                             (void*)&custom_short, (void*)&custom_short, NULL),
-                         0);
+  nr_segment_set_priority_flag(&root, NR_SEGMENT_PRIORITY_ROOT);
+  nr_segment_set_priority_flag(&dt, NR_SEGMENT_PRIORITY_DT);
+  nr_segment_set_priority_flag(&log, NR_SEGMENT_PRIORITY_LOG);
+  nr_segment_set_priority_flag(
+      &dt_log, NR_SEGMENT_PRIORITY_DT | NR_SEGMENT_PRIORITY_LOG);
+
+  /*
+   * The impact of different priority flags is tested by sorting a
+   * vector of segments according to their priority values. In this way,
+   * all necessary test cases are covered.
+   *
+   * The helper function test_segment_priority_comparator is used to
+   * sort segments according to the numeric value of the priority field.
+   * This should test the correct relation of the priority flags to each
+   * other.
+   *
+   * The table below shows the segments with their priority flags and
+   * the resulting values of the priority field.
+   *
+   * Position | Segment     | Priority            | NR_SEGMENT_PRIORITY_*
+   * ---------+-------------+---------------------+-----------------------
+   * 4        | root        | 0b10000000000000000 | ROOT
+   * 3        | dt_log      | 0b01100000000000000 | DT | LOG
+   * 2        | dt          | 0b01000000000000000 | DT
+   * 1        | log         | 0b00100000000000000 | LOG
+   * 0        | no priority | 0b00000000000000000 |
+   */
+
+  nr_vector_push_back(segments, &no_priority);
+  nr_vector_push_back(segments, &root);
+  nr_vector_push_back(segments, &dt);
+  nr_vector_push_back(segments, &log);
+  nr_vector_push_back(segments, &dt_log);
+
+  nr_vector_sort(segments, test_segment_priority_comparator, NULL);
+
+  tlib_pass_if_ptr_equal("1. root", nr_vector_get(segments, 4), &root);
+  tlib_pass_if_ptr_equal("2. dt with log", nr_vector_get(segments, 3), &dt_log);
+  tlib_pass_if_ptr_equal("3. dt", nr_vector_get(segments, 2), &dt);
+  tlib_pass_if_ptr_equal("4. log", nr_vector_get(segments, 1), &log);
+  tlib_pass_if_ptr_equal("5. no priority", nr_vector_get(segments, 0),
+                         &no_priority);
+
+  nr_vector_destroy(&segments);
 }
 
 static void test_segment_init_deinit(void) {
@@ -1847,6 +1987,75 @@ static void test_segment_init_deinit(void) {
   nr_slab_destroy(&txn.segment_slab);
 }
 
+static void test_segment_ensure_id(void) {
+  nrapp_t app = {
+      .state = NR_APP_OK,
+      .limits = {
+        .analytics_events = NR_MAX_ANALYTIC_EVENTS,
+        .span_events = NR_MAX_SPAN_EVENTS,
+      },
+  };
+  nrtxnopt_t opts;
+  nr_segment_t* segment;
+  char* segment_id;
+  nrtxn_t* txn;
+
+  /* start txn and segment */
+  nr_memset(&opts, 0, sizeof(opts));
+  opts.distributed_tracing_enabled = 1;
+  opts.span_events_enabled = 1;
+  txn = nr_txn_begin(&app, &opts, NULL);
+  segment = nr_segment_start(txn, txn->segment_root, NULL);
+  nr_distributed_trace_set_sampled(txn->distributed_trace, true);
+
+  /*
+   * Test : Bad parameters
+   */
+  tlib_pass_if_null("null txn and segment", nr_segment_ensure_id(NULL, NULL));
+  tlib_pass_if_null("null txn", nr_segment_ensure_id(segment, NULL));
+  tlib_pass_if_null("null segment", nr_segment_ensure_id(NULL, txn));
+
+  /*
+   * Test : segment id is created
+   */
+  segment_id = nr_segment_ensure_id(segment, txn);
+  tlib_fail_if_null("segment id is created", segment_id);
+
+  /*
+   * Test : correct id is returned for the segment
+   */
+  tlib_pass_if_str_equal("correct id is returned for the segment", segment_id,
+                         nr_segment_ensure_id(segment, txn));
+  nr_free(segment->id);
+
+  /*
+   * Test : NULL segment id when DT is disabled
+   */
+  txn->options.distributed_tracing_enabled = 0;
+  tlib_pass_if_null("no segment id when DT is disabled",
+                    nr_segment_ensure_id(segment, txn));
+  txn->options.distributed_tracing_enabled = 1;
+
+  /*
+   * Test : NULL segment id when span events are disabled
+   */
+  txn->options.span_events_enabled = 0;
+  tlib_pass_if_null("no segment id when span events are disabled",
+                    nr_segment_ensure_id(segment, txn));
+  txn->options.span_events_enabled = 1;
+
+  /*
+   * Test : NULL segment id when DT is not sampled
+   */
+  nr_distributed_trace_set_sampled(txn->distributed_trace, false);
+  tlib_pass_if_null("no segment id when DT is sampled",
+                    nr_segment_ensure_id(segment, txn));
+  nr_distributed_trace_set_sampled(txn->distributed_trace, true);
+
+  nr_segment_destroy(segment);
+  nr_txn_destroy(&txn);
+}
+
 tlib_parallel_info_t parallel_info = {.suggested_nthreads = 2, .state_size = 0};
 
 void test_main(void* p NRUNUSED) {
@@ -1879,5 +2088,8 @@ void test_main(void* p NRUNUSED) {
   test_segment_set_parent_cycle();
   test_segment_no_recording();
   test_segment_span_comparator();
+  test_segment_span_comparator_null();
+  test_segment_set_priority_flag();
   test_segment_init_deinit();
+  test_segment_ensure_id();
 }

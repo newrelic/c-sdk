@@ -2,6 +2,8 @@ package newrelic
 
 import (
 	"testing"
+
+	"newrelic/limits"
 )
 
 func TestSyntheticsSampling(t *testing.T) {
@@ -44,7 +46,7 @@ func BenchmarkTxnEvents(b *testing.B) {
 	// priorities.
 	sp := []SamplingPriority{0.99999, 0.42, 0.13, 0.007, 0.8}
 	data := []byte(`[{"zip":"zap","alpha":"beta","pen":"pencil"},{},{}]`)
-	events := NewTxnEvents(MaxTxnEvents)
+	events := NewTxnEvents(limits.MaxTxnEvents)
 
 	b.ReportAllocs()
 

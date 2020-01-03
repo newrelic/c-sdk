@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"newrelic/collector"
 )
 
 // A MockedAppHarvest comprises two groups of data.  First, the dependencies necessary
@@ -17,7 +19,7 @@ type MockedAppHarvest struct {
 }
 
 func (m *MockedAppHarvest) NewMockedAppHarvest() {
-	harvest := NewHarvest(time.Now())
+	harvest := NewHarvest(time.Now(), collector.NewHarvestLimits())
 
 	m.App.HarvestTrigger = triggerBuilder(HarvestAll, time.Duration(m.cycleDuration))
 

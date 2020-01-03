@@ -1,4 +1,8 @@
-package newrelic
+// Default limits.
+//
+// This should be kept in sync with axiom/nr_limits.h, which is the agent's
+// view of the default limits.
+package limits
 
 import (
 	"time"
@@ -16,7 +20,7 @@ const (
 	DefaultAppTimeout = 10 * time.Minute
 
 	// Harvest Data Limits
-
+	DefaultReportPeriod   = 60 * time.Second
 	MaxMetrics            = 2 * 1000
 	MaxTxnEvents          = 10 * 1000
 	MaxCustomEvents       = 10 * 1000

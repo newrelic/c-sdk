@@ -31,6 +31,7 @@
 #include "nr_span_event.h"
 
 #include "tlib_main.h"
+#include "test_app_helpers.h"
 
 /* This is defined only to satisfy link requirements, and is not shared amongst
  * threads. */
@@ -82,6 +83,7 @@ static void test_encode_span_events(void) {
   txn.name = nr_strdup("name");
   txn.distributed_trace = nr_distributed_trace_create();
   txn.segment_slab = nr_slab_create(sizeof(nr_segment_t), 0);
+  txn.app_limits = default_app_limits();
   nr_distributed_trace_set_priority(txn.distributed_trace, 1.2);
   nr_distributed_trace_set_sampled(txn.distributed_trace, true);
   nr_distributed_trace_set_trace_id(txn.distributed_trace, "tid");

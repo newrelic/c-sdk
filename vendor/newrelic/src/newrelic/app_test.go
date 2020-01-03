@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"newrelic/limits"
 	"newrelic/sysinfo"
 	"newrelic/utilization"
 )
@@ -242,7 +243,8 @@ func TestConnectPayloadEncoded(t *testing.T) {
 		`"labels":[{"label_type":"c","label_value":"d"}],` +
 		`"environment":[["b",2]],` +
 		`"identifier":"one;two",` +
-		`"utilization":{"metadata_version":1,"logical_processors":22,"total_ram_mib":1000,"hostname":"some_host"}` +
+		`"utilization":{"metadata_version":1,"logical_processors":22,"total_ram_mib":1000,"hostname":"some_host"},` +
+		`"event_harvest_config":{"report_period_ms":60000,"harvest_limits":{"error_event_data":100,"analytic_event_data":10000,"custom_event_data":10000,"span_event_data":1000}}` +
 		`}` +
 		`]`
 
@@ -267,7 +269,8 @@ func TestConnectPayloadEncoded(t *testing.T) {
 		`"labels":[{"label_type":"c","label_value":"d"}],` +
 		`"environment":[["b",2]],` +
 		`"identifier":"one;two",` +
-		`"utilization":{"metadata_version":1,"logical_processors":22,"total_ram_mib":1000,"hostname":"some_host"}` +
+		`"utilization":{"metadata_version":1,"logical_processors":22,"total_ram_mib":1000,"hostname":"some_host"},` +
+		`"event_harvest_config":{"report_period_ms":60000,"harvest_limits":{"error_event_data":100,"analytic_event_data":10000,"custom_event_data":10000,"span_event_data":1000}}` +
 		`}` +
 		`]`
 
@@ -275,7 +278,7 @@ func TestConnectPayloadEncoded(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else if string(b) != expected {
-		t.Fatal(string(b))
+		t.Errorf("expected: %s\nactual: %s", expected, string(b))
 	}
 }
 
@@ -285,32 +288,32 @@ func TestNeedsConnectAttempt(t *testing.T) {
 	now := time.Date(2015, time.January, 10, 23, 0, 0, 0, time.UTC)
 
 	app.state = AppStateUnknown
-	app.lastConnectAttempt = now.Add(-AppConnectAttemptBackoff)
-	if !app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
+	app.lastConnectAttempt = now.Add(-limits.AppConnectAttemptBackoff)
+	if !app.NeedsConnectAttempt(now, limits.AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
 	}
 
 	app.state = AppStateUnknown
 	app.lastConnectAttempt = now
-	if app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
+	if app.NeedsConnectAttempt(now, limits.AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
 	}
 
 	app.state = AppStateConnected
-	app.lastConnectAttempt = now.Add(-AppConnectAttemptBackoff)
-	if app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
+	app.lastConnectAttempt = now.Add(-limits.AppConnectAttemptBackoff)
+	if app.NeedsConnectAttempt(now, limits.AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
 	}
 
 	app.state = AppStateInvalidLicense
-	app.lastConnectAttempt = now.Add(-AppConnectAttemptBackoff)
-	if app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
+	app.lastConnectAttempt = now.Add(-limits.AppConnectAttemptBackoff)
+	if app.NeedsConnectAttempt(now, limits.AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
 	}
 
 	app.state = AppStateDisconnected
-	app.lastConnectAttempt = now.Add(-AppConnectAttemptBackoff)
-	if app.NeedsConnectAttempt(now, AppConnectAttemptBackoff) {
+	app.lastConnectAttempt = now.Add(-limits.AppConnectAttemptBackoff)
+	if app.NeedsConnectAttempt(now, limits.AppConnectAttemptBackoff) {
 		t.Fatal(now, app.lastConnectAttempt, app.state)
 	}
 }

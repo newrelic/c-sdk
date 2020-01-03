@@ -60,6 +60,27 @@ typedef enum _nr_segment_color_t {
   NR_SEGMENT_GREY
 } nr_segment_color_t;
 
+/*
+ * Segment priority indicators
+ *
+ * These go into the priority bitfield in the nr_segment_t struct and can be
+ * set via nr_segment_set_priority_flag. The higher the value of the priority
+ * field, the higher the likelihood that the span created from the segment will
+ * be kept.
+ *
+ * NR_SEGMENT_PRIORITY_ROOT indicates that the segment in question is a root
+ * segment.
+ *
+ * NR_SEGMENT_PRIORITY_DT indicates that the segment's id is included in an
+ * outbound DT payload.
+ *
+ * NR_SEGMENT_PRIORITY_LOG indicates that the segment's id is included in an
+ * log payload.
+ */
+#define NR_SEGMENT_PRIORITY_ROOT (1 << 16)
+#define NR_SEGMENT_PRIORITY_DT (1 << 15)
+#define NR_SEGMENT_PRIORITY_LOG (1 << 14)
+
 typedef struct _nr_segment_datastore_t {
   char* component; /* The name of the database vendor or driver */
   char* sql;
@@ -123,6 +144,8 @@ typedef struct _nr_segment_t {
                                        transaction has ended; before then, this
                                        will be NULL. */
   nrobj_t* user_attributes;            /* User attributes */
+  int priority; /* Used to determine which segments are preferred for span event
+                   creation */
 
   /*
    * Type specific fields.
@@ -403,12 +426,9 @@ extern int nr_segment_wrapped_duration_comparator(const void* a,
  * Note    : This is a comparison function required for creating a minmax heap
  *           of segments.
  *
- *           The span priority of a segment is defined as follows:
- *            1. The root segment has higher priority than any other segment.
- *            2. Segments with ids assigned have higher priority than any other
- *               segments, except the root segment.
- *            3. For all other cases, the segment with the longer duration has
- *               higher span priority.
+ *           The segment with the higher value of its priority field is
+ *           given priority. If both priority values are the same, the segment
+ *           with the longer duration is given priority.
  */
 extern int nr_segment_wrapped_span_priority_comparator(const void* a,
                                                        const void* b,
@@ -489,5 +509,33 @@ extern bool nr_segment_discard(nr_segment_t** segment);
  *           and returns false. Use nr_segment_discard for those cases.
  */
 extern bool nr_segment_deinit(nr_segment_t* segment);
+
+/*
+ * Purpose : Ensure the segment has an ID.
+ *
+ *           This function is guaranteed to return an ID if span events will be
+ *           created for the given transaction, otherwise it can return NULL.
+ *
+ * Params  : 1. A pointer to a segment.
+ *           2. The transaction.
+ *
+ * Returns : The ID of the segment or NULL.
+ */
+extern char* nr_segment_ensure_id(nr_segment_t* segment, const nrtxn_t* txn);
+
+/*
+ * Purpose : Set a segment priority flag
+ *
+ *           This will influence the likelihood with which a span event will be
+ *           created for a segment.
+ *
+ * Params  : 1. A pointer to a segment
+ *           2. One of the NR_SEGMENT_PRIORITY_* flags
+ *
+ * Notes   : Mutliple flags can be set for a single segment, either by
+ *           multiple calls to this function or by chaining flags with the `|`
+ *           operator.
+ */
+extern void nr_segment_set_priority_flag(nr_segment_t* segment, int flag);
 
 #endif /* NR_SEGMENT_HDR */

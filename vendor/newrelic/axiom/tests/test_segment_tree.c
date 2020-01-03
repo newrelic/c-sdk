@@ -97,6 +97,9 @@ static void test_finalise_span_priority(void) {
   txn.segment_root = root;
   txn.segment_count = 4;
 
+  nr_segment_set_priority_flag(root, NR_SEGMENT_PRIORITY_ROOT);
+  nr_segment_set_priority_flag(external, NR_SEGMENT_PRIORITY_DT);
+
   /*
    * Our internal heap implementation doesn't allow for a heap of size
    * 1. That's why we start with a span limit of 2 here.

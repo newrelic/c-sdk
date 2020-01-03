@@ -87,7 +87,15 @@ func (m *MockedProcessor) DoConnect(t *testing.T, id *AgentRunID) {
 	<-m.clientParams // preconnect
 	m.clientReturn <- ClientReturn{[]byte(`{"redirect_host":"specific_collector.com"}`), nil}
 	<-m.clientParams // connect
-	m.clientReturn <- ClientReturn{[]byte(`{"agent_run_id":"` + id.String() + `","zip":"zap"}`), nil}
+	m.clientReturn <- ClientReturn{[]byte(`{"agent_run_id":"` + id.String() + `","zip":"zap","event_harvest_config":{"report_period_ms":5000,"harvest_limits":{"analytics_event_data":5,"custom_event_data":5,"error_event_data":5,"span_event_data":5}}}`), nil}
+	<-m.p.trackProgress // receive connect reply
+}
+
+func (m *MockedProcessor) DoConnectConfiguredReply(t *testing.T, reply string) {
+	<-m.clientParams // preconnect
+	m.clientReturn <- ClientReturn{[]byte(`{"redirect_host":"specific_collector.com"}`), nil}
+	<-m.clientParams // connect
+	m.clientReturn <- ClientReturn{[]byte(reply), nil}
 	<-m.p.trackProgress // receive connect reply
 }
 
@@ -175,8 +183,9 @@ func TestProcessorHarvestCustomEvents(t *testing.T) {
 	}
 	cp := <-m.clientParams
 	<-m.p.trackProgress // receive harvest notice
-	if string(cp.data) != `["one",{"reservoir_size":10000,"events_seen":1},[half birthday]]` {
-		t.Fatal(string(cp.data))
+	expected := `["one",{"reservoir_size":5,"events_seen":1},[half birthday]]`
+	if string(cp.data) != expected {
+		t.Fatalf("expected: %s \ngot: %s", expected, string(cp.data))
 	}
 
 	m.p.quit()
@@ -203,8 +212,9 @@ func TestProcessorHarvestCleanExit(t *testing.T) {
 	<-m.clientParams /* ditch metrics */
 	cp := <-m.clientParams
 
-	if string(cp.data) != `["one",{"reservoir_size":10000,"events_seen":1},[half birthday]]` {
-		t.Fatal(string(cp.data))
+	expected := `["one",{"reservoir_size":5,"events_seen":1},[half birthday]]`
+	if string(cp.data) != expected {
+		t.Fatalf("expected: %s \ngot: %s", expected, string(cp.data))
 	}
 }
 
@@ -225,11 +235,50 @@ func TestProcessorHarvestErrorEvents(t *testing.T) {
 	}
 	cp := <-m.clientParams
 	<-m.p.trackProgress // receive harvest notice
-	if string(cp.data) != `["one",{"reservoir_size":100,"events_seen":1},[forgotten birthday]]` {
+	if string(cp.data) != `["one",{"reservoir_size":5,"events_seen":1},[forgotten birthday]]` {
 		t.Fatal(string(cp.data))
 	}
 
 	m.p.quit()
+}
+
+func TestProcessorHarvestZeroErrorEvents(t *testing.T) {
+	m := NewMockedProcessor(1)
+
+	m.DoAppInfo(t, nil, AppStateUnknown)
+
+	m.DoConnectConfiguredReply(t, `{"agent_run_id":"` + idOne.String() + `","zip":"zap","event_harvest_config":{"report_period_ms":5000,"harvest_limits":{"analytics_event_data":5,"custom_event_data":5,"error_event_data":0,"span_event_data":5}}}`)
+	m.DoAppInfo(t, nil, AppStateConnected)
+
+	m.TxnData(t, idOne, txnErrorEventSample)
+	m.TxnData(t, idOne, txnCustomEventSample)
+
+	// Trigger an error event harvest. Due to the error_event_data limit being
+	// zero, no harvest will actually occur here.
+	m.processorHarvestChan <- ProcessorHarvest{
+		AppHarvest: m.p.harvests[idOne],
+		ID:         idOne,
+		Type:       HarvestErrorEvents,
+	}
+	// No check of m.clientParams here because we expect no harvest to occur
+	// due to the zero error_event_data limit.
+	<-m.p.trackProgress // receive harvest notice
+
+	// Now we'll force a harvest for a different event type, and make sure we
+	// receive that harvest (and not an error event harvest).
+	m.processorHarvestChan <- ProcessorHarvest{
+		AppHarvest: m.p.harvests[idOne],
+		ID:         idOne,
+		Type:       HarvestCustomEvents,
+	}
+
+	cp := <-m.clientParams
+	<-m.p.trackProgress // receive harvest notice
+	if string(cp.data) != `["one",{"reservoir_size":5,"events_seen":1},[half birthday]]` {
+		t.Fatal(string(cp.data))
+	}
+	m.p.quit()
+
 }
 
 func TestProcessorHarvestSplitTxnEvents(t *testing.T) {

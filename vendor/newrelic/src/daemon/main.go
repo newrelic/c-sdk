@@ -18,6 +18,7 @@ import (
 
 	"newrelic"
 	"newrelic/config"
+	"newrelic/limits"
 	"newrelic/log"
 	"newrelic/utilization"
 	"newrelic/version"
@@ -406,7 +407,7 @@ var (
 		DetectGCP:    true,
 		DetectPCF:    true,
 		DetectDocker: true,
-		AppTimeout:   config.Timeout(newrelic.DefaultAppTimeout),
+		AppTimeout:   config.Timeout(limits.DefaultAppTimeout),
 	}
 )
 

@@ -64,6 +64,9 @@ static void sig_handler(int sig) {
 
 static void usage(void) {
   fprintf(stderr, "%s [-U] [-j parallel]\n", progname);
+  fprintf(
+      stderr,
+      "-U\tIgnore unexpected failures when computing process return code\n");
   exit(1);
 }
 

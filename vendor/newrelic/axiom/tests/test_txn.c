@@ -33,6 +33,7 @@
 #include "nr_commands_private.h"
 
 #include "tlib_main.h"
+#include "test_app_helpers.h"
 #include "test_segment_helpers.h"
 
 typedef struct _test_txn_state_t {
@@ -109,7 +110,7 @@ static void test_freeze_name_fn(const char* testname,
   nr_status_t rv;
   nrtxn_t txnv;
   nrtxn_t* txn = &txnv;
-  nrapp_t appv;
+  nrapp_t appv = {.info = {0}};
   nrapp_t* app = &appv;
   test_txn_state_t* p = (test_txn_state_t*)tlib_getspecific();
 
@@ -200,7 +201,7 @@ static void test_key_txns_fn(const char* testname,
   nr_status_t rv;
   nrtxn_t txnv;
   nrtxn_t* txn = &txnv;
-  nrapp_t appv;
+  nrapp_t appv = {.info = {0}};
   nrapp_t* app = &appv;
   test_txn_state_t* p = (test_txn_state_t*)tlib_getspecific();
 
@@ -314,7 +315,7 @@ static void test_freeze_name_update_apdex(void) {
     nr_status_t rv;
     nrtxn_t txnv;
     nrtxn_t* txn = &txnv;
-    nrapp_t appv;
+    nrapp_t appv = {.info = {0}};
     nrapp_t* app = &appv;
 
     nrt_mutex_init(&app->app_lock, 0);
@@ -1145,6 +1146,10 @@ static void test_set_path(void) {
 static void test_set_request_uri(void) {
   nrtxn_t txnv;
   nrtxn_t* txn = &txnv;
+  nr_attribute_config_t* attribute_config;
+
+  attribute_config = nr_attribute_config_create();
+  txn->attributes = nr_attributes_create(attribute_config);
 
   txn->request_uri = 0;
 
@@ -1183,6 +1188,8 @@ static void test_set_request_uri(void) {
                     0 == nr_strcmp("gamma", txn->request_uri),
                     "txn->request_uri=%s", NRSAFESTR(txn->request_uri));
 
+  nr_attribute_config_destroy(&attribute_config);
+  nr_attributes_destroy(&txn->attributes);
   nr_free(txn->request_uri);
 }
 
@@ -1411,13 +1418,26 @@ static void test_created_txn_fn(const char* testname,
    * Test : Options
    */
   test_pass_if_true(
-      testname, opts->custom_events_enabled == correct->custom_events_enabled,
+      testname,
+      (bool)opts->analytics_events_enabled
+          == (bool)correct->analytics_events_enabled,
+      "opts->analytics_events_enabled=%d correct->analytics_events_enabled=%d",
+      opts->analytics_events_enabled, correct->analytics_events_enabled);
+  test_pass_if_true(
+      testname,
+      (bool)opts->custom_events_enabled == (bool)correct->custom_events_enabled,
       "opts->custom_events_enabled=%d correct->custom_events_enabled=%d",
       opts->custom_events_enabled, correct->custom_events_enabled);
   test_pass_if_true(
-      testname, opts->error_events_enabled == correct->error_events_enabled,
+      testname,
+      (bool)opts->error_events_enabled == (bool)correct->error_events_enabled,
       "opts->error_events_enabled=%d correct->error_events_enabled=%d",
       opts->error_events_enabled, correct->error_events_enabled);
+  test_pass_if_true(
+      testname,
+      (bool)opts->span_events_enabled == (bool)correct->span_events_enabled,
+      "opts->span_events_enabled=%d correct->span_events_enabled=%d",
+      opts->span_events_enabled, correct->span_events_enabled);
   test_pass_if_true(
       testname, opts->synthetics_enabled == correct->synthetics_enabled,
       "opts->synthetics_enabled=%d correct->synthetics_enabled=%d",
@@ -1490,6 +1510,30 @@ static void test_default_trace_id(void) {
   nr_txn_destroy(&txn);
 }
 
+static void test_root_segment_priority(void) {
+  nrapp_t app;
+  nrtxnopt_t opts;
+  nrtxn_t* txn;
+  uint32_t priority;
+
+  nr_memset(&app, 0, sizeof(app));
+  app.state = NR_APP_OK;
+  nr_memset(&opts, 0, sizeof(opts));
+
+  txn = nr_txn_begin(&app, &opts, NULL);
+
+  tlib_fail_if_null("txn", txn);
+  tlib_fail_if_null("root segment", txn->segment_root);
+
+  priority = txn->segment_root->priority;
+
+  tlib_pass_if_true("root segment priority",
+                    priority & NR_SEGMENT_PRIORITY_ROOT, "priority=0x%08x",
+                    priority);
+
+  nr_txn_destroy(&txn);
+}
+
 static void test_begin_bad_params(void) {
   nrapp_t app;
   nrtxnopt_t opts;
@@ -1528,7 +1572,7 @@ static void test_begin(void) {
   nrtxnopt_t optsv;
   nrtxnopt_t* opts = &optsv;
   nrtxnopt_t correct;
-  nrapp_t appv;
+  nrapp_t appv = {.info = {0}};
   nrapp_t* app = &appv;
   nr_attribute_config_t* attribute_config;
   char* json;
@@ -1539,6 +1583,7 @@ static void test_begin(void) {
   opts->error_events_enabled = 27;
   opts->synthetics_enabled = 110;
   opts->analytics_events_enabled = 108;
+  opts->span_events_enabled = 112;
   opts->err_enabled = 2;
   opts->request_params_enabled = 3;
   opts->autorum_enabled = 5;
@@ -1563,10 +1608,12 @@ static void test_begin(void) {
   nro_set_hash_double(app->connect_reply, "apdex_t", 0.6);
   nro_set_hash_string(app->connect_reply, "js_agent_file",
                       "js-agent.newrelic.com\\/nr-213.min.js");
+  nro_set_hash_string(app->connect_reply, "entity_guid", "00abcdef");
   app->state = NR_APP_OK;
 
   app->agent_run_id = nr_strdup("12345678");
-  app->info.appname = nr_strdup("App Name;Foo;Bar");
+  app->host_name = nr_strdup("host_name");
+  app->entity_name = nr_strdup("App Name");
   app->info.license = nr_strdup("1234567890123456789012345678901234567890");
   app->info.host_display_name = nr_strdup("foo_host");
   app->info.security_policies_token = nr_strdup("");
@@ -1574,6 +1621,7 @@ static void test_begin(void) {
   nr_memset(&app->harvest, 0, sizeof(nr_app_harvest_t));
   app->harvest.frequency = 60;
   app->harvest.target_transactions_per_cycle = 10;
+  app->limits = default_app_limits();
 
   /*
    * Test : Options provided.
@@ -1585,6 +1633,7 @@ static void test_begin(void) {
   correct.request_params_enabled = 3;
   correct.autorum_enabled = 5;
   correct.analytics_events_enabled = 108;
+  correct.span_events_enabled = 112;
   correct.tt_enabled = 7;
   correct.ep_enabled = 8;
   correct.tt_recordsql = NR_SQL_OBFUSCATED;
@@ -1727,7 +1776,29 @@ static void test_begin(void) {
       nr_distributed_trace_get_account_id(rv->distributed_trace));
   nr_txn_destroy(&rv);
 
+  /*
+   * Test : Application disables events.
+   */
+  app->limits = (nr_app_limits_t){
+      .analytics_events = 0,
+      .custom_events = 0,
+      .error_events = 0,
+      .span_events = 0,
+  };
+  rv = nr_txn_begin(app, opts, attribute_config);
+  tlib_pass_if_int_equal("analytics_events_enabled", 0,
+                         rv->options.analytics_events_enabled);
+  tlib_pass_if_int_equal("custom_events_enabled", 0,
+                         rv->options.custom_events_enabled);
+  tlib_pass_if_int_equal("error_events_enabled", 0,
+                         rv->options.error_events_enabled);
+  tlib_pass_if_int_equal("span_events_enabled", 0,
+                         rv->options.span_events_enabled);
+  nr_txn_destroy(&rv);
+
   nr_free(app->agent_run_id);
+  nr_free(app->host_name);
+  nr_free(app->entity_name);
   nr_free(app->info.appname);
   nr_free(app->info.license);
   nr_free(app->info.host_display_name);
@@ -1932,7 +2003,7 @@ static void test_end_testcase_fn(const char* testname,
 
 static void test_end(void) {
   nrtxn_t* txn = 0;
-  nrapp_t appv;
+  nrapp_t appv = {.info = {0}};
   nrapp_t* app = &appv;
   nrobj_t* rules_ob;
   nrtime_t duration;
@@ -2257,6 +2328,10 @@ static void test_set_http_status(void) {
           == nr_strcmp("{"
                        "\"user\":[],"
                        "\"agent\":["
+                       "{"
+                       "\"dests\":[\"event\",\"trace\",\"error\"],"
+                       "\"key\":\"response.statusCode\",\"value\":503"
+                       "},"
                        "{"
                        "\"dests\":[\"event\",\"trace\",\"error\"],"
                        "\"key\":\"httpResponseCode\",\"value\":\"503\""
@@ -3390,30 +3465,6 @@ static void test_get_path_hash(void) {
   nr_free(txn->primary_app_name);
 }
 
-static void test_get_primary_app_name(void) {
-  char* result;
-
-  /*
-   * Test : Bad parameters.
-   */
-  tlib_pass_if_null("NULL appname", nr_txn_get_primary_app_name(NULL));
-  tlib_pass_if_null("empty appname", nr_txn_get_primary_app_name(""));
-
-  /*
-   * Test : No rollup.
-   */
-  result = nr_txn_get_primary_app_name("App Name");
-  tlib_pass_if_str_equal("no rollup", "App Name", result);
-  nr_free(result);
-
-  /*
-   * Test : Rollup.
-   */
-  result = nr_txn_get_primary_app_name("App Name;Foo;Bar");
-  tlib_pass_if_str_equal("rollup", "App Name", result);
-  nr_free(result);
-}
-
 static void test_is_synthetics(void) {
   nrtxn_t txn;
 
@@ -4146,6 +4197,8 @@ static void test_txn_cat_map_cross_agent_testcase_fn(nrapp_t* app,
 
   nr_free(app->info.appname);
   app->info.appname = nr_strdup(appname);
+  nr_free(app->entity_name);
+  app->entity_name = nr_strdup(appname);
 
   txn = nr_txn_begin(app, &nr_txn_test_options, NULL);
   test_pass_if_true_file_line("tests valid", NULL != txn, file, line, "txn=%p",
@@ -4250,6 +4303,7 @@ static void test_txn_cat_map_cross_agent_tests(void) {
   }
 
   nr_free(app.info.appname);
+  nr_free(app.entity_name);
   nro_delete(app.connect_reply);
   nro_delete(array);
   nr_free(json);
@@ -4561,11 +4615,11 @@ static void test_txn_dt_cross_agent_tests(void) {
   nrobj_t* array = 0;
   nrotype_t otype;
   int i;
-  nrapp_t app;
+  nrapp_t app = {
+      .state = NR_APP_OK,
+      .limits = default_app_limits(),
+  };
   int size;
-
-  nr_memset(&app, 0, sizeof(app));
-  app.state = NR_APP_OK;
 
   json = nr_read_file_contents(CROSS_AGENT_TESTS_DIR
                                "/distributed_tracing/distributed_tracing.json",
@@ -4653,13 +4707,14 @@ static void test_txn_set_attribute(void) {
   tlib_pass_if_str_equal("bad params", json, "{\"user\":[],\"agent\":[]}");
   nr_free(json);
 
-  nr_txn_set_string_attribute(&txn, nr_txn_request_user_agent, "1");
+  nr_txn_set_string_attribute(&txn, nr_txn_request_user_agent_deprecated, "1");
   nr_txn_set_string_attribute(&txn, nr_txn_request_accept_header, "2");
   nr_txn_set_string_attribute(&txn, nr_txn_request_host, "3");
   nr_txn_set_string_attribute(&txn, nr_txn_request_content_type, "4");
   nr_txn_set_string_attribute(&txn, nr_txn_request_method, "5");
   nr_txn_set_string_attribute(&txn, nr_txn_server_name, "6");
   nr_txn_set_string_attribute(&txn, nr_txn_response_content_type, "7");
+  nr_txn_set_string_attribute(&txn, nr_txn_request_user_agent, "8");
 
   nr_txn_set_long_attribute(&txn, nr_txn_request_content_length, 123);
   nr_txn_set_long_attribute(&txn, nr_txn_response_content_length, 456);
@@ -4671,6 +4726,8 @@ static void test_txn_set_attribute(void) {
                          "\"response.headers.contentLength\",\"value\":456},"
                          "{\"dests\":[\"event\",\"trace\",\"error\"],\"key\":"
                          "\"request.headers.contentLength\",\"value\":123},"
+                         "{\"dests\":[\"trace\",\"error\"],\"key\":"
+                         "\"request.headers.userAgent\",\"value\":\"8\"},"
                          "{\"dests\":[\"event\",\"trace\",\"error\"],\"key\":"
                          "\"response.headers.contentType\",\"value\":\"7\"},"
                          "{\"dests\":[\"trace\",\"error\"],\"key\":\"SERVER_"
@@ -5186,6 +5243,9 @@ static void test_create_distributed_trace_payload(void) {
   text = nr_txn_create_distributed_trace_payload(&txn, current_segment);
   tlib_fail_if_null("The segment ID should be set when DT sampled is on",
                     current_segment->id);
+  tlib_pass_if_true("The segment priority should be set  when DT sampled is on",
+                    current_segment->priority & NR_SEGMENT_PRIORITY_DT,
+                    "priority=0x%08x", current_segment->priority);
   dt_guid = nr_strdup(current_segment->id);
   nr_free(text);
 
@@ -5815,6 +5875,98 @@ static void test_should_create_span_events(void) {
   nr_distributed_trace_destroy(&txn.distributed_trace);
 }
 
+static void test_txn_accept_distributed_trace_payload_optionals(void) {
+  char* json_payload_missing
+      = "{ \
+    \"v\": [0,1],   \
+    \"d\": {        \
+      \"ty\": \"App\", \
+      \"ac\": \"9123\", \
+      \"ap\": \"51424\", \
+      \"id\": \"27856f70d3d314b7\", \
+      \"tr\": \"3221bf09aa0bcf0d\", \
+      \"ti\": 1482959525577 \
+    } \
+  }";
+  char* json_payload_invalid
+      = "{ \
+    \"v\": [0,1],   \
+    \"d\": {        \
+      \"ty\": \"App\", \
+      \"ac\": \"9123\", \
+      \"ap\": \"51424\", \
+      \"id\": \"27856f70d3d314b7\", \
+      \"pr\": null, \
+      \"tr\": \"3221bf09aa0bcf0d\", \
+      \"sa\": null, \
+      \"ti\": 1482959525577 \
+    } \
+  }";
+  bool rv;
+  nrtxn_t txn = {0};
+  const nr_sampling_priority_t priority = 0.1;
+
+  txn.options.distributed_tracing_enabled = 1;
+  txn.app_connect_reply = nro_new_hash();
+  nro_set_hash_string(txn.app_connect_reply, "trusted_account_key", "9123");
+
+  /*
+   * Accept a payload with no priority ("pr") and sampling ("sa") fields without
+   * changing the priority and sampling values.
+   */
+
+  txn.unscoped_metrics = nrm_table_create(0);
+  txn.distributed_trace = nr_distributed_trace_create();
+  nr_distributed_trace_set_priority(txn.distributed_trace, priority);
+  nr_distributed_trace_set_sampled(txn.distributed_trace, true);
+
+  rv = nr_txn_accept_distributed_trace_payload(&txn, json_payload_missing,
+                                               NULL);
+  tlib_pass_if_true("expected return code", rv, "rv=%d", rv);
+  test_txn_metric_is("success", txn.unscoped_metrics, MET_FORCED,
+                     "Supportability/DistributedTrace/AcceptPayload/Success", 1,
+                     0, 0, 0, 0, 0);
+
+  tlib_pass_if_double_equal(
+      "Unaltered priority",
+      nr_distributed_trace_get_priority(txn.distributed_trace), priority);
+  tlib_pass_if_bool_equal(
+      "Unaltered sampled",
+      nr_distributed_trace_is_sampled(txn.distributed_trace), true);
+
+  nr_distributed_trace_destroy(&txn.distributed_trace);
+  nrm_table_destroy(&txn.unscoped_metrics);
+
+  /*
+   * Accept a payload with invalid priority ("pr") and sampling ("sa") fields
+   * without changing the priority and sampling values.
+   */
+
+  txn.unscoped_metrics = nrm_table_create(0);
+  txn.distributed_trace = nr_distributed_trace_create();
+  nr_distributed_trace_set_priority(txn.distributed_trace, priority);
+  nr_distributed_trace_set_sampled(txn.distributed_trace, false);
+
+  rv = nr_txn_accept_distributed_trace_payload(&txn, json_payload_invalid,
+                                               NULL);
+  tlib_pass_if_true("expected return code", rv, "rv=%d", rv);
+  test_txn_metric_is("success", txn.unscoped_metrics, MET_FORCED,
+                     "Supportability/DistributedTrace/AcceptPayload/Success", 1,
+                     0, 0, 0, 0, 0);
+
+  tlib_pass_if_double_equal(
+      "Unaltered priority",
+      nr_distributed_trace_get_priority(txn.distributed_trace), priority);
+  tlib_pass_if_bool_equal(
+      "Unaltered sampled",
+      nr_distributed_trace_is_sampled(txn.distributed_trace), false);
+
+  nr_distributed_trace_destroy(&txn.distributed_trace);
+  nrm_table_destroy(&txn.unscoped_metrics);
+
+  nro_delete(txn.app_connect_reply);
+}
+
 static void test_parent_stacks(void) {
   nr_segment_t s = {.type = NR_SEGMENT_CUSTOM, .parent = NULL};
   nrtxn_t txn = {.parent_stacks = NULL};
@@ -5841,6 +5993,183 @@ static void test_parent_stacks(void) {
   /* See also: More meaningful unit-tests in test_segment.c.  Starting and
    * ending a segment trigger nr_txn_set_current_segment() and
    * nr_txn_retire_current_segment(). */
+}
+
+static void test_txn_is_sampled(void) {
+  nrtxn_t txn;
+  bool scenarios[][3]
+      = {/* { DT enabled, sampled, result } */
+         {false, false, false},
+         {false, true, false},
+         {true, false, false},
+         {true, true, true}};
+
+  txn.distributed_trace = nr_distributed_trace_create();
+  for (size_t i = 0; i < sizeof(scenarios) / sizeof(scenarios[0]); i++) {
+    txn.options.distributed_tracing_enabled = scenarios[i][0];
+    nr_distributed_trace_set_sampled(txn.distributed_trace, scenarios[i][1]);
+    tlib_pass_if_true(__func__, nr_txn_is_sampled(&txn) == scenarios[i][2],
+                      "dt=%d,sampled=%d,result=%d", scenarios[i][0],
+                      scenarios[i][1], scenarios[i][2]);
+  }
+  nr_distributed_trace_destroy(&txn.distributed_trace);
+
+  /* Passing a NULL txn into nr_txn_is_sampled() must return false and
+   * not seg fault */
+  tlib_pass_if_false(__func__, nr_txn_is_sampled(NULL),
+                     "nr_txn_is_sampled(NULL) should return false");
+}
+
+static void test_get_current_trace_id(void) {
+  nrapp_t app;
+  nrtxnopt_t opts;
+  char* trace_id;
+  nrtxn_t* txn;
+  const char* txn_id;
+
+  /* setup and start txn */
+  nr_memset(&app, 0, sizeof(app));
+  nr_memset(&opts, 0, sizeof(opts));
+  app.state = NR_APP_OK;
+  opts.distributed_tracing_enabled = 1;
+  txn = nr_txn_begin(&app, &opts, NULL);
+
+  /*
+   * Test : Bad parameters
+   */
+  tlib_pass_if_null("no trace id. txn is null",
+                    nr_txn_get_current_trace_id(NULL));
+
+  /*
+   * Test : Correct trace id
+   */
+  txn_id = nr_txn_get_guid(txn);
+  trace_id = nr_txn_get_current_trace_id(txn);
+  tlib_fail_if_null("txn id", txn_id);
+  tlib_pass_if_str_equal("txn_id == trace_id", txn_id, trace_id);
+  nr_free(trace_id);
+
+  /*
+   * Test : Null trace id with DT disabled
+   */
+  txn->options.distributed_tracing_enabled = 0;
+  tlib_pass_if_null("DT is disabled. trace id is null",
+                    nr_txn_get_current_trace_id(txn));
+
+  /*
+   * Test : Null trace id with null DT
+   */
+  txn->options.distributed_tracing_enabled = 1;
+  nr_distributed_trace_destroy(&txn->distributed_trace);
+  tlib_pass_if_null("DT is null. null trace id is returned",
+                    nr_txn_get_current_trace_id(txn));
+
+  nr_txn_destroy(&txn);
+}
+
+static void test_get_current_span_id(void) {
+  nrapp_t app;
+  nrtxnopt_t opts;
+  nr_segment_t* segment;
+  char* span_id;
+  nrtxn_t* txn;
+  uint32_t priority;
+
+  /* start txn and segment */
+  nr_memset(&app, 0, sizeof(app));
+  nr_memset(&opts, 0, sizeof(opts));
+  app.state = NR_APP_OK;
+  opts.distributed_tracing_enabled = 1;
+  txn = nr_txn_begin(&app, &opts, NULL);
+  segment = nr_segment_start(txn, txn->segment_root, NULL);
+  nr_distributed_trace_set_sampled(txn->distributed_trace, true);
+  nr_txn_set_current_segment(txn, segment);
+
+  /*
+   * Test : Bad parameters
+   */
+  tlib_pass_if_null("no span id. txn is null",
+                    nr_txn_get_current_span_id(NULL));
+
+  /*
+   * Test : disabled span events
+   */
+  txn->options.span_events_enabled = 0;
+  tlib_pass_if_null("span events disabled", nr_txn_get_current_span_id(txn));
+
+  /*
+   * Test : span id is created
+   */
+  txn->options.span_events_enabled = 1;
+  span_id = nr_txn_get_current_span_id(txn);
+  tlib_fail_if_null("span id is created", span_id);
+  nr_free(span_id);
+
+  /*
+   * Test : segment priority is set correctly
+   */
+  priority = segment->priority;
+  tlib_pass_if_true("log segment priority", priority & NR_SEGMENT_PRIORITY_LOG,
+                    "priority=0x%08x", priority);
+
+  nr_txn_destroy(&txn);
+}
+
+static void test_finalize_parent_stacks(void) {
+  nrapp_t app;
+  nrtxnopt_t opts;
+  nr_segment_t* segment_default_1;
+  nr_segment_t* segment_default_2;
+  nr_segment_t* segment_async_1;
+  nr_segment_t* segment_async_2;
+  nrtxn_t* txn;
+  uint64_t key;
+
+  /*
+   * Don't crash on a NULL txn
+   */
+  nr_txn_finalize_parent_stacks(NULL);
+
+  nr_memset(&app, 0, sizeof(app));
+  nr_memset(&opts, 0, sizeof(opts));
+  app.state = NR_APP_OK;
+  txn = nr_txn_begin(&app, &opts, NULL);
+
+  /*
+   * Don't crash on a NULL stack
+   */
+  key = nr_string_add(txn->trace_strings, "nullstack");
+  nr_hashmap_index_set(txn->parent_stacks, key, NULL);
+  nr_txn_finalize_parent_stacks(txn);
+
+  /*
+   * Start a default and an async segment
+   */
+  segment_default_1 = nr_segment_start(txn, NULL, NULL);
+  segment_default_2 = nr_segment_start(txn, NULL, NULL);
+  segment_async_1 = nr_segment_start(txn, NULL, "async");
+  segment_async_2 = nr_segment_start(txn, NULL, "async");
+
+  /*
+   * Finalize segment stacks. Test that segments have a stop time and
+   * that segment stacks are empty.
+   */
+  nr_txn_finalize_parent_stacks(txn);
+
+  tlib_pass_if_true("segment in default parent stack ended",
+                    segment_default_1->stop_time != 0, "stop_time=" NR_TIME_FMT,
+                    segment_default_1->stop_time);
+  tlib_pass_if_true("segment in default parent stack ended",
+                    segment_default_2->stop_time != 0, "stop_time=" NR_TIME_FMT,
+                    segment_default_2->stop_time);
+  tlib_pass_if_true("segment in async parent stack ended",
+                    segment_async_1->stop_time != 0, "stop_time=" NR_TIME_FMT,
+                    segment_async_1->stop_time);
+  tlib_pass_if_true("segment in async parent stack ended",
+                    segment_async_2->stop_time != 0, "stop_time=" NR_TIME_FMT,
+                    segment_async_2->stop_time);
+
+  nr_txn_destroy(&txn);
 }
 
 tlib_parallel_info_t parallel_info
@@ -5888,7 +6217,6 @@ void test_main(void* p NRUNUSED) {
   test_get_cat_trip_id();
   test_get_guid();
   test_get_path_hash();
-  test_get_primary_app_name();
   test_is_synthetics();
   test_start_time();
   test_start_time_secs();
@@ -5919,7 +6247,13 @@ void test_main(void* p NRUNUSED) {
   test_txn_accept_distributed_trace_payload_metrics();
   test_txn_accept_distributed_trace_payload();
   test_txn_accept_distributed_trace_payload_httpsafe();
+  test_txn_accept_distributed_trace_payload_optionals();
   test_default_trace_id();
+  test_root_segment_priority();
   test_should_create_span_events();
   test_parent_stacks();
+  test_txn_is_sampled();
+  test_get_current_trace_id();
+  test_get_current_span_id();
+  test_finalize_parent_stacks();
 }

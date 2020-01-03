@@ -474,6 +474,9 @@ static void test_get(void) {
                            nr_vector_get(&v, (size_t)i));
   }
 
+  tlib_pass_if_null("access beyond the end of a vector fails",
+                    nr_vector_get(&v, 8));
+
   nr_vector_deinit(&v);
 }
 

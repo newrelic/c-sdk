@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"newrelic/limits"
 	"newrelic/log"
 )
 
@@ -29,7 +30,7 @@ type PidFile struct {
 // CreatePidFile opens the given pid file and acquires an exclusive
 // write lock.
 func CreatePidFile(name string) (*PidFile, error) {
-	for i := 0; i < MaxPidfileRetries; i++ {
+	for i := 0; i < limits.MaxPidfileRetries; i++ {
 		f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
 			return nil, err

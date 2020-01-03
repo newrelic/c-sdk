@@ -19,7 +19,7 @@ export GO15VENDOREXPERIMENT=1
 # GOBIN affects the behavior of go install, ensure it is unset.
 unexport GOBIN
 
-GOFLAGS := -ldflags '-X newrelic/version.Number=$(AGENT_VERSION) -X newrelic/version.Commit=$(GIT_COMMIT) -X newrelic/secrets.NewrelicCollectorHost=$(NEWRELIC_COLLECTOR_HOST) -X newrelic/secrets.NewrelicLicenseKey=$(NEWRELIC_LICENSE_KEY) -X newrelic/secrets.WhiteList=$(WHITE_LIST) -X newrelic/secrets.NewrelicCollectorKeys=$(NEWRELIC_COLLECTOR_KEYS)' $(GO_TAGS)
+GOFLAGS := -ldflags '-X newrelic/version.Number=$(AGENT_VERSION) -X newrelic/version.Commit=$(GIT_COMMIT) -X newrelic/secrets.NewrelicCollectorHost=$(NEWRELIC_COLLECTOR_HOST) -X newrelic/secrets.NewrelicLicenseKey=$(NEWRELIC_LICENSE_KEY) -X newrelic/secrets.NewrelicCollectorKeys=$(NEWRELIC_COLLECTOR_KEYS)' $(GO_TAGS)
 
 GCOVRFLAGS += -e "agent/tests/*" -e "axiom/tests/*" -e ".*\.h" -o
 
@@ -203,7 +203,7 @@ DAEMON_COV_FILE = daemon_coverage.out
 .PHONY: daemon_cover
 daemon_cover: go-minimum-version
 	@rm -f $(DAEMON_COV_FILE)
-	$(GO) test -coverprofile=$(DAEMON_COV_FILE) $(GOFLAGS) newrelic
+	$(GO) test -coverprofile=$(DAEMON_COV_FILE) $(GOFLAGS) ./...
 	$(GO) tool cover -html=$(DAEMON_COV_FILE)
 	@rm -f $(DAEMON_COV_FILE)
 
@@ -286,7 +286,7 @@ axiom-clean:
 
 .PHONY: integration
 integration: Makefile daemon lasp-test-all
-	for PHP in $${PHPS:-7.3 7.2 7.1 7.0 5.6 5.5 5.4 5.3}; do \
+	for PHP in $${PHPS:-7.4 7.3 7.2 7.1 7.0 5.6 5.5 5.4 5.3}; do \
           echo; echo "# PHP=$${PHP}"; \
 	  env NRLAMP_PHP=$${PHP} bin/integration_runner $(INTEGRATION_ARGS) || exit 1; \
 	  echo "# PHP=$${PHP}"; \
@@ -350,7 +350,7 @@ package-clean:
 lasp-test: daemon
 	if [ ! $(SUITE_LASP) ]; then echo "USAGE: make lasp-test SUITE_LASP=suite-most-secure"; exit 1; fi
 	if [ ! -d "tests/lasp/$(SUITE_LASP)" ]; then echo "No such suite in tests/lasp folder"; exit 1; fi
-	for PHP in $${PHPS:-7.3 7.2 7.1 7.0 5.6 5.5 5.4 5.3}; do \
+	for PHP in $${PHPS:-7.4 7.3 7.2 7.1 7.0 5.6 5.5 5.4 5.3}; do \
           echo; echo "# PHP=$${PHP}"; \
           NRLAMP_PHP=$${PHP} bin/integration_runner $(INTEGRATION_ARGS) -loglevel debug \
         -license @tests/lasp/$(SUITE_LASP)/nr-license.txt \

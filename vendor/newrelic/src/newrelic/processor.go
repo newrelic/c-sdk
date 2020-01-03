@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"newrelic/collector"
+	"newrelic/limits"
 	"newrelic/log"
 	"newrelic/utilization"
 )
@@ -319,9 +320,9 @@ func (p *Processor) processAppInfo(m AppInfoMessage) {
 		return
 	}
 
-	if len(p.apps) > AppLimit {
+	if len(p.apps) > limits.AppLimit {
 		log.Errorf("unable to add app '%s', limit of %d applications reached",
-			m.Info, AppLimit)
+			m.Info, limits.AppLimit)
 		return
 	}
 
@@ -403,7 +404,7 @@ func (p *Processor) processConnectAttempt(rep ConnectAttempt) {
 	log.Infof("app '%s' connected with run id '%s'", app, app.connectReply.ID)
 
 	p.harvests[*app.connectReply.ID] = NewAppHarvest(*app.connectReply.ID, app,
-		NewHarvest(time.Now()), p.processorHarvestChan)
+		NewHarvest(time.Now(), app.connectReply.EventHarvestConfig.EventConfigs), p.processorHarvestChan)
 }
 
 type harvestArgs struct {
@@ -468,7 +469,7 @@ func considerHarvestPayload(p PayloadCreator, args *harvestArgs) {
 }
 
 func considerHarvestPayloadTxnEvents(txnEvents *TxnEvents, args *harvestArgs) {
-	if args.splitLargePayloads && (txnEvents.events.Len() >= (MaxTxnEvents / 2)) {
+	if args.splitLargePayloads && (txnEvents.events.Len() >= (limits.MaxTxnEvents / 2)) {
 		events1, events2 := txnEvents.Split()
 		considerHarvestPayload(&TxnEvents{events1}, args)
 		considerHarvestPayload(&TxnEvents{events2}, args)
@@ -477,10 +478,10 @@ func considerHarvestPayloadTxnEvents(txnEvents *TxnEvents, args *harvestArgs) {
 	}
 }
 
-func harvestAll(harvest *Harvest, args *harvestArgs) {
+func harvestAll(harvest *Harvest, args *harvestArgs, harvestLimits collector.EventHarvestConfig) {
 	log.Debugf("harvesting %d commands processed", harvest.commandsProcessed)
 
-	harvest.createFinalMetrics()
+	harvest.createFinalMetrics(harvestLimits)
 	harvest.Metrics = harvest.Metrics.ApplyRules(args.rules)
 
 	considerHarvestPayload(harvest.Metrics, args)
@@ -505,12 +506,12 @@ func harvestByType(ah *AppHarvest, args *harvestArgs, ht HarvestType) {
 	//       at the same rate.
 	// In such cases, harvest all types and return.
 	if ht&HarvestAll == HarvestAll {
-		ah.Harvest = NewHarvest(time.Now())
+		ah.Harvest = NewHarvest(time.Now(), ah.App.connectReply.EventHarvestConfig.EventConfigs)
 		if args.blocking {
 			// Invoked primarily by CleanExit
-			harvestAll(harvest, args)
+			harvestAll(harvest, args, ah.connectReply.EventHarvestConfig)
 		} else {
-			go harvestAll(harvest, args)
+			go harvestAll(harvest, args, ah.connectReply.EventHarvestConfig)
 		}
 		return
 	}
@@ -522,17 +523,18 @@ func harvestByType(ah *AppHarvest, args *harvestArgs, ht HarvestType) {
 
 		log.Debugf("harvesting %d commands processed", harvest.commandsProcessed)
 
-		harvest.createFinalMetrics()
+		harvest.createFinalMetrics(ah.connectReply.EventHarvestConfig)
 		harvest.Metrics = harvest.Metrics.ApplyRules(args.rules)
 
 		metrics := harvest.Metrics
 		errors := harvest.Errors
 		slowSQLs := harvest.SlowSQLs
 		txnTraces := harvest.TxnTraces
+		spanEvents := harvest.SpanEvents
 
-		harvest.Metrics = NewMetricTable(MaxMetrics, time.Now())
-		harvest.Errors = NewErrorHeap(MaxErrors)
-		harvest.SlowSQLs = NewSlowSQLs(MaxSlowSQLs)
+		harvest.Metrics = NewMetricTable(limits.MaxMetrics, time.Now())
+		harvest.Errors = NewErrorHeap(limits.MaxErrors)
+		harvest.SlowSQLs = NewSlowSQLs(limits.MaxSlowSQLs)
 		harvest.TxnTraces = NewTxnTraces()
 		harvest.commandsProcessed = 0
 		harvest.pidSet = make(map[int]struct{})
@@ -541,40 +543,44 @@ func harvestByType(ah *AppHarvest, args *harvestArgs, ht HarvestType) {
 		considerHarvestPayload(errors, args)
 		considerHarvestPayload(slowSQLs, args)
 		considerHarvestPayload(txnTraces, args)
+		considerHarvestPayload(spanEvents, args)
 	}
+
+	eventConfigs := ah.App.connectReply.EventHarvestConfig.EventConfigs
 
 	// The next three types are those which may have individually-configured
 	// custom reporting periods; they each may be harvested at different rates.
-	if ht&HarvestCustomEvents == HarvestCustomEvents {
+	if ht&HarvestCustomEvents == HarvestCustomEvents && eventConfigs.CustomEventConfig.Limit != 0 {
 		log.Debugf("harvesting custom events")
 
 		customEvents := harvest.CustomEvents
-		harvest.CustomEvents = NewCustomEvents(MaxCustomEvents)
+		harvest.CustomEvents = NewCustomEvents(eventConfigs.CustomEventConfig.Limit)
 		considerHarvestPayload(customEvents, args)
 	}
 
-	if ht&HarvestErrorEvents == HarvestErrorEvents {
+	if ht&HarvestErrorEvents == HarvestErrorEvents  && eventConfigs.ErrorEventConfig.Limit != 0 {
 		log.Debugf("harvesting error events")
 
 		errorEvents := harvest.ErrorEvents
-		harvest.ErrorEvents = NewErrorEvents(MaxErrorEvents)
+		harvest.ErrorEvents = NewErrorEvents(eventConfigs.ErrorEventConfig.Limit)
 		considerHarvestPayload(errorEvents, args)
 	}
 
-	if ht&HarvestTxnEvents == HarvestTxnEvents {
+	if ht&HarvestTxnEvents == HarvestTxnEvents && eventConfigs.AnalyticEventConfig.Limit != 0 {
 		log.Debugf("harvesting transaction events")
 
 		txnEvents := harvest.TxnEvents
-		harvest.TxnEvents = NewTxnEvents(MaxTxnEvents)
+		harvest.TxnEvents = NewTxnEvents(eventConfigs.AnalyticEventConfig.Limit)
 		considerHarvestPayloadTxnEvents(txnEvents, args)
 	}
 
-	if ht&HarvestSpanEvents == HarvestSpanEvents {
+	if ht&HarvestSpanEvents == HarvestSpanEvents && eventConfigs.SpanEventConfig.Limit != 0 {
 		log.Debugf("harvesting span events")
 
 		spanEvents := harvest.SpanEvents
-		harvest.SpanEvents = NewSpanEvents(MaxSpanEvents)
+		harvest.SpanEvents = NewSpanEvents(eventConfigs.SpanEventConfig.Limit)
 		considerHarvestPayload(spanEvents, args)
+
 	}
 }
 
@@ -653,13 +659,13 @@ func NewProcessor(cfg ProcessorConfig) *Processor {
 	return &Processor{
 		apps:                  make(map[AppKey]*App),
 		harvests:              make(map[AgentRunID]*AppHarvest),
-		txnDataChannel:        make(chan TxnData, TxnDataChanBuffering),
-		appInfoChannel:        make(chan AppInfoMessage, AppInfoChanBuffering),
+		txnDataChannel:        make(chan TxnData, limits.TxnDataChanBuffering),
+		appInfoChannel:        make(chan AppInfoMessage, limits.AppInfoChanBuffering),
 		connectAttemptChannel: make(chan ConnectAttempt),
 		harvestErrorChannel:   make(chan HarvestError),
 		quitChan:              make(chan struct{}),
 		processorHarvestChan:  make(chan ProcessorHarvest),
-		appConnectBackoff:     AppConnectAttemptBackoff,
+		appConnectBackoff:     limits.AppConnectAttemptBackoff,
 		cfg:                   cfg,
 	}
 }
@@ -702,6 +708,7 @@ func (p *Processor) Run() error {
 			}
 		}
 
+		// This is only used for testing
 		if nil != p.trackProgress {
 			p.trackProgress <- struct{}{}
 		}
@@ -727,7 +734,7 @@ func integrationLog(now time.Time, id AgentRunID, p PayloadCreator) {
 
 func (p *Processor) IncomingTxnData(id AgentRunID, sample AggregaterInto) {
 	if p.cfg.IntegrationMode {
-		h := NewHarvest(time.Now())
+		h := NewHarvest(time.Now(), collector.NewHarvestLimits())
 		sample.AggregateInto(h)
 		now := time.Now()
 		integrationLog(now, id, h.Metrics)

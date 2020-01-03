@@ -17,6 +17,7 @@
 #include "nr_commands.h"
 #include "nr_commands_private.h"
 #include "nr_distributed_trace.h"
+#include "nr_limits.h"
 #include "nr_slowsqls.h"
 #include "nr_span_event.h"
 #include "nr_synthetics.h"
@@ -252,8 +253,8 @@ static uint32_t nr_txndata_prepend_span_events(nr_flatbuffer_t* fb,
 
   if (0 == event_count) {
     return 0;
-  } else if (event_count > NR_MAX_SPAN_EVENTS) {
-    event_count = NR_MAX_SPAN_EVENTS;
+  } else if (event_count > (size_t)txn->app_limits.span_events) {
+    event_count = (size_t)txn->app_limits.span_events;
   }
 
   buf = nr_buffer_create(1024, 0);

@@ -19,6 +19,7 @@ import (
 	ds "daemon/signal"
 	"newrelic"
 	"newrelic/config"
+	"newrelic/limits"
 	"newrelic/log"
 	"newrelic/version"
 )
@@ -97,7 +98,7 @@ func runWorker(cfg *Config) {
 	}
 
 	if cfg.AppTimeout < 0 {
-		cfg.AppTimeout = config.Timeout(newrelic.DefaultAppTimeout)
+		cfg.AppTimeout = config.Timeout(limits.DefaultAppTimeout)
 		log.Errorf("application inactivity timeout cannot be negative, using default of %v",
 			cfg.AppTimeout)
 	}
@@ -110,8 +111,12 @@ func runWorker(cfg *Config) {
 	})
 	go processTxnData(errorChan, p)
 
+	// We have a progenitor if neither the --foreground nor
+	// --watchdog-foreground flags were supplied.
+	hasProgenitor := !(cfg.Foreground || cfg.WatchdogForeground)
+
 	select {
-	case <-listenAndServe(cfg.BindAddr, errorChan, p):
+	case <-listenAndServe(cfg.BindAddr, errorChan, p, hasProgenitor):
 		log.Debugf("listener shutdown - exiting")
 	case err := <-errorChan:
 		if err != nil {
@@ -132,7 +137,7 @@ func runWorker(cfg *Config) {
 // listenAndServe starts and supervises the listener. If the listener
 // terminates with an error, it is sent on errorChan; otherwise, the
 // returned channel is closed to indicate a clean exit.
-func listenAndServe(address string, errorChan chan<- error, p *newrelic.Processor) <-chan struct{} {
+func listenAndServe(address string, errorChan chan<- error, p *newrelic.Processor, hasProgenitor bool) <-chan struct{} {
 	doneChan := make(chan struct{})
 
 	go func() {
@@ -183,8 +188,10 @@ func listenAndServe(address string, errorChan chan<- error, p *newrelic.Processo
 		defer list.Close()
 		log.Infof("daemon listening on %s", addr)
 
-		if err := ds.SendReady(); err != nil {
-			log.Debugf("error sending signal to the progenitor process that the worker is ready: %v", err)
+		if hasProgenitor {
+			if err := ds.SendReady(); err != nil {
+				log.Debugf("error sending signal to the progenitor process that the worker is ready: %v", err)
+			}
 		}
 
 		if err = list.Serve(newrelic.CommandsHandler{Processor: p}); err != nil {

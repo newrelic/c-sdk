@@ -10,6 +10,32 @@ func TestHarvestTriggerGet(t *testing.T) {
 
 	reply := &ConnectReply{}
 
+	errorEventConfig := 100
+	txnEventData := 10000
+	customEventConfig := 10000
+	spanEventConfig := 1000
+
+	reply.EventHarvestConfig = collector.EventHarvestConfig{
+		ReportPeriod: 60000,
+		EventConfigs: collector.EventConfigs{
+			ErrorEventConfig: collector.Event{
+				Limit: errorEventConfig,
+				ReportPeriod: 60000,
+			},
+			AnalyticEventConfig: collector.Event{
+				Limit: txnEventData,
+				ReportPeriod: 60000,
+			},
+			CustomEventConfig: collector.Event{
+				Limit: customEventConfig,
+				ReportPeriod: 60000,
+			},
+			SpanEventConfig: collector.Event{
+				Limit: spanEventConfig,
+				ReportPeriod: 60000,
+			},
+		}}
+
 	trigger := getHarvestTrigger("1234", reply)
 
 	if trigger == nil {
@@ -21,17 +47,31 @@ func TestHarvestTriggerGetCustom(t *testing.T) {
 
 	reply := &ConnectReply{}
 
-	reportPeriod := &collector.ReportPeriod{
-		InSeconds: 15,
-	}
+	errorEventConfig := 100
+	txnEventData := 10000
+	customEventConfig := 10000
+	spanEventConfig := 1000
 
-	methods := &collector.DataMethods{
-		ErrorEventData:    reportPeriod,
-		AnalyticEventData: reportPeriod,
-		CustomEventData:   reportPeriod,
-	}
-
-	reply.DataMethods = methods
+	reply.EventHarvestConfig = collector.EventHarvestConfig{
+		ReportPeriod: 60000,
+		EventConfigs: collector.EventConfigs{
+			ErrorEventConfig:   collector.Event{
+				Limit: errorEventConfig,
+				ReportPeriod: 60000,
+			},
+			AnalyticEventConfig: collector.Event{
+				Limit: txnEventData,
+				ReportPeriod: 60000,
+			},
+			CustomEventConfig: collector.Event{
+				Limit: customEventConfig,
+				ReportPeriod: 60000,
+			},
+			SpanEventConfig: collector.Event{
+				Limit: spanEventConfig,
+				ReportPeriod: 60000,
+			},
+		}}
 
 	trigger := getHarvestTrigger("1234", reply)
 
@@ -39,24 +79,4 @@ func TestHarvestTriggerGetCustom(t *testing.T) {
 		t.Fatal("No custom harvest trigger created")
 	}
 
-}
-
-func TestFasterHarvestWhitelistReplyBuilder(t *testing.T) {
-	reply1 := fasterHarvestWhitelistReplyBuilder(7)
-
-	if 7 != reply1.DataMethods.ErrorEventData.InSeconds {
-		t.Fatal("ErrorEventData value is incorrect")
-	}
-
-	if 7 != reply1.DataMethods.AnalyticEventData.InSeconds {
-		t.Fatal("AnalyticEventData value is incorrect")
-	}
-
-	if 7 != reply1.DataMethods.CustomEventData.InSeconds {
-		t.Fatal("CustomEventData value is incorrect")
-	}
-
-	if 7 != reply1.DataMethods.SpanEventData.InSeconds {
-		t.Fatal("SpanEventData value is incorrect")
-	}
 }

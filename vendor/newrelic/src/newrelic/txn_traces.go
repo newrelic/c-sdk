@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"newrelic/collector"
+	"newrelic/limits"
 )
 
 type TxnTrace struct {
@@ -106,9 +107,9 @@ type TxnTraces struct {
 
 func NewTxnTraces() *TxnTraces {
 	return &TxnTraces{
-		regular:        NewTxnTraceHeap(MaxRegularTraces),
-		forcePersisted: NewTxnTraceHeap(MaxForcePersistTraces),
-		synthetics:     NewTxnTraceHeap(MaxSyntheticsTraces),
+		regular:        NewTxnTraceHeap(limits.MaxRegularTraces),
+		forcePersisted: NewTxnTraceHeap(limits.MaxForcePersistTraces),
+		synthetics:     NewTxnTraceHeap(limits.MaxSyntheticsTraces),
 	}
 }
 

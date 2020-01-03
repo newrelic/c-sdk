@@ -1,5 +1,6 @@
 #include "nr_axiom.h"
 
+#include "nr_guid.h"
 #include "nr_segment_private.h"
 #include "nr_segment.h"
 #include "nr_segment_traces.h"
@@ -460,6 +461,22 @@ bool nr_segment_discard(nr_segment_t** segment_ptr) {
   return true;
 }
 
+/*
+ * Safety check for comparator functions
+ *
+ * This avoids NULL checks in each comparator and ensures that NULL
+ * elements are consistently considered as smaller.
+ */
+#define COMPARATOR_NULL_CHECK(__elem1, __elem2)             \
+  if (nrunlikely(NULL == (__elem1) || NULL == (__elem2))) { \
+    if ((__elem1) < (__elem2)) {                            \
+      return -1;                                            \
+    } else if ((__elem1) > (__elem2)) {                     \
+      return 1;                                             \
+    }                                                       \
+    return 0;                                               \
+  }
+
 static int nr_segment_duration_comparator(const nr_segment_t* a,
                                           const nr_segment_t* b) {
   nrtime_t duration_a = a->stop_time - a->start_time;
@@ -476,43 +493,28 @@ static int nr_segment_duration_comparator(const nr_segment_t* a,
 int nr_segment_wrapped_duration_comparator(const void* a,
                                            const void* b,
                                            void* userdata NRUNUSED) {
+  COMPARATOR_NULL_CHECK(a, b);
+
   return nr_segment_duration_comparator((const nr_segment_t*)a,
                                         (const nr_segment_t*)b);
 }
 
 static int nr_segment_span_priority_comparator(const nr_segment_t* a,
                                                const nr_segment_t* b) {
-  /*
-   * 1. Root segments always have the highest priority.
-   */
-  if (NULL == a->parent) {
+  if (a->priority > b->priority) {
     return 1;
-  }
-  if (NULL == b->parent) {
+  } else if (a->priority < b->priority) {
     return -1;
+  } else {
+    return nr_segment_duration_comparator(a, b);
   }
-
-  /*
-   * 2. Every segment having an id assigned. This id can stem from distributed
-   *    trace payload creation or from span id getters. Let's keep segments
-   *    whose ids are floating around out there.
-   */
-  if (NULL != a->id && NULL == b->id) {
-    return 1;
-  }
-  if (NULL != b->id && NULL == a->id) {
-    return -1;
-  }
-
-  /*
-   * 3. The longest segments.
-   */
-  return nr_segment_duration_comparator(a, b);
 }
 
 int nr_segment_wrapped_span_priority_comparator(const void* a,
                                                 const void* b,
                                                 void* userdata NRUNUSED) {
+  COMPARATOR_NULL_CHECK(a, b);
+
   return nr_segment_span_priority_comparator((const nr_segment_t*)a,
                                              (const nr_segment_t*)b);
 }
@@ -667,4 +669,25 @@ void nr_segment_heap_to_set(nr_minmax_heap_t* heap, nr_set_t* set) {
       (void*)set);
 
   return;
+}
+
+char* nr_segment_ensure_id(nr_segment_t* segment, const nrtxn_t* txn) {
+  if (nrunlikely(NULL == segment || NULL == txn)) {
+    return NULL;
+  }
+
+  // Create a segment id if it doesn't exist.
+  if ((NULL == segment->id) && (nr_txn_should_create_span_events(txn))) {
+    segment->id = nr_guid_create(txn->rnd);
+  }
+
+  return segment->id;
+}
+
+void nr_segment_set_priority_flag(nr_segment_t* segment, int flag) {
+  if (NULL == segment) {
+    return;
+  }
+
+  segment->priority |= flag;
 }

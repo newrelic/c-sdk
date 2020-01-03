@@ -46,6 +46,9 @@ bool nr_distributed_trace_accept_inbound_payload(nr_distributed_trace_t* dt,
                                                  const char* transport_type,
                                                  const char** error) {
   const nrobj_t* obj_payload_data;
+  nr_status_t errp = NR_FAILURE;
+  nr_sampling_priority_t priority;
+  bool sampled;
 
   if (NULL != *error) {
     return false;
@@ -76,9 +79,25 @@ bool nr_distributed_trace_accept_inbound_payload(nr_distributed_trace_t* dt,
   set_dt_field(&dt->trace_id,
                nro_get_hash_string(obj_payload_data, "tr", NULL));
 
-  dt->priority = (nr_sampling_priority_t)nro_get_hash_double(obj_payload_data,
-                                                             "pr", NULL);
-  dt->sampled = nro_get_hash_boolean(obj_payload_data, "sa", NULL);
+  /*
+   * Keep the current priority if the priority in the inbound payload is
+   * missing or invalid.
+   */
+  priority = (nr_sampling_priority_t)nro_get_hash_double(obj_payload_data, "pr",
+                                                         &errp);
+  if (NR_SUCCESS == errp) {
+    dt->priority = priority;
+  }
+
+  /*
+   * Keep the current sampled flag if the sampled flag in the inbound payload is
+   * missing or invalid.
+   */
+  sampled = nro_get_hash_boolean(obj_payload_data, "sa", &errp);
+
+  if (NR_SUCCESS == errp) {
+    dt->sampled = sampled;
+  }
 
   // Convert payload timestamp from MS to US.
   dt->inbound.timestamp

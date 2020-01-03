@@ -1,6 +1,9 @@
 package newrelic
 
-import "newrelic/collector"
+import (
+	"newrelic/collector"
+	"newrelic/limits"
+)
 
 type ClientConfig struct {
 	CAFile string
@@ -18,8 +21,8 @@ func NewClient(cfg *ClientConfig) (Client, error) {
 		CAFile:      cfg.CAFile,
 		CAPath:      cfg.CAPath,
 		Proxy:       cfg.Proxy,
-		MaxParallel: MaxOutboundConns,
-		Timeout:     HarvestTimeout,
+		MaxParallel: limits.MaxOutboundConns,
+		Timeout:     limits.HarvestTimeout,
 	}
 	return collector.NewClient(realCfg)
 }

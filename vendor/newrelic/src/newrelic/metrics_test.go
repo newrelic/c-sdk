@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"newrelic/limits"
 )
 
 var start = time.Date(2014, time.November, 28, 1, 1, 0, 0, time.UTC)
@@ -205,7 +207,7 @@ func TestMergeFailedLimitReached(t *testing.T) {
 	addDuration(src, "two", "", 2*time.Second, 1*time.Second, Unforced)
 	addDuration(src, "three", "", 2*time.Second, 1*time.Second, Unforced)
 
-	src.failedHarvests = FailedMetricAttemptsLimit
+	src.failedHarvests = limits.FailedMetricAttemptsLimit
 
 	dest.MergeFailed(src)
 

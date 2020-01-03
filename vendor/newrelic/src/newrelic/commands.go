@@ -9,6 +9,7 @@ import (
 	"github.com/google/flatbuffers/go"
 
 	"newrelic/collector"
+	"newrelic/limits"
 	"newrelic/log"
 	"newrelic/protocol"
 )
@@ -276,7 +277,7 @@ func processBinary(data []byte, handler AgentDataHandler) ([]byte, error) {
 	// Check that the first offset is actually within the bounds of the message
 	// length.
 	offset := int(flatbuffers.GetUOffsetT(data[0:]))
-	if len(data)-MinFlatbufferSize <= offset {
+	if len(data)-limits.MinFlatbufferSize <= offset {
 		return nil, errors.New("offset is too large, len=" + strconv.Itoa(offset))
 	}
 

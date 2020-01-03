@@ -10,6 +10,7 @@
 #include "nr_agent.h"
 #include "nr_commands.h"
 #include "nr_commands_private.h"
+#include "nr_limits.h"
 #include "nr_rules.h"
 #include "util_buffer.h"
 #include "util_errno.h"
@@ -235,6 +236,7 @@ nr_status_t nr_cmd_appinfo_process_reply(const uint8_t* data,
   int status;
   int reply_len;
   const char* reply_json;
+  const char* entity_guid;
 
   if ((NULL == data) || (0 == len)) {
     return NR_FAILURE;
@@ -324,6 +326,14 @@ nr_status_t nr_cmd_appinfo_process_reply(const uint8_t* data,
   app->segment_terms = nr_segment_terms_create_from_obj(
       nro_get_hash_array(app->connect_reply, "transaction_segment_terms", 0));
 
+  nr_free(app->entity_guid);
+  entity_guid = nro_get_hash_string(app->connect_reply, "entity_guid", NULL);
+  if (NULL != entity_guid) {
+    app->entity_guid = nr_strdup(entity_guid);
+  } else {
+    app->entity_guid = NULL;
+  }
+
   nrl_debug(NRL_ACCT, "APPINFO reply full app='%.*s' agent_run_id=%s",
             NRP_APPNAME(app->info.appname), app->agent_run_id);
 
@@ -341,11 +351,48 @@ nr_status_t nr_cmd_appinfo_process_reply(const uint8_t* data,
       = nro_create_from_json_unterminated(reply_json, reply_len);
 
   /*
+   * Disable any event types the backend is uninterested in.
+   */
+  nr_cmd_appinfo_process_event_harvest_config(
+      nro_get_hash_hash(app->connect_reply, "event_harvest_config", NULL),
+      &app->limits);
+
+  /*
    * Finally, handle the harvest timing information.
    */
   nr_cmd_appinfo_process_harvest_timing(&reply, app);
 
   return NR_SUCCESS;
+}
+
+void nr_cmd_appinfo_process_event_harvest_config(const nrobj_t* config,
+                                                 nr_app_limits_t* app_limits) {
+  const nrobj_t* harvest_limits
+      = nro_get_hash_hash(config, "harvest_limits", NULL);
+
+  /* At the per-transaction agent level, the actual limits are only really
+   * meaningful for custom and span events: the other event types generally only
+   * result in one event per transaction, so we really just need to know if the
+   * event type is enabled at all. We'll still cache the limit values for
+   * consistency, but the defaults are more or less inconsequential. */
+  app_limits->analytics_events = nr_cmd_appinfo_process_get_harvest_limit(
+      harvest_limits, "analytic_event_data", NR_MAX_ANALYTIC_EVENTS);
+  app_limits->custom_events = nr_cmd_appinfo_process_get_harvest_limit(
+      harvest_limits, "custom_event_data", NR_MAX_CUSTOM_EVENTS);
+  app_limits->error_events = nr_cmd_appinfo_process_get_harvest_limit(
+      harvest_limits, "error_event_data", NR_MAX_ERRORS);
+  app_limits->span_events = nr_cmd_appinfo_process_get_harvest_limit(
+      harvest_limits, "span_event_data", NR_MAX_SPAN_EVENTS);
+}
+
+int nr_cmd_appinfo_process_get_harvest_limit(const nrobj_t* limits,
+                                             const char* key,
+                                             int default_value) {
+  int limit;
+  nr_status_t status = NR_FAILURE;
+
+  limit = nro_get_hash_int(limits, key, &status);
+  return NR_SUCCESS == status ? limit : default_value;
 }
 
 /* Hook for stubbing APPINFO messages during testing. */

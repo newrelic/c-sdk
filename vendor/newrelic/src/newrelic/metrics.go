@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"newrelic/jsonx"
+	"newrelic/limits"
 	"newrelic/log"
 )
 
@@ -150,7 +151,7 @@ func (mt *MetricTable) mergeMetric(nameSlice []byte, nameString, scope string,
 // may be discarded if mt is full.
 func (mt *MetricTable) MergeFailed(from *MetricTable) {
 	fails := from.failedHarvests + 1
-	if fails > FailedMetricAttemptsLimit {
+	if fails > limits.FailedMetricAttemptsLimit {
 		log.Debugf("discarding metrics: %d failed harvest attempts", fails)
 		return
 	}

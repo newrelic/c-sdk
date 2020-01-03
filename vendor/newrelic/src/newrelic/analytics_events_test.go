@@ -3,6 +3,8 @@ package newrelic
 import (
 	"fmt"
 	"testing"
+
+	"newrelic/limits"
 )
 
 func TestBasic(t *testing.T) {
@@ -185,7 +187,7 @@ func TestAnalyticsEventMergeFailedLimitReached(t *testing.T) {
 	e2.AddEvent(sampleAnalyticsEvent(0.6))
 	e2.AddEvent(sampleAnalyticsEvent(0.24))
 
-	e2.failedHarvests = FailedEventsAttemptsLimit
+	e2.failedHarvests = limits.FailedEventsAttemptsLimit
 
 	e1.MergeFailed(e2)
 
@@ -216,9 +218,9 @@ func BenchmarkEventsCollectorJSON(b *testing.B) {
 	// priorities.
 	sp := []SamplingPriority{0.99999, 0.42, 0.13, 0.007, 0.8}
 	data := []byte(`[{"zip":"zap","alpha":"beta","pen":"pencil"},{},{}]`)
-	events := NewTxnEvents(MaxTxnEvents)
+	events := NewTxnEvents(limits.MaxTxnEvents)
 
-	for n := 0; n < MaxTxnEvents; n++ {
+	for n := 0; n < limits.MaxTxnEvents; n++ {
 		events.AddTxnEvent(data, sp[n%len(sp)])
 	}
 

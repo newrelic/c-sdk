@@ -10,6 +10,7 @@
 #include "nr_commands.h"
 #include "nr_custom_events.h"
 #include "nr_guid.h"
+#include "nr_limits.h"
 #include "nr_segment.h"
 #include "nr_segment_private.h"
 #include "nr_segment_traces.h"
@@ -49,6 +50,9 @@ struct _nr_txn_attribute_t {
 #define NR_TXN_ATTR(X, NAME, DESTS) \
   const nr_txn_attribute_t* X = &(nr_txn_attribute_t) { (NAME), (DESTS) }
 
+NR_TXN_ATTR(nr_txn_request_uri,
+            "request.uri",
+            NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
 NR_TXN_ATTR(nr_txn_host_display_name,
             "host.displayName",
             NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
@@ -67,9 +71,6 @@ NR_TXN_ATTR(nr_txn_request_host,
 NR_TXN_ATTR(nr_txn_request_method,
             "request.method",
             NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
-NR_TXN_ATTR(nr_txn_request_user_agent,
-            "request.headers.User-Agent",
-            NR_TXN_ATTRIBUTE_TRACE_ERROR);
 NR_TXN_ATTR(nr_txn_request_referer,
             "request.headers.referer",
             NR_ATTRIBUTE_DESTINATION_ERROR);
@@ -82,13 +83,30 @@ NR_TXN_ATTR(nr_txn_response_content_length,
 /* This "SERVER_NAME" attribute is PHP specific:  It was a custom parameter
  * before attributes happened. */
 NR_TXN_ATTR(nr_txn_server_name, "SERVER_NAME", NR_TXN_ATTRIBUTE_TRACE_ERROR);
-NR_TXN_ATTR(nr_txn_response_code,
-            "httpResponseCode",
-            NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
 NR_TXN_ATTR(nr_txn_error_message,
             "errorMessage",
             NR_ATTRIBUTE_DESTINATION_TXN_EVENT);
 NR_TXN_ATTR(nr_txn_error_type, "errorType", NR_ATTRIBUTE_DESTINATION_TXN_EVENT);
+NR_TXN_ATTR(nr_txn_response_code,
+            "response.statusCode",
+            NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
+NR_TXN_ATTR(nr_txn_request_user_agent,
+            "request.headers.userAgent",
+            NR_TXN_ATTRIBUTE_TRACE_ERROR);
+
+/*
+ * Deprecated per November 2019
+ */
+NR_TXN_ATTR(nr_txn_response_code_deprecated,
+            "httpResponseCode",
+            NR_TXN_ATTRIBUTE_TRACE_ERROR_EVENT);
+
+/*
+ * Deprecated per November 2019
+ */
+NR_TXN_ATTR(nr_txn_request_user_agent_deprecated,
+            "request.headers.User-Agent",
+            NR_TXN_ATTRIBUTE_TRACE_ERROR);
 
 void nr_txn_set_string_attribute(nrtxn_t* txn,
                                  const nr_txn_attribute_t* attribute,
@@ -149,7 +167,7 @@ bool nr_txn_cmp_options(nrtxnopt_t* o1, nrtxnopt_t* o2) {
     return true;
   if (o1 == NULL || o2 == NULL)
     return false;
-  if (o1->custom_events_enabled != o2->custom_events_enabled)
+  if ((bool)o1->custom_events_enabled != (bool)o2->custom_events_enabled)
     return false;
   if (o1->synthetics_enabled != o2->synthetics_enabled)
     return false;
@@ -164,9 +182,9 @@ bool nr_txn_cmp_options(nrtxnopt_t* o1, nrtxnopt_t* o2) {
     return false;
   if (o1->autorum_enabled != o2->autorum_enabled)
     return false;
-  if (o1->analytics_events_enabled != o2->analytics_events_enabled)
+  if ((bool)o1->analytics_events_enabled != (bool)o2->analytics_events_enabled)
     return false;
-  if (o1->error_events_enabled != o2->error_events_enabled)
+  if ((bool)o1->error_events_enabled != (bool)o2->error_events_enabled)
     return false;
   if (o1->tt_enabled != o2->tt_enabled)
     return false;
@@ -190,7 +208,7 @@ bool nr_txn_cmp_options(nrtxnopt_t* o1, nrtxnopt_t* o2) {
     return false;
   if (o1->distributed_tracing_enabled != o2->distributed_tracing_enabled)
     return false;
-  if (o1->span_events_enabled != o2->span_events_enabled)
+  if ((bool)o1->span_events_enabled != (bool)o2->span_events_enabled)
     return false;
 
   return true;
@@ -388,6 +406,19 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
     nt->options.tt_threshold = 4 * nt->options.apdex_t;
   }
 
+  /*
+   * Update the options based on the backend event data configuration, if
+   * necessary.
+   */
+  nt->options.analytics_events_enabled
+      = nt->options.analytics_events_enabled && app->limits.analytics_events;
+  nt->options.custom_events_enabled
+      = nt->options.custom_events_enabled && app->limits.custom_events;
+  nt->options.error_events_enabled
+      = nt->options.error_events_enabled && app->limits.error_events;
+  nt->options.span_events_enabled
+      = nt->options.span_events_enabled && app->limits.span_events;
+
 #define NR_TXN_MAX_SLOWSQLS 10
   nt->slowsqls = nr_slowsqls_create(NR_TXN_MAX_SLOWSQLS);
   nt->datastore_products = nr_string_pool_create();
@@ -396,8 +427,7 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
   nt->attributes = nr_attributes_create(attribute_config);
   nt->intrinsics = nro_new_hash();
 
-#define NR_TXN_MAX_CUSTOM_EVENTS (10 * 1000)
-  nt->custom_events = nr_analytics_events_create(NR_TXN_MAX_CUSTOM_EVENTS);
+  nt->custom_events = nr_analytics_events_create(app->limits.custom_events);
 
   /*
    * Enforce SSC and LASP if enabled
@@ -444,6 +474,7 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
     return NULL;
   }
   nt->segment_root->start_time = 0;
+  nr_segment_set_priority_flag(nt->segment_root, NR_SEGMENT_PRIORITY_ROOT);
 
   nr_get_cpu_usage(&nt->user_cpu[NR_CPU_USAGE_START],
                    &nt->sys_cpu[NR_CPU_USAGE_START]);
@@ -451,7 +482,8 @@ nrtxn_t* nr_txn_begin(nrapp_t* app,
   nt->license = nr_strdup(app->info.license);
 
   nt->app_connect_reply = nro_copy(app->connect_reply);
-  nt->primary_app_name = nr_txn_get_primary_app_name(app->info.appname);
+  nt->app_limits = app->limits;
+  nt->primary_app_name = nr_strdup(app->entity_name);
 
   nt->cat.alternate_path_hashes = nro_new_hash();
 
@@ -1351,6 +1383,7 @@ void nr_txn_set_request_uri(nrtxn_t* txn, const char* uri) {
 
   nr_free(txn->request_uri);
   txn->request_uri = without_params;
+  nr_txn_set_string_attribute(txn, nr_txn_request_uri, without_params);
 
   nrl_verbosedebug(NRL_TXN, "request_uri=" NRP_FMT, NRP_URL(txn->request_uri));
 }
@@ -1483,7 +1516,9 @@ void nr_txn_set_http_status(nrtxn_t* txn, int http_code) {
 
   buf[0] = 0;
   snprintf(buf, sizeof(buf), "%d", http_code);
-  nr_txn_set_string_attribute(txn, nr_txn_response_code, buf);
+  nr_txn_set_string_attribute(txn, nr_txn_response_code_deprecated, buf);
+
+  nr_txn_set_long_attribute(txn, nr_txn_response_code, http_code);
 }
 
 #define NR_DEFAULT_USER_ATTRIBUTE_DESTINATIONS NR_ATTRIBUTE_DESTINATION_ALL
@@ -1699,6 +1734,15 @@ static int nr_txn_is_dt(const nrtxn_t* txn) {
   }
 
   return 0;
+}
+
+bool nr_txn_is_sampled(const nrtxn_t* txn) {
+  if (NULL == txn) {
+    return false;
+  }
+
+  return txn->options.distributed_tracing_enabled
+         && nr_distributed_trace_is_sampled(txn->distributed_trace);
 }
 
 nr_tt_recordsql_t nr_txn_sql_recording_level(const nrtxn_t* txn) {
@@ -2074,20 +2118,6 @@ int nr_txn_event_should_add_guid(const nrtxn_t* txn) {
     return 1;
   }
   return 0;
-}
-
-char* nr_txn_get_primary_app_name(const char* appname) {
-  char* delimiter;
-
-  if ((NULL == appname) || ('\0' == appname[0])) {
-    return NULL;
-  }
-
-  delimiter = nr_strchr(appname, ';');
-  if (NULL == delimiter) {
-    return nr_strdup(appname);
-  }
-  return nr_strndup(appname, delimiter - appname);
 }
 
 double nr_txn_start_time_secs(const nrtxn_t* txn) {
@@ -2520,20 +2550,12 @@ char* nr_txn_create_distributed_trace_payload(nrtxn_t* txn,
     goto end;
   }
 
-  if (nr_txn_should_create_span_events(txn)) {
-    /*
-     * Ensure the segment has an ID, since it's required to generate the
-     * distributed trace payload.
-     */
-    if (NULL == segment->id) {
-      segment->id = nr_guid_create(txn->rnd);
-    }
-  }
-
-  payload = nr_distributed_trace_payload_create(txn->distributed_trace,
-                                                segment->id);
+  payload = nr_distributed_trace_payload_create(
+      txn->distributed_trace, nr_segment_ensure_id(segment, txn));
   text = nr_distributed_trace_payload_as_text(payload);
   nr_distributed_trace_payload_destroy(&payload);
+
+  nr_segment_set_priority_flag(segment, NR_SEGMENT_PRIORITY_DT);
 
 end:
   if (text) {
@@ -2671,6 +2693,43 @@ bool nr_txn_accept_distributed_trace_payload(nrtxn_t* txn,
   return true;
 }
 
+/*
+ * Purpose : End all segments in a given stack and remove segments from
+ *           the stack.
+ */
+static void nr_txn_end_segments_in_stack(nr_stack_t* stack) {
+  if (NULL == stack) {
+    return;
+  }
+
+  while (!nr_stack_is_empty(stack)) {
+    nr_segment_t* segment = (nr_segment_t*)nr_stack_pop(stack);
+
+    nr_segment_end(segment);
+  }
+}
+
+/*
+ * Purpose : Wrap nr_txn_end_segments_in_stack so it can be passed to
+ *           nr_hashmap_apply.
+ */
+static void nr_txn_end_segments_in_stack_wrapper(void* value,
+                                                 const char* key NRUNUSED,
+                                                 size_t key_len NRUNUSED,
+                                                 void* user_data NRUNUSED) {
+  nr_txn_end_segments_in_stack((nr_stack_t*)value);
+}
+
+void nr_txn_finalize_parent_stacks(nrtxn_t* txn) {
+  if (NULL == txn) {
+    return;
+  }
+
+  nr_hashmap_apply(txn->parent_stacks, nr_txn_end_segments_in_stack_wrapper,
+                   NULL);
+  nr_txn_end_segments_in_stack(&txn->default_parent_stack);
+}
+
 nr_segment_t* nr_txn_get_current_segment(nrtxn_t* txn,
                                          const char* async_context) {
   if (nrunlikely(NULL == txn)) {
@@ -2735,4 +2794,43 @@ void nr_txn_retire_current_segment(nrtxn_t* txn, nr_segment_t* segment) {
   } else {
     nr_stack_remove_topmost(&txn->default_parent_stack, segment);
   }
+}
+
+char* nr_txn_get_current_trace_id(nrtxn_t* txn) {
+  const char* trace_id;
+
+  if (NULL == txn) {
+    return NULL;
+  }
+
+  trace_id = nr_distributed_trace_get_trace_id(txn->distributed_trace);
+
+  if ((NULL == trace_id) || (!txn->options.distributed_tracing_enabled)) {
+    return NULL;
+  }
+
+  return nr_strdup(trace_id);
+}
+
+char* nr_txn_get_current_span_id(nrtxn_t* txn) {
+  nr_segment_t* segment;
+  char* span_id;
+
+  if (NULL == txn) {
+    return NULL;
+  }
+
+  segment = nr_txn_get_current_segment(txn, NULL);
+  if (NULL == segment) {
+    return NULL;
+  }
+
+  span_id = nr_segment_ensure_id(segment, txn);
+  if (NULL == span_id) {
+    return NULL;
+  }
+
+  nr_segment_set_priority_flag(segment, NR_SEGMENT_PRIORITY_LOG);
+
+  return nr_strdup(span_id);
 }

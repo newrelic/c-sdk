@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"newrelic/limits"
 	"newrelic/log"
 )
 
@@ -111,6 +112,11 @@ func (events *analyticsEvents) AddEvent(e AnalyticsEvent) {
 		return
 	}
 
+	// zero is a valid capacity because it signifies events are disabled
+	if 0 == cap(*events.events) {
+		return
+	}
+
 	if e.priority.IsLowerPriority((*events.events)[0].priority) {
 		return
 	}
@@ -125,7 +131,7 @@ func (events *analyticsEvents) AddEvent(e AnalyticsEvent) {
 // is full, reservoir sampling is performed.
 func (events *analyticsEvents) MergeFailed(other *analyticsEvents) {
 	fails := other.failedHarvests + 1
-	if fails > FailedEventsAttemptsLimit {
+	if fails > limits.FailedEventsAttemptsLimit {
 		log.Debugf("discarding events: %d failed harvest attempts", fails)
 		return
 	}

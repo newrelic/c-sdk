@@ -8,6 +8,7 @@
 #include "nr_commands.h"
 #include "util_logging.h"
 #include "util_memory.h"
+#include "util_sleep.h"
 #include "util_strings.h"
 #include "util_system.h"
 
@@ -110,6 +111,8 @@ void nr_app_destroy(nrapp_t** app_ptr) {
   nr_free(app->agent_run_id);
   nr_free(app->plicense);
   nr_free(app->host_name);
+  nr_free(app->entity_guid);
+  nr_free(app->entity_name);
   nr_rules_destroy(&app->url_rules);
   nr_rules_destroy(&app->txn_rules);
   nr_segment_terms_destroy(&app->segment_terms);
@@ -247,6 +250,7 @@ static nrapp_t* create_new_app(const nr_app_info_t* info) {
   app->plicense = nr_app_create_printable_license(info->license);
   app->state = NR_APP_UNKNOWN;
   app->host_name = nr_system_get_hostname();
+  app->entity_name = nr_app_get_primary_app_name(info->appname);
   app->info.appname = nr_strdup(info->appname);
   app->info.lang = nr_strdup(info->lang);
   app->info.version = nr_strdup(info->version);
@@ -444,8 +448,12 @@ int nr_agent_should_do_app_daemon_query(const nrapp_t* app, time_t now) {
 
 nrapp_t* nr_agent_find_or_add_app(nrapplist_t* applist,
                                   const nr_app_info_t* info,
-                                  nrobj_t* (*settings_callback_fn)(void)) {
+                                  nrobj_t* (*settings_callback_fn)(void),
+                                  nrtime_t timeout) {
   nrapp_t* app;
+  nrtime_t start_time;
+  nrtime_t delta_time;
+  const int retry_sleep_ms = 50;
 
   if (0 == nr_app_info_valid(info)) {
     return 0;
@@ -472,12 +480,68 @@ nrapp_t* nr_agent_find_or_add_app(nrapplist_t* applist,
   /*
    * Query the daemon about the state of the application, if appropriate.
    */
-  nr_app_consider_appinfo(app, time(0));
+  start_time = nr_get_time();
+  while (true) {
+    nr_app_consider_appinfo(app, time(0));
 
-  if (NR_APP_OK == app->state) {
-    return app;
+    if (NR_APP_OK == app->state || NR_APP_INVALID == app->state) {
+      return app;
+    }
+
+    delta_time = nr_time_duration(start_time, nr_get_time());
+    if (delta_time >= timeout) {
+      break;
+    }
+
+    nr_msleep(retry_sleep_ms);
   }
 
   nrt_mutex_unlock(&app->app_lock);
   return 0;
+}
+
+char* nr_app_get_primary_app_name(const char* appname) {
+  char* delimiter;
+
+  if ((NULL == appname) || ('\0' == appname[0])) {
+    return NULL;
+  }
+
+  delimiter = nr_strchr(appname, ';');
+  if (NULL == delimiter) {
+    return nr_strdup(appname);
+  }
+  return nr_strndup(appname, delimiter - appname);
+}
+
+const char* nr_app_get_entity_name(const nrapp_t* app) {
+  if (NULL == app) {
+    return NULL;
+  }
+
+  return app->entity_name;
+}
+
+const char* nr_app_get_entity_type(const nrapp_t* app) {
+  if (NULL == app) {
+    return NULL;
+  }
+
+  return "SERVICE";
+}
+
+const char* nr_app_get_entity_guid(const nrapp_t* app) {
+  if (NULL == app) {
+    return NULL;
+  }
+
+  return app->entity_guid;
+}
+
+const char* nr_app_get_host_name(const nrapp_t* app) {
+  if (NULL == app) {
+    return NULL;
+  }
+
+  return app->host_name;
 }

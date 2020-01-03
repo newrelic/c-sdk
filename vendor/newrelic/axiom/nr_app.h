@@ -68,6 +68,16 @@ typedef struct _nr_app_info_t {
       supported_security_policies; /* list of supported security policies */
 } nr_app_info_t;
 
+/*
+ * Calculated limits for event types.
+ */
+typedef struct _nr_app_limits_t {
+  int analytics_events;
+  int custom_events;
+  int error_events;
+  int span_events;
+} nr_app_limits_t;
+
 typedef struct _nrapp_t {
   nr_app_info_t info;
   nr_random_t* rnd;         /* Random number generator */
@@ -76,6 +86,8 @@ typedef struct _nrapp_t {
   char* agent_run_id;       /* The collector's agent run ID; assigned from the
                                New Relic backend */
   char* host_name;          /* Local host name reported to the daemon */
+  char* entity_name;        /* Entity name related to this application */
+  char* entity_guid;        /* Entity guid related to this application */
   time_t last_daemon_query; /* Used by agent: Last time we queried daemon about
                                this app */
   int failed_daemon_query_count; /* Used by agent: Number of times daemon query
@@ -93,6 +105,10 @@ typedef struct _nrapp_t {
                                  obtained from Preconnect */
   nrthread_mutex_t app_lock;  /* Serialization lock */
   nr_app_harvest_t harvest;   /* Harvest timing and sampling data */
+
+  /* The limits are set based on the event harvest configuration provided in
+   * the connect reply. They do not reflect any agent side configuration. */
+  nr_app_limits_t limits;
 } nrapp_t;
 
 typedef enum _nrapptype_t {
@@ -152,6 +168,9 @@ extern nrapp_t* nr_app_verify_id(nrapplist_t* applist,
  *           2. The application information.
  *           3. An agent-specific callback function whose purpose it is to
  *              provide the settings hash upon app creation.
+ *           4. Specifies the maximum time to wait for a connection to be
+ *              established; a value of 0 causes the method to make only one
+ *              attempt at connecting to the daemon.
  *
  * Returns : A pointer to the locked valid application if it, or NULL if the
  *           application is unknown or invalid, or if there was any form of
@@ -163,10 +182,10 @@ extern nrapp_t* nr_app_verify_id(nrapplist_t* applist,
  *           either return the known application info from its cache or begin
  *           the process of querying the application from the New Relic backend.
  */
-extern nrapp_t* nr_agent_find_or_add_app(
-    nrapplist_t* applist,
-    const nr_app_info_t* info,
-    nrobj_t* (*settings_callback_fn)(void));
+extern nrapp_t* nr_agent_find_or_add_app(nrapplist_t* applist,
+                                         const nr_app_info_t* info,
+                                         nrobj_t* (*settings_callback_fn)(void),
+                                         nrtime_t timeout);
 
 /*
  * Purpose : Create and return a sanitized/obfuscated version of the license
@@ -184,6 +203,16 @@ extern char* nr_app_create_printable_license(const char* license);
 extern void nr_app_info_destroy_fields(nr_app_info_t* info);
 
 /*
+ * Purpose : Return the primary app name, given an app name string that may
+ *           include rollups.
+ *
+ * Params  : 1. The app name(s) string.
+ *
+ * Returns : A newly allocated string containing the primary app name.
+ */
+extern char* nr_app_get_primary_app_name(const char* appname);
+
+/*
  * Purpose : Decides whether the daemon should be queried for appinfo,
  *           and if so, does the work of querying the daemon.  Function may
  *           change app->state.
@@ -197,5 +226,47 @@ extern void nr_app_info_destroy_fields(nr_app_info_t* info);
  * Returns : Returns true is appinfo was queried, false if it was not
  */
 bool nr_app_consider_appinfo(nrapp_t* app, time_t now);
+
+/*
+ * Purpose : Return the entity name related to the given application.
+ *
+ * Params  : 1. The application
+ *
+ * Returns : An entity name. A string bound to the lifetime of the given
+ *           application.
+ */
+extern const char* nr_app_get_entity_name(const nrapp_t* app);
+
+/*
+ * Purpose : Return the entity type of the given application.
+ *
+ *           For agents, this always is the string "SERVICE".
+ *
+ * Params  : 1. The application
+ *
+ * Returns : An entity type. A string bound to the lifetime of the given
+ *           application.
+ */
+extern const char* nr_app_get_entity_type(const nrapp_t* app);
+
+/*
+ * Purpose : Return the entity guid related to the given application.
+ *
+ * Params  : 1. The application
+ *
+ * Returns : An entity guid. A string bound to the lifetime of the given
+ *           application.
+ */
+extern const char* nr_app_get_entity_guid(const nrapp_t* app);
+
+/*
+ * Purpose : Return the host name related to the given application.
+ *
+ * Params  : 1. The application
+ *
+ * Returns : A host name. A string bound to the lifetime of the given
+ *           application.
+ */
+extern const char* nr_app_get_host_name(const nrapp_t* app);
 
 #endif /* NR_APP_HDR */

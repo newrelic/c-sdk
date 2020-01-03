@@ -1,6 +1,7 @@
 #include "nr_axiom.h"
 
 #include "nr_guid.h"
+#include "nr_limits.h"
 #include "nr_segment.h"
 #include "nr_segment_private.h"
 #include "nr_segment_traces.h"
@@ -512,8 +513,9 @@ void nr_segment_traces_create_data(
   }
 
   if (create_spans) {
-    size_t vector_size = (txn->segment_count > NR_MAX_SPAN_EVENTS)
-                             ? NR_MAX_SPAN_EVENTS
+    size_t app_span_event_limit = (size_t)txn->app_limits.span_events;
+    size_t vector_size = (txn->segment_count > app_span_event_limit)
+                             ? app_span_event_limit
                              : txn->segment_count;
     span_events
         = nr_vector_create(vector_size, nr_vector_span_event_dtor, NULL);

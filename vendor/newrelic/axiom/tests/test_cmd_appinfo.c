@@ -7,6 +7,7 @@
 #include "nr_agent.h"
 #include "nr_commands.h"
 #include "nr_commands_private.h"
+#include "nr_limits.h"
 #include "nr_rules.h"
 #include "util_buffer.h"
 #include "util_memory.h"
@@ -16,6 +17,7 @@
 #include "util_strings.h"
 
 #include "tlib_main.h"
+#include "test_app_helpers.h"
 
 #define test_pass_if_empty_vector(T, I)  \
   tlib_pass_if_size_t_equal(__func__, 0, \
@@ -560,6 +562,7 @@ static void test_process_connected_app(void) {
   connect_json
       = "{"
         "\"agent_run_id\":\"346595271037263\","
+        "\"entity_guid\":\"00112233445566778899aa\","
         "\"url_rules\":"
         "[{\"each_segment\":false,\"terminate_chain\":true,\"replace_all\":"
         "false,"
@@ -571,7 +574,15 @@ static void test_process_connected_app(void) {
         "\"match_expression\":\"^a$\",\"ignore\":false,\"eval_order\":0,"
         "\"replacement\":\"b\"}],"
         "\"transaction_segment_terms\":[{\"prefix\":\"Foo/"
-        "Bar\",\"terms\":[\"a\",\"b\"]}]"
+        "Bar\",\"terms\":[\"a\",\"b\"]}],"
+        "\"event_harvest_config\":{"
+        "\"report_period_ms\":5000,"
+        "\"harvest_limits\":{"
+        "\"analytic_event_data\":833,"
+        "\"custom_event_data\":0,"
+        "\"error_event_data\":null"
+        "}"
+        "}"
         "}";
 
   reply = create_app_reply_two_fields("346595271037263", APP_STATUS_CONNECTED,
@@ -582,10 +593,27 @@ static void test_process_connected_app(void) {
   tlib_pass_if_status_success(__func__, st);
   tlib_pass_if_int_equal(__func__, (int)app.state, (int)NR_APP_OK);
   tlib_pass_if_str_equal(__func__, app.agent_run_id, "346595271037263");
+  tlib_pass_if_str_equal(__func__, app.entity_guid, "00112233445566778899aa");
   tlib_pass_if_not_null(__func__, app.connect_reply);
   tlib_pass_if_not_null(__func__, app.url_rules);
   tlib_pass_if_not_null(__func__, app.txn_rules);
   tlib_pass_if_not_null(__func__, app.segment_terms);
+
+  /*
+   * The harvest limits should turn into these event flags:
+   *
+   * 1. analytics_events_limit is 833 because the field is present and set to
+   *    833.
+   * 2. custom_events_limit is 0 because the field is present and set to 0.
+   * 3. error_events_limit is 100 because the field is present but invalid,
+   *    as it is null, so the default value is used.
+   * 4. span_events_limit is 1000 because the field is omitted, so the default
+   *    value is used.
+   */
+  tlib_pass_if_int_equal(__func__, 833, app.limits.analytics_events);
+  tlib_pass_if_int_equal(__func__, 0, app.limits.custom_events);
+  tlib_pass_if_int_equal(__func__, NR_MAX_ERRORS, app.limits.error_events);
+  tlib_pass_if_int_equal(__func__, NR_MAX_SPAN_EVENTS, app.limits.span_events);
 
   /*
    * Perform same test again to make sure that populated fields are freed
@@ -603,6 +631,7 @@ static void test_process_connected_app(void) {
   tlib_pass_if_not_null(__func__, app.segment_terms);
 
   nr_free(app.agent_run_id);
+  nr_free(app.entity_guid);
   nro_delete(app.connect_reply);
   nr_rules_destroy(&app.url_rules);
   nr_rules_destroy(&app.txn_rules);
@@ -850,6 +879,134 @@ static void test_process_harvest_timing(void) {
   nr_flatbuffers_destroy(&fb);
 }
 
+static void test_process_event_harvest_config(void) {
+  nr_app_limits_t app_limits_all_default = default_app_limits();
+  nr_app_limits_t app_limits_all_enabled = {
+      .analytics_events = 833,
+      .custom_events = 833,
+      .error_events = 833,
+      .span_events = 833,
+  };
+  nr_app_limits_t app_limits_all_zero = {
+      .analytics_events = 0,
+      .custom_events = 0,
+      .error_events = 0,
+      .span_events = 0,
+  };
+  nr_app_limits_t app_limits;
+  nrobj_t* array = nro_new_array();
+  nrobj_t* empty = nro_new_hash();
+  nrobj_t* limits_disabled = nro_create_from_json(
+      "{"
+      "\"harvest_limits\":{"
+      "\"analytic_event_data\":0,"
+      "\"custom_event_data\":0,"
+      "\"error_event_data\":0,"
+      "\"span_event_data\":0"
+      "}"
+      "}");
+  nrobj_t* limits_enabled = nro_create_from_json(
+      "{"
+      "\"harvest_limits\":{"
+      "\"analytic_event_data\":833,"
+      "\"custom_event_data\":833,"
+      "\"error_event_data\":833,"
+      "\"span_event_data\":833"
+      "}"
+      "}");
+
+  app_limits = app_limits_all_zero;
+  nr_cmd_appinfo_process_event_harvest_config(NULL, &app_limits);
+  tlib_pass_if_bytes_equal("a NULL config should enable all event types",
+                           &app_limits_all_default, sizeof(nr_app_limits_t),
+                           &app_limits, sizeof(nr_app_limits_t));
+
+  app_limits = app_limits_all_zero;
+  nr_cmd_appinfo_process_event_harvest_config(array, &app_limits);
+  tlib_pass_if_bytes_equal("an invalid config should enable all event types",
+                           &app_limits_all_default, sizeof(nr_app_limits_t),
+                           &app_limits, sizeof(nr_app_limits_t));
+
+  app_limits = app_limits_all_zero;
+  nr_cmd_appinfo_process_event_harvest_config(empty, &app_limits);
+  tlib_pass_if_bytes_equal("an empty config should enable all event types",
+                           &app_limits_all_default, sizeof(nr_app_limits_t),
+                           &app_limits, sizeof(nr_app_limits_t));
+
+  app_limits = app_limits_all_zero;
+  nr_cmd_appinfo_process_event_harvest_config(limits_disabled, &app_limits);
+  tlib_pass_if_bytes_equal(
+      "a config with all types disabled should disable all event types",
+      &app_limits_all_zero, sizeof(nr_app_limits_t), &app_limits,
+      sizeof(nr_app_limits_t));
+
+  app_limits = app_limits_all_zero;
+  nr_cmd_appinfo_process_event_harvest_config(limits_enabled, &app_limits);
+  tlib_pass_if_bytes_equal(
+      "a config with all types enabled should enable all event types",
+      &app_limits_all_enabled, sizeof(nr_app_limits_t), &app_limits,
+      sizeof(nr_app_limits_t));
+
+  nro_delete(array);
+  nro_delete(empty);
+  nro_delete(limits_disabled);
+  nro_delete(limits_enabled);
+}
+
+static void test_process_get_harvest_limit(void) {
+  nrobj_t* array = nro_new_array();
+  nrobj_t* limits = nro_create_from_json(
+      "{"
+      "\"analytic_event_data\":833,"
+      "\"custom_event_data\":0,"
+      "\"error_event_data\":null,"
+      "\"negative_value\":-42,"
+      "\"string_value\":\"foo\""
+      "}");
+
+  tlib_pass_if_int_equal(
+      "NULL limits should return the default value for any key", 100,
+      nr_cmd_appinfo_process_get_harvest_limit(NULL, "analytic_event_data",
+                                               100));
+
+  tlib_pass_if_int_equal(
+      "NULL keys should return the default value", 100,
+      nr_cmd_appinfo_process_get_harvest_limit(limits, NULL, 100));
+
+  tlib_pass_if_int_equal("a non-hash object should return the default value",
+                         100,
+                         nr_cmd_appinfo_process_get_harvest_limit(
+                             array, "analytic_event_data", 100));
+
+  tlib_pass_if_int_equal(
+      "missing keys should return the default value", 100,
+      nr_cmd_appinfo_process_get_harvest_limit(limits, "span_event_data", 100));
+
+  tlib_pass_if_int_equal("null values should return the default value", 100,
+                         nr_cmd_appinfo_process_get_harvest_limit(
+                             limits, "error_event_data", 100));
+
+  tlib_pass_if_int_equal(
+      "non-integer values should return the default value", 100,
+      nr_cmd_appinfo_process_get_harvest_limit(limits, "string_value", 100));
+
+  tlib_pass_if_int_equal(
+      "non-zero integers should return the actual value", -42,
+      nr_cmd_appinfo_process_get_harvest_limit(limits, "negative_value", 100));
+
+  tlib_pass_if_int_equal("non-zero integers should return the actual value",
+                         833,
+                         nr_cmd_appinfo_process_get_harvest_limit(
+                             limits, "analytic_event_data", 100));
+
+  tlib_pass_if_int_equal("zero integers should return zero", 0,
+                         nr_cmd_appinfo_process_get_harvest_limit(
+                             limits, "custom_event_data", 100));
+
+  nro_delete(array);
+  nro_delete(limits);
+}
+
 tlib_parallel_info_t parallel_info = {.suggested_nthreads = 4, .state_size = 0};
 
 void test_main(void* vp NRUNUSED) {
@@ -868,6 +1025,7 @@ void test_main(void* vp NRUNUSED) {
   test_process_wrong_body_type();
   test_process_lasp_connected_app();
   test_process_harvest_timing_connected_app();
-
   test_process_harvest_timing();
+  test_process_event_harvest_config();
+  test_process_get_harvest_limit();
 }

@@ -7,6 +7,7 @@
 #include "nr_segment.h"
 #include "tlib_main.h"
 #include "util_metrics_private.h"
+#include "nr_limits.h"
 #include "nr_txn.h"
 #include "nr_txn_private.h"
 
@@ -230,6 +231,12 @@ static NRUNUSED nrtxn_t* new_txn(int background) {
       "{\"collect_traces\":true,\"collect_errors\":true}");
   app.info.license = nr_strdup("0123456789012345678901234567890123456789");
   app.rnd = NULL;
+  app.limits = (nr_app_limits_t){
+      .analytics_events = NR_MAX_ANALYTIC_EVENTS,
+      .custom_events = NR_MAX_CUSTOM_EVENTS,
+      .error_events = NR_MAX_ERRORS,
+      .span_events = NR_MAX_SPAN_EVENTS,
+  };
 
   txn = nr_txn_begin(&app, &nr_txn_test_options, 0);
   if (0 == txn) {

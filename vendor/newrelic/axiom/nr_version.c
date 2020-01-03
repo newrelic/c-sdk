@@ -105,8 +105,11 @@
  *   gin                     29Mar2019 (8.7/9.0) (Johannes)
  *   heliotrope              09Aug2019 (9.1) (Tanya)
  *   iceberg                 04Sep2019 (9.2) (Tanya)
+ *   jasmine                 07Oct2019 (9.3) (Amanda)
+ *   kiwi                    11Nov2019 (9.4) (Kyle)
+ *   liver                   19Dec2019 (9.5) (Kyle)
  */
-#define NR_CODENAME "iceberg"
+#define NR_CODENAME "liver"
 
 const char* nr_version(void) {
   return NR_STR2(NR_VERSION);

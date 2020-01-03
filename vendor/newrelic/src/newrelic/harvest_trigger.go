@@ -1,17 +1,12 @@
 package newrelic
 
 import (
-	"encoding/json"
 	"time"
 
 	"newrelic/collector"
+	"newrelic/limits"
 	"newrelic/log"
-	"newrelic/secrets"
 )
-
-type whitelist map[string]int
-
-var whiteListStruct whitelist
 
 // A harvest trigger function. Each App has one of these, and it sends
 // HarvestType messages to the given channel to initiate a harvest for that app.
@@ -22,15 +17,24 @@ type HarvestTriggerFunc func(trigger chan HarvestType, cancel chan bool)
 // Given a reply, determine whether the configuration requires the same
 // reporting period across all data reporting.
 func (reply *ConnectReply) isHarvestAll() bool {
-	if reply != nil {
-		dataMethods := reply.DataMethods
+	if reply == nil {
+		// If a well-formed ConnectReply is not supplied, assume a default reporting
+		// period across all data reporting.
+		return true
+	}
+	eventsConfig := reply.EventHarvestConfig.EventConfigs
+	collectorReportPeriod := reply.EventHarvestConfig.ReportPeriod
 
-		return dataMethods.AllEqualTo(collector.DefaultReportPeriod)
+	// If any event has a unique report period we will need be able to harvest
+	// all events at the same time.
+	if eventsConfig.ErrorEventConfig.ReportPeriod != collectorReportPeriod ||
+		eventsConfig.AnalyticEventConfig.ReportPeriod != collectorReportPeriod ||
+		eventsConfig.CustomEventConfig.ReportPeriod != collectorReportPeriod ||
+		eventsConfig.SpanEventConfig.ReportPeriod != collectorReportPeriod {
+			return false
 	}
 
-	// If a well-formed ConnectReply is not supplied, assume a default reporting
-	// period across all data reporting.
-	return true
+	return reply.EventHarvestConfig.ReportPeriod == limits.DefaultReportPeriod
 }
 
 // A convenience function to create a harvest trigger function which triggers
@@ -65,37 +69,48 @@ func startGroupMember(f HarvestTriggerFunc, trigger chan HarvestType) chan bool 
 	return cancel
 }
 
+func checkReportPeriod(period time.Duration, defaultPeriod time.Duration, event string) time.Duration{
+	if period == 0 {
+		log.Debugf("%s report period not received", event)
+		return defaultPeriod
+	} else {
+		log.Debugf("setting %s report period to: %d", event, period)
+		return period
+	}
+}
+
 // In some cases, five different kinds of data are harvested at five different
 // periods.  In such cases, build the comprehensive harvest trigger that adheres
 // to such a configuration.
-func customTriggerBuilder(reply *ConnectReply, reportPeriod int,
-	units time.Duration) HarvestTriggerFunc {
-	methods := reply.DataMethods
+func customTriggerBuilder(reply *ConnectReply) HarvestTriggerFunc {
+	defaultPeriod := limits.DefaultReportPeriod
+	reportPeriod := reply.EventHarvestConfig.ReportPeriod
+	eventConfig := reply.EventHarvestConfig.EventConfigs
 
-	defaultTrigger := triggerBuilder(HarvestDefaultData,
-		time.Duration(reportPeriod)*units)
-	analyticTrigger := triggerBuilder(HarvestTxnEvents,
-		time.Duration(methods.GetValueOrDefault("AnalyticEventData"))*units)
-	customTrigger := triggerBuilder(HarvestCustomEvents,
-		time.Duration(methods.GetValueOrDefault("CustomEventData"))*units)
-	errorTrigger := triggerBuilder(HarvestErrorEvents,
-		time.Duration(methods.GetValueOrDefault("ErrorEventData"))*units)
-	spanTrigger := triggerBuilder(HarvestSpanEvents,
-		time.Duration(methods.GetValueOrDefault("SpanEventData"))*units)
+	reportPeriod = checkReportPeriod(reportPeriod, defaultPeriod, "all events")
+	eventConfig.AnalyticEventConfig.ReportPeriod = checkReportPeriod(
+		eventConfig.AnalyticEventConfig.ReportPeriod, defaultPeriod, "Analytic Events")
+	eventConfig.CustomEventConfig.ReportPeriod = checkReportPeriod(
+		eventConfig.CustomEventConfig.ReportPeriod, defaultPeriod, "Custom Events")
+	eventConfig.ErrorEventConfig.ReportPeriod = checkReportPeriod(
+		eventConfig.ErrorEventConfig.ReportPeriod, defaultPeriod, "Error Events")
+	eventConfig.SpanEventConfig.ReportPeriod = checkReportPeriod(
+		eventConfig.SpanEventConfig.ReportPeriod, defaultPeriod, "Span Events")
+
+	defaultTrigger := triggerBuilder(HarvestDefaultData, defaultPeriod)
+	analyticTrigger := triggerBuilder(HarvestTxnEvents, eventConfig.AnalyticEventConfig.ReportPeriod)
+	customTrigger := triggerBuilder(HarvestCustomEvents, eventConfig.CustomEventConfig.ReportPeriod)
+	errorTrigger := triggerBuilder(HarvestErrorEvents, eventConfig.ErrorEventConfig.ReportPeriod)
+	spanTrigger := triggerBuilder(HarvestSpanEvents, eventConfig.SpanEventConfig.ReportPeriod)
 
 	return func(trigger chan HarvestType, cancel chan bool) {
-		broadcastGroup := make([]chan bool, 0)
-
-		broadcastGroup = append(broadcastGroup, startGroupMember(
-			defaultTrigger, trigger))
-		broadcastGroup = append(broadcastGroup, startGroupMember(
-			analyticTrigger, trigger))
-		broadcastGroup = append(broadcastGroup, startGroupMember(
-			customTrigger, trigger))
-		broadcastGroup = append(broadcastGroup, startGroupMember(
-			errorTrigger, trigger))
-		broadcastGroup = append(broadcastGroup, startGroupMember(
-			spanTrigger, trigger))
+		broadcastGroup := []chan bool{
+			startGroupMember(defaultTrigger, trigger),
+			startGroupMember(analyticTrigger, trigger),
+			startGroupMember(customTrigger, trigger),
+			startGroupMember(errorTrigger, trigger),
+			startGroupMember(spanTrigger, trigger),
+		}
 
 		// This function listens for the cancel message and then broadcasts it
 		// to all members of the broadcastGroup.
@@ -117,75 +132,17 @@ func customTriggerBuilder(reply *ConnectReply, reportPeriod int,
 	}
 }
 
-// This function creates a connect reply for
-// the customTriggerBuilder function.
-func fasterHarvestWhitelistReplyBuilder(seconds int) *ConnectReply {
-	reply := &ConnectReply{}
-	methods := &collector.DataMethods{
-		ErrorEventData:    &collector.ReportPeriod{InSeconds: seconds},
-		AnalyticEventData: &collector.ReportPeriod{InSeconds: seconds},
-		CustomEventData:   &collector.ReportPeriod{InSeconds: seconds},
-		SpanEventData:     &collector.ReportPeriod{InSeconds: seconds},
-	}
-	reply.DataMethods = methods
-	return reply
-}
-
-// This function checks the customAppEventHarvestTimesInSeconds map for a key
-// match.  If none is found, return nil to indicate the customer is not on
-// the whitelist.  If we do have a key match, return a custom trigger function.
-// The report period for events will be the value in customAppEventHarvestTimesInSeconds,
-// the report period of other harvests (i.e. non-events) will be the value passed
-// in via the reportPeriod paramater.
-func getCustomLicenseHarvestTrigger(key collector.LicenseKey, reportPeriod int) HarvestTriggerFunc {
-	// The whitelist is injected via make variables in make/secrets.mk
-	if whiteListStruct == nil && secrets.WhiteList != "" {
-		jsonWhiteList := secrets.WhiteList
-		err := json.Unmarshal([]byte(jsonWhiteList), &whiteListStruct)
-		if err != nil {
-			log.Debugf("WARNING: unable to parse whitelist: %v\n", err)
-			return nil
-		}
-	}
-	if seconds, ok := whiteListStruct[string(key)]; ok {
-		reply := fasterHarvestWhitelistReplyBuilder(seconds)
-		return customTriggerBuilder(reply, reportPeriod, time.Second)
-	}
-	return nil
-}
-
 // This function returns the harvest trigger function that should be used for
 // this agent.  In priority order:
 //   1. Either it uses the ConnectReply to build custom triggers as specified by
 //      the New Relic server-side collector.
 //   2. Or it creates a default harvest trigger, harvesting all data at the
 //      default period.
-func getHarvestTrigger(key collector.LicenseKey,
-	reply *ConnectReply) HarvestTriggerFunc {
-	// First, check the whitelist for faster harvest, passing the the default
-	// report period
-	trigger := getCustomLicenseHarvestTrigger(key,
-		collector.DefaultReportPeriod)
-
-	// If not on the whitelist, build a trigger from the server-side collector
-	// configuration.
-	if trigger == nil {
-		// Build a trigger from the server-side collector configuration.
-		if reply.isHarvestAll() {
-			trigger = triggerBuilder(HarvestAll,
-				time.Duration(collector.DefaultReportPeriod)*time.Second)
-		} else {
-			trigger = customTriggerBuilder(reply, collector.DefaultReportPeriod,
-				time.Second)
-		}
+func getHarvestTrigger(key collector.LicenseKey, reply *ConnectReply) HarvestTriggerFunc {
+	// Build a trigger from the server-side collector configuration.
+	if reply.isHarvestAll() {
+		return triggerBuilder(HarvestAll, limits.DefaultReportPeriod)
+	} else {
+		return customTriggerBuilder(reply)
 	}
-
-	// Something in the server-side collector configuration was not well-formed.
-	// Build a default HarvestAll trigger.
-	if trigger == nil {
-		trigger = triggerBuilder(HarvestAll,
-			time.Duration(collector.DefaultReportPeriod)*time.Second)
-	}
-
-	return trigger
 }

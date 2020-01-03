@@ -168,6 +168,14 @@ extern nr_status_t nr_cmd_appinfo_process_reply(const uint8_t* data,
 extern void nr_cmd_appinfo_process_harvest_timing(nr_flatbuffers_table_t* reply,
                                                   nrapp_t* app);
 
+extern void nr_cmd_appinfo_process_event_harvest_config(
+    const nrobj_t* config,
+    nr_app_limits_t* app_limits);
+
+extern int nr_cmd_appinfo_process_get_harvest_limit(const nrobj_t* limits,
+                                                    const char* key,
+                                                    int default_value);
+
 extern char* nr_txndata_error_to_json(const nrtxn_t* txn);
 
 extern nr_flatbuffer_t* nr_txndata_encode(const nrtxn_t* txn);

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"newrelic/collector"
+	"newrelic/limits"
 )
 
 type AggregaterInto interface {
@@ -23,16 +24,16 @@ type Harvest struct {
 	pidSet            map[int]struct{}
 }
 
-func NewHarvest(now time.Time) *Harvest {
+func NewHarvest(now time.Time, hl collector.EventConfigs) *Harvest {
 	return &Harvest{
-		Metrics:           NewMetricTable(MaxMetrics, now),
-		Errors:            NewErrorHeap(MaxErrors),
-		SlowSQLs:          NewSlowSQLs(MaxSlowSQLs),
+		Metrics:           NewMetricTable(limits.MaxMetrics, now),
+		Errors:            NewErrorHeap(limits.MaxErrors),
+		SlowSQLs:          NewSlowSQLs(limits.MaxSlowSQLs),
 		TxnTraces:         NewTxnTraces(),
-		TxnEvents:         NewTxnEvents(MaxTxnEvents),
-		CustomEvents:      NewCustomEvents(MaxCustomEvents),
-		ErrorEvents:       NewErrorEvents(MaxErrorEvents),
-		SpanEvents:        NewSpanEvents(MaxSpanEvents),
+		TxnEvents:         NewTxnEvents(hl.AnalyticEventConfig.Limit),
+		CustomEvents:      NewCustomEvents(hl.CustomEventConfig.Limit),
+		ErrorEvents:       NewErrorEvents(hl.ErrorEventConfig.Limit),
+		SpanEvents:        NewSpanEvents(hl.SpanEventConfig.Limit),
 		commandsProcessed: 0,
 		pidSet:            make(map[int]struct{}),
 	}
@@ -50,7 +51,7 @@ func (h *Harvest) empty() bool {
 		h.TxnTraces.Empty()
 }
 
-func (h *Harvest) createFinalMetrics() {
+func (h *Harvest) createFinalMetrics(harvestLimits collector.EventHarvestConfig) {
 	if h.empty() {
 		// No agent data received, do not create derived metrics. This allows
 		// upstream to detect inactivity sooner.
@@ -64,7 +65,7 @@ func (h *Harvest) createFinalMetrics() {
 		pidSetSize = 1
 	}
 
-	// NOTE: It is important that this metric be created once per minute.
+	// NOTE: It is important that this metric be created once per harvest period.
 	h.Metrics.AddCount("Instance/Reporting", "", float64(pidSetSize), Forced)
 
 	// Custom Events Supportability Metrics
@@ -96,6 +97,12 @@ func (h *Harvest) createFinalMetrics() {
 	} else if collector.CertPoolState == collector.SystemCertPoolAvailable {
 		h.Metrics.AddCount("Supportability/PHP/SystemCertificates/Available", "", float64(1), Forced)
 	}
+	h.Metrics.AddCount("Supportability/EventHarvest/ReportPeriod", "", float64(harvestLimits.ReportPeriod), Forced)
+	h.Metrics.AddCount("Supportability/EventHarvest/AnalyticEventData/HarvestLimit", "", float64(harvestLimits.EventConfigs.AnalyticEventConfig.Limit), Forced)
+	h.Metrics.AddCount("Supportability/EventHarvest/CustomEventData/HarvestLimit", "", float64(harvestLimits.EventConfigs.CustomEventConfig.Limit), Forced)
+	h.Metrics.AddCount("Supportability/EventHarvest/ErrorEventData/HarvestLimit", "", float64(harvestLimits.EventConfigs.ErrorEventConfig.Limit), Forced)
+	h.Metrics.AddCount("Supportability/EventHarvest/SpanEventData/HarvestLimit", "", float64(harvestLimits.EventConfigs.SpanEventConfig.Limit), Forced)
+
 }
 
 type FailedHarvestSaver interface {

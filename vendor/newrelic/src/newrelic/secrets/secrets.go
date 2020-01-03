@@ -5,6 +5,5 @@ var (
 
 	NewrelicCollectorHost = ""
 	NewrelicLicenseKey    = ""
-	WhiteList             = ""
 	NewrelicCollectorKeys = ""
 )
