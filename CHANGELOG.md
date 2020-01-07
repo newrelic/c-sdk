@@ -8,6 +8,7 @@
 - For inbound distributed tracing payloads with invalid or missing values for
   `pr` (priority) and/or `sa` (sampled) the agent used to assign a default
   priority of -1 and/or a default sampled value of `false` to the transaction.
+  
   This has been fixed, the agent now keeps initial priority and sampled values
   if the respective values in the inbound distributed tracing payload are 
   missing or invalid.
