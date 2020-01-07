@@ -1,16 +1,38 @@
 # New Relic C Agent Release Notes #
 
+## Contents ##
+
+| Release Number | Release Date |
+| ------------- |-------------|
+| [1.3.0](#130) | 2020-01-07 |
+| [1.2.0](#120) | 2019-10-09 |
+| [1.1.0](#110) | 2019-06-04 |
+| [1.0.1](#101) | 2019-05-02 |
+| [1.0.0](#100) | 2019-04-23 |
+| [0.1.3](#013) | 2019-03-20 |
+| [0.1.2](#012) | 2019-02-22 |
+| [0.1.1](#011) | 2019-01-25 |
+| [0.1.0](#010) | 2018-12-21 |
+| [0.0.6](#006) | 2018-08-10 |
+| [0.0.5](#005) | 2018-03-12 |
+| [0.0.4](#004) | 2018-02-12 |
+| [0.0.3](#003-alpha) | 2018-01-16 |
+| [0.0.2](#002-alpha) | 2017-10-30 |
+| [0.0.1](#001-alpha) | 2017-09-21 |
+
+## 1.3.0 ##
+
 ### Bug Fixes ###
 
 - A default configuration created with `newrelic_create_app_config()` will now
-  work as expected with licence keys for non-US accounts.
+  work as expected with license keys for non-US accounts.
 
 - For inbound distributed tracing payloads with invalid or missing values for
   `pr` (priority) and/or `sa` (sampled) the agent used to assign a default
   priority of -1 and/or a default sampled value of `false` to the transaction.
-  
+
   This has been fixed, the agent now keeps initial priority and sampled values
-  if the respective values in the inbound distributed tracing payload are 
+  if the respective values in the inbound distributed tracing payload are
   missing or invalid.
 
 ### New Features ###
@@ -26,25 +48,6 @@
 ### Internal Changes ###
 
 - An error when compiling the test suite with GCC 9.2 was fixed.
-
-## Contents ##
-
-| Release Number | Release Date |
-| ------------- |-------------|
-| [1.2.0](#120) | 2019-10-09 |
-| [1.1.0](#110) | 2019-06-04 |
-| [1.0.1](#101) | 2019-05-02 |
-| [1.0.0](#100) | 2019-04-23 |
-| [0.1.3](#013) | 2019-03-20 |
-| [0.1.2](#012) | 2019-02-22 |
-| [0.1.1](#011) | 2019-01-25 |
-| [0.1.0](#010) | 2018-12-21 |
-| [0.0.6](#006) | 2018-08-10 |
-| [0.0.5](#005) | 2018-03-12 |
-| [0.0.4](#004) | 2018-02-12 |
-| [0.0.3](#003-alpha) | 2018-01-16 |
-| [0.0.2](#002-alpha) | 2017-10-30 |
-| [0.0.1](#001-alpha) | 2017-09-21 |
 
 ## 1.2.0 ##
 
@@ -107,7 +110,7 @@
     Distributed tracing is available with an APM Pro or
     equivalent subscription. To see a complete distributed
     trace, you need to enable the feature on a set of
-    neighboring services. 
+    neighboring services.
 
     Refer to the New Relic
     [C SDK documentation](https://docs.newrelic.com/docs/agents/c-sdk/instrumentation/enable-distributed-tracing-your-c-applications)
@@ -116,8 +119,8 @@
 ### End of Life Notices ###
 
 - The `log_filename` and `log_level` fields of `newrelic_app_config_t` are
-  currently deprecated.  Future versions of the C SDK permanently remove these fields. 
-  To specify the log file and log level to use with the C SDK, use 
+  currently deprecated.  Future versions of the C SDK permanently remove these fields.
+  To specify the log file and log level to use with the C SDK, use
   `newrelic_configure_log()`.
 
 ## 1.0.1 ##
@@ -134,24 +137,24 @@
 
 ## 1.0.0 ##
 
-This is the first release of the New Relic C SDK! If your application does not use 
-other New Relic APM agent languages, you can use the C SDK to take advantage of 
-New Relic's monitoring capabilities and features to instrument a wide range of 
+This is the first release of the New Relic C SDK! If your application does not use
+other New Relic APM agent languages, you can use the C SDK to take advantage of
+New Relic's monitoring capabilities and features to instrument a wide range of
 applications.
 
 For more information, see:
 
-[Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): How to get 
-started with the C SDK, install and configure it, instrument transactions, 
+[Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): How to get
+started with the C SDK, install and configure it, instrument transactions,
 segments, and errors, use the C SDK API, and do some basic troubleshooting.
 
-### End of Life Notice ### 
+### End of Life Notice ###
 
 The previous APM Agent SDK is deprecated beta software. If you were previously
-using the Agent SDK, you can switch to the C SDK. Check the 
+using the Agent SDK, you can switch to the C SDK. Check the
 [compatibility and requirements](https://docs.newrelic.com/docs/c-sdk-compatibility-requirements),
-and then 
-[instrument, compile and link your application's code](https://docs.newrelic.com/docs/install-c-sdk-compile-link-your-code) 
+and then
+[instrument, compile and link your application's code](https://docs.newrelic.com/docs/install-c-sdk-compile-link-your-code)
 to use the C SDK.  The C SDK currently does not support New Relic's HSM feature;
 this may impact how you schedule your transition away from the Agent SDK.
 
