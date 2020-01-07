@@ -5,6 +5,13 @@
 - A default configuration created with `newrelic_create_app_config()` will now
   work as expected with licence keys for non-US accounts.
 
+- For inbound distributed tracing payloads with invalid or missing values for
+  `pr` (priority) and/or `sa` (sampled) the agent used to assign a default
+  priority of -1 and/or a default sampled value of `false` to the transaction.
+  This has been fixed, the agent now keeps initial priority and sampled values
+  if the respective values in the inbound distributed tracing payload are 
+  missing or invalid.
+
 ### New Features ###
 
 - Event data is now sent to New Relic every five seconds, instead of every
