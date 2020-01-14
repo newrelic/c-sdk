@@ -112,6 +112,7 @@ TESTS := \
 	test_start_transaction \
 	test_txn \
 	test_version \
+	test_set_external \
 
 #
 # The list of tests to skip and tests to run.
