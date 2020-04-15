@@ -1,3 +1,5 @@
+#include "error.h"
+
 #include "libnewrelic.h"
 #include "stack.h"
 #include "transaction.h"
@@ -10,6 +12,27 @@ void newrelic_notice_error(newrelic_txn_t* transaction,
                            int priority,
                            const char* errmsg,
                            const char* errclass) {
+  newrelic_do_notice_error(transaction, priority, errmsg, errclass, NULL);
+}
+
+void newrelic_notice_error_with_stacktrace(newrelic_txn_t* transaction,
+                           int priority,
+                           const char* errmsg,
+                           const char* errclass,
+                           const char* errstacktrace) {
+  if (NULL == errstacktrace) {
+    nrl_error(NRL_INSTRUMENT, "unable to add NULL/empty error stacktrace to transaction");
+    return;
+  }
+
+  newrelic_do_notice_error(transaction, priority, errmsg, errclass, errstacktrace);
+}
+
+void newrelic_do_notice_error(newrelic_txn_t* transaction,
+                           int priority,
+                           const char* errmsg,
+                           const char* errclass,
+                           const char* errstacktrace) {
   if (NULL == transaction) {
     nrl_error(NRL_INSTRUMENT, "unable to add error to NULL transaction");
     return;
@@ -29,8 +52,6 @@ void newrelic_notice_error(newrelic_txn_t* transaction,
 
   nrt_mutex_lock(&transaction->lock);
   {
-    char* stacktrace_json;
-
     if (0 == transaction->txn->options.err_enabled) {
       nrl_error(NRL_INSTRUMENT,
                 "unable to add error to transaction when errors are disabled");
@@ -56,10 +77,15 @@ void newrelic_notice_error(newrelic_txn_t* transaction,
       goto end;
     }
 
-    stacktrace_json = newrelic_get_stack_trace_as_json();
-    nr_txn_record_error(transaction->txn, priority, errmsg, errclass,
-                        stacktrace_json);
-    nr_free(stacktrace_json);
+    if (NULL == errstacktrace) {
+      char* stacktrace_json = newrelic_get_stack_trace_as_json();
+      nr_txn_record_error(transaction->txn, priority, errmsg, errclass,
+                          stacktrace_json);
+      nr_free(stacktrace_json);
+    } else {
+      nr_txn_record_error(transaction->txn, priority, errmsg, errclass,
+                          errstacktrace);
+    }
   }
 end:
   nrt_mutex_unlock(&transaction->lock);
