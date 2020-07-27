@@ -911,6 +911,31 @@ newrelic_segment_t* newrelic_start_external_segment(
     const newrelic_external_segment_params_t* params);
 
 /**
+ * @brief Modify an existing segment to be an external segment within a
+ * transaction.
+ *
+ * Given an active transaction and segment, this function modifies an existing
+ * segment inside of the transaction making it external. An external segment is
+ * generally used to represent a HTTP or RPC request.
+ *
+ * @param [in] transaction An active transaction.
+ * @param [in] segment     An active segment.
+ * @param [in] params      The parameters describing the external request. All
+ *                         parameters are copied, and no references to the
+ *                         pointers provided are kept after this function
+ *                         returns.
+ *
+ * @return A pointer to the modified segment. If an
+ *         error occurs when while modifying the segment, NULL is returned,
+ *         and a log message will be written to the SDK log at LOG_ERROR
+ *         level.
+ */
+newrelic_segment_t* newrelic_set_segment_external(
+    newrelic_txn_t* transaction,
+    newrelic_segment_t* segment,
+    const newrelic_external_segment_params_t* params);
+
+/**
  * @brief Set the parent for the given segment.
  *
  * This function changes the parent for the given segment to another segment.

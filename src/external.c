@@ -61,6 +61,56 @@ newrelic_segment_t* newrelic_start_external_segment(
   return segment;
 }
 
+newrelic_segment_t* newrelic_set_segment_external(
+    newrelic_txn_t* transaction,
+    newrelic_segment_t* segment,
+    const newrelic_external_segment_params_t* params) {
+  /* Validate our inputs. */
+  if (NULL == transaction) {
+    nrl_error(NRL_INSTRUMENT,
+              "cannot set as external segment on a NULL transaction");
+    return NULL;
+  }
+
+  if (NULL == segment) {
+    nrl_error(NRL_INSTRUMENT, "cannot set a NULL segment external");
+    return NULL;
+  }
+
+  if (NULL == params) {
+    nrl_error(NRL_INSTRUMENT, "params cannot be NULL");
+    return NULL;
+  }
+
+  if (!newrelic_validate_segment_param(params->library, "library")) {
+    return NULL;
+  }
+
+  if (!newrelic_validate_segment_param(params->procedure, "procedure")) {
+    return NULL;
+  }
+
+  if (NULL == params->uri) {
+    nrl_error(NRL_INSTRUMENT, "uri cannot be NULL");
+    return NULL;
+  }
+
+  nrt_mutex_lock(&transaction->lock);
+  {
+    segment->segment->type = NR_SEGMENT_EXTERNAL;
+
+    /* Save the supplied parameters until the external segment is ended */
+    segment->type.external.uri = params->uri ? nr_strdup(params->uri) : NULL;
+    segment->type.external.library
+        = params->library ? nr_strdup(params->library) : NULL;
+    segment->type.external.procedure
+        = params->procedure ? nr_strdup(params->procedure) : NULL;
+  }
+  nrt_mutex_unlock(&transaction->lock);
+
+  return segment;
+}
+
 void newrelic_destroy_external_segment_fields(newrelic_segment_t* segment) {
   nr_free(segment->type.external.uri);
   nr_free(segment->type.external.library);
