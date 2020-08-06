@@ -825,6 +825,28 @@ void newrelic_notice_error(newrelic_txn_t* transaction,
                            const char* errclass);
 
 /**
+ * @brief Record an error in a transaction, passing a custom stacktrace
+ *
+ * Given an active transaction, this function records an error
+ * inside of the transaction. A custom stacktrace must be passed as a string
+ * in JSON format like: "[\"first line\",\"second line\",\"third line\"]"
+ *
+ * @param [in]  transaction An active transaction.
+ * @param [in]  priority The error's priority. The C SDK sends up one error per
+ *              transaction.  If multiple calls to this function are made during
+ *              a single transaction, the error with the highest priority is
+ *              reported to New Relic.
+ * @param [in]  errmsg A string comprising the error message.
+ * @param [in]  errclass A string comprising the error class.
+ * @param [in]  errstacktrace A string comprising the error stacktrace, in NewRelic's JSON format.
+ */
+void newrelic_notice_error_with_stacktrace(newrelic_txn_t* transaction,
+                           int priority,
+                           const char* errmsg,
+                           const char* errclass,
+                           const char* errstacktrace);
+
+/**
  * @brief A segment within a transaction.
  *
  * Within an active transaction, instrument additional segments for greater
