@@ -7,7 +7,7 @@ New Relic is moving toward OpenTelemetry. OpenTelemetry is a unified standard fo
 
 
 ## Roadmap
-**The roadmap project is found [here](https://github.com/newrelic/go-agent/projects/1)**.  
+**The roadmap project is found [here](https://github.com/orgs/newrelic/projects/23)**.  
 
 This roadmap project is broken down into the following sections:
 
