@@ -24,10 +24,6 @@ Running unit tests requires cmake 2.8 or higher.
 
 Compiling the New Relic daemon requires Go 1.7 or higher.
 
-<!-- ## Getting Started
-
->[Simple steps to start working with the software similar to a "Hello World"] -->
-
 ## Building
 
 If your system meets the requirements, building the C SDK and 
