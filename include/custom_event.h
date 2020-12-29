@@ -4,8 +4,8 @@
  * @brief Type definitions, constants, and function declarations necessary to
  * support adding custom events to transactions in the C SDK.
  */
-#ifndef LIBNEWRELIC_ATTRIBUTE_H
-#define LIBNEWRELIC_ATTRIBUTE_H
+#ifndef LIBNEWRELIC_CUSTOM_EVENT_H
+#define LIBNEWRELIC_CUSTOM_EVENT_H
 
 #include "util_object.h"
 
@@ -17,4 +17,4 @@ typedef struct _newrelic_custom_event_t {
   nrobj_t* attributes;
 } newrelic_custom_event_t;
 
-#endif /* LIBNEWRELIC_ATTRIBUTE_H */
+#endif /* LIBNEWRELIC_CUSTOM_EVENT_H */
