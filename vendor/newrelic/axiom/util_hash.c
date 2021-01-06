@@ -189,10 +189,10 @@ uint32_t nr_mkhash(const char* str, int* len) {
   switch (str_len & 3) {
     case 3:
       k1 ^= tail[2] << 16;
-      /* FALLTHROUGH */
+      FALLTHROUGH /* FALLTHROUGH */
     case 2:
       k1 ^= tail[1] << 8;
-      /* FALLTHROUGH */
+      FALLTHROUGH /* FALLTHROUGH */
     case 1:
       k1 ^= tail[0];
 
