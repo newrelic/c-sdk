@@ -76,7 +76,7 @@ If the issue has been confirmed as a bug or is a feature request, file a GitHub 
 
 **Support Channels**
 
-* [New Relic Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): Comprehensive guidance for using our platform
+* [New Relic Documentation](https://docs.newrelic.com/docs/apm/agents/c-sdk/get-started/introduction-c-sdk): Comprehensive guidance for using our platform
 * [New Relic C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html)
 * [New Relic C SDK Guide](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md)
 * [New Relic C SDK distributed tracing example](https://github.com/newrelic/c-dt-example)
