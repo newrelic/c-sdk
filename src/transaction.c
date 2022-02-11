@@ -185,26 +185,26 @@ bool newrelic_set_transaction_name(newrelic_txn_t* transaction,
 
 bool newrelic_set_transaction_uri(newrelic_txn_t* transaction,
                                   const char* uri) {
-    if (NULL == transaction) {
-      nrl_error(NRL_API, "unable to set uri on NULL transaction");
-      return false;
-    }
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to set uri on NULL transaction");
+    return false;
+  }
 
-    if (NULL == uri) {
-      nrl_error(NRL_API, "uri cannot be NULL");
-      return false;
-    }
+  if (NULL == uri) {
+    nrl_error(NRL_API, "uri cannot be NULL");
+    return false;
+  }
 
-    nr_txn_set_request_uri(transaction->txn, uri);
-    nrl_debug(NRL_API, "uri set to: \"%s\"", uri);
-    return true;
+  nr_txn_set_request_uri(transaction->txn, uri);
+  nrl_debug(NRL_API, "uri set to: \"%s\"", uri);
+  return true;
 }
 
 bool newrelic_set_request_referer(newrelic_txn_t* transaction,
                                   const char* request_referer) {
   if (NULL == transaction) {
-      nrl_error(NRL_API, "unable to set referer on NULL transaction");
-      return false;
+    nrl_error(NRL_API, "unable to set referer on NULL transaction");
+    return false;
   }
 
   if (NULL == request_referer) {
@@ -234,9 +234,7 @@ bool newrelic_set_request_content_length(newrelic_txn_t* transaction,
   return true;
 }
 
-bool newrelic_set_http_status(newrelic_txn_t* transaction,
-                              int http_code) {
-
+bool newrelic_set_http_status(newrelic_txn_t* transaction, int http_code) {
   if (NULL == transaction) {
     nrl_error(NRL_API, "unable to set http_code on NULL transactin");
     return false;

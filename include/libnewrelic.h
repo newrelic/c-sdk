@@ -1273,14 +1273,14 @@ bool newrelic_set_transaction_uri(newrelic_txn_t* transaction,
  *
  * @return true on success
  */
-bool newrelic_set_request_referer(newrelic_txn_t * transaction,
+bool newrelic_set_request_referer(newrelic_txn_t* transaction,
                                   const char* request_referer);
 
 /**
  * @brief Set request content length
  *
- * Given an active transaction and a content length, this function sets the transaction
- * request's content length to the given content_length
+ * Given an active transaction and a content length, this function sets the
+ * transaction request's content length to the given content_length
  *
  * @param [in] transaction    An active transaction
  * @param [in] content_length Request content length
@@ -1293,16 +1293,15 @@ bool newrelic_set_request_content_length(newrelic_txn_t* transaction,
 /**
  * @brief Set http status
  *
- * Given an active transaction and a http status code, this function sets the transaction's
- * status code to the given status code
+ * Given an active transaction and a http status code, this function sets the
+ * transaction's status code to the given status code
  *
  * @param [in] transaction    An active transaction
  * @param [in] code           HTTP Status Code
  *
  * @return true on success
  */
-bool newrelic_set_http_status(newrelic_txn_t* transaction,
-                              int http_code);
+bool newrelic_set_http_status(newrelic_txn_t* transaction, int http_code);
 /**
  * A list of examples for Doxygen to cross-reference. If a function in
  * libnewrelic.h appears in one of these examples, the example source

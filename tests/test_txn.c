@@ -147,7 +147,7 @@ static void test_txn_naming(void** state) {
 /*
  * Purpose: Tests we can set uri on a transaction
  */
-static void test_txn_uri(void **state) {
+static void test_txn_uri(void** state) {
   newrelic_app_t* appWithInfo = (newrelic_app_t*)*state;
   bool ret = false;
   newrelic_txn_t* txn = NULL;
@@ -183,7 +183,7 @@ static void test_txn_uri(void **state) {
 /*
  * Purpose: Tests we can set referer on a transaction
  */
-static void test_txn_referer(void **state) {
+static void test_txn_referer(void** state) {
   newrelic_app_t* appWithInfo = (newrelic_app_t*)*state;
   bool ret = false;
   newrelic_txn_t* txn = NULL;
@@ -219,7 +219,7 @@ static void test_txn_referer(void **state) {
 /*
  * Purpose: Tests we can set content length on a transaction
  */
-static void test_txn_content_length(void **state) {
+static void test_txn_content_length(void** state) {
   newrelic_app_t* appWithInfo = (newrelic_app_t*)*state;
   bool ret = false;
   newrelic_txn_t* txn = NULL;
@@ -255,7 +255,7 @@ static void test_txn_content_length(void **state) {
 /*
  * Purpose: Tests we can set http status on a transaction
  */
-static void test_txn_http_status(void **state) {
+static void test_txn_http_status(void** state) {
   newrelic_app_t* appWithInfo = (newrelic_app_t*)*state;
   bool ret = false;
   newrelic_txn_t* txn = NULL;
