@@ -6,5 +6,3 @@ As of April 2022, we're discontinuing support for several capabilities, includin
 ## Product Vision
 The goal of the C SDK is to provide visibility into the health of your service. The agent provides metrics about the runtime health of your service and the process it runs in, and traces that show how specific requests are performing. It also provides information about the environment in which it is running, so you can identify issues with specific hosts, regions, deployments, and other facets. 
 
-New Relic is moving toward OpenTelemetry. OpenTelemetry is a unified standard for service instrumentation. You will soon see a new repository for a New Relic OpenTelemetry Exporter that will allow you to use the CPP OpenTelemetry SDK and send data up to New Relic. OpenTelemetry will include a broad set of high-quality community-contributed instrumentation and a powerful vendor-neutral API for adding your own instrumentation.
-
