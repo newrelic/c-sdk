@@ -1,44 +1,18 @@
 # Contributing to the C SDK
 
-Thanks for your interest in contributing to the New Relic C SDK! We look forward to engaging with you.
+Thanks for your interest in contributing to the New Relic C SDK! 
 
-## How to Contribute
+## End of Life Notice ##
+As of April 2022, we're discontinuing support for several capabilities, including the C SDK. Please explore the [option to use OpenTelemetry](https://github.com/newrelic/docs-website/blob/develop/docs/apm/agents/c-sdk/get-started/otel_cpp_example) as an alternative to send C++ telemetry data to New Relic. For more details about the EOL, see our [Explorers Hub post](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
+
+## Best Practices for Modifying Forks
 
 1. Read [this contributing file](CONTRIBUTING.md). (Good job!)
 1. Read our [code of conduct](CODE_OF_CONDUCT.md).
 1. Submit a [pull request](#pull-request-guidelines) or [issue](#filing-issues--bug-reports). For pull requests, please also:
     1. Ensure the [test suite passes](#testing-guidelines).
-    1. Sign the [Contributor Licensing Agreement](#contributor-license-agreement-cla), if you haven't already done so. (You will be prompted if we don't have a signed CLA already recorded.)
-
-## How to Get Help or Ask Questions
-
-Do you have questions or are you experiencing unexpected behaviour? Please 
-engage with us on the
-[Explorers Hub](https://discuss.newrelic.com/c/build-on-new-relic/Open-Source-Agents-SDKs), 
-New Relic’s Forum.
 
 ## Contributor License Agreement ("CLA")
-
-We'd love to get your contributions to improve the C SDK! Keep in mind when you 
-submit your pull request, you'll need to sign the CLA via the click-through using [CLA-Assistant](https://cla-assistant.io/). 
-You only have to sign the CLA one time.
-
-If you'd like to execute our corporate CLA, or if you have any questions, please 
-drop us an email at open-source@newrelic.com. 
-
-## Filing Issues & Bug Reports
-
-We use GitHub issues to track public issues and bugs. If possible, please provide a 
-link to an example app or gist that reproduces the issue. When filing an issue, 
-please ensure your description is clear and includes the following information.
-
-* Project version (ex: 0.4.0)
-* Custom configurations (most likely, anything that you've changed from the default `newrelic_app_config_t` or an explicit call to `newrelic_init()`)
-* Any modifications made to the C SDK
-
-We'll take care to respond to your issue within one business day. From there, we'll
-start a conversation with you and work to troubleshoot your issue or think 
-deliberately through your possible feature request.
 
 New Relic is committed to the security of our customers and their data. We believe 
 that providing coordinated disclosure by security researchers and engaging with 
@@ -56,22 +30,6 @@ The only additional requirement to run our test suite is
 make the build process easier.
 
 To run the test suite, please refer to the [testing guidelines](#testing-guidelines).
-
-## Pull Request Guidelines
-
-Before we can accept a pull request, you must sign our 
-[Contributor Licensing Agreement](#contributor-license-agreement-cla), if you have 
-not already done so. This grants us the right to use your code under the same 
-Apache 2.0 license as we use for the C SDK in general.
-
-Minimally, the [test suite](#testing-guidelines) must pass for us to accept a PR. 
-Ideally, we would love it if you also added appropriate tests if you're implementing
-a feature!
-
-We'll take care to respond to your PR within one business day. From there, we'll
-start a conversation with you and work to perform a PR review based on engineer 
-availability.  And we welcome PR comments and review from folks in the C SDK 
-development community!
 
 ## Coding Style Guidelines
 
