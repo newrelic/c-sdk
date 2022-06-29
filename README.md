@@ -8,8 +8,8 @@ monitoring capabilities and features to instrument a wide range of applications.
 
 [![Build Status](https://travis-ci.org/newrelic/c-sdk.svg?branch=master)](https://travis-ci.org/newrelic/c-sdk)
 
-## End of Life Notice ##
-As of April 2022, we're discontinuing support for several capabilities, including the C SDK. Please explore the [option to use OpenTelemetry](https://github.com/newrelic/docs-website/blob/develop/docs/apm/agents/c-sdk/get-started/otel_cpp_example) as an alternative to send C++ telemetry data to New Relic. For more details about the EOL, see our [Explorers Hub post](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
+## Archival Notice ##
+As of June 30 2022 we are archiving the C-SDK project. Please explore the [option to use OpenTelemetry](https://github.com/newrelic/docs-website/blob/develop/docs/apm/agents/c-sdk/get-started/otel_cpp_example) as an alternative to send C++ telemetry data to New Relic. For more details, see our [Explorers Hub announcement](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
 
 ## Installation
 
