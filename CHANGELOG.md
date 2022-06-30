@@ -1,5 +1,8 @@
 # New Relic C Agent Release Notes #
 
+## Archival Notice ##
+As of June 30 2022 we are archiving the C-SDK project. Please explore the [option to use OpenTelemetry](https://docs.newrelic.com/docs/apm/agents/c-sdk/get-started/otel_cpp_example/) as an alternative to send C++ telemetry data to New Relic. For more details, see our [Explorers Hub announcement](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
+
 ## Contents ##
 
 | Release Number | Release Date |

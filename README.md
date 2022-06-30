@@ -1,4 +1,4 @@
-[![Community Project header](https://github.com/newrelic/open-source-office/raw/master/examples/categories/images/Community_Project.png)](https://github.com/newrelic/open-source-office/blob/master/examples/categories/index.md#community-project)
+[![Archived header](https://github.com/newrelic/opensource-website/raw/master/src/images/categories/Archived.png)](https://opensource.newrelic.com/oss-category/#archived)
 
 # New Relic C SDK
 
@@ -7,6 +7,9 @@ APM agent languages, you can use the C SDK to take advantage of New Relic's
 monitoring capabilities and features to instrument a wide range of applications.
 
 [![Build Status](https://travis-ci.org/newrelic/c-sdk.svg?branch=master)](https://travis-ci.org/newrelic/c-sdk)
+
+## Archival Notice ##
+As of June 30 2022 we are archiving the C-SDK project. Please explore the [option to use OpenTelemetry](https://github.com/newrelic/docs-website/blob/develop/docs/apm/agents/c-sdk/get-started/otel_cpp_example) as an alternative to send C++ telemetry data to New Relic. For more details, see our [Explorers Hub announcement](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
 
 ## Installation
 
@@ -68,23 +71,6 @@ Or, just to compile them:
 make tests
 ```
 
-## Support
-
-Should you need assistance with New Relic products, you are in good hands with several support channels.
-
-If the issue has been confirmed as a bug or is a feature request, file a GitHub issue.
-
-**Support Channels**
-
-* [New Relic Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): Comprehensive guidance for using our platform
-* [New Relic C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html)
-* [New Relic C SDK Guide](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md)
-* [New Relic C SDK distributed tracing example](https://github.com/newrelic/c-dt-example)
-* [New Relic Community](https://discuss.newrelic.com/c/build-on-new-relic/Open-Source-Agents-SDKs): The best place to engage in troubleshooting questions
-* [New Relic Developer](https://developer.newrelic.com/): Resources for building a custom observability applications
-* [New Relic University](https://learn.newrelic.com/): A range of online training for New Relic users of every level
-* Use your preferred search engine to find other New Relic resources.
-
 ## Privacy
 At New Relic we take your privacy and the security of your information seriously, and are committed to protecting your information. We must emphasize the importance of not sharing personal data in public forums, and ask all users to scrub logs and diagnostic information for sensitive information, whether personal, proprietary, or otherwise.
 
@@ -94,9 +80,7 @@ For more information, review [New Relic’s General Data Privacy Notice](https:/
 
 ## Contribute
 
-We encourage your contributions to improve the C SDK! Keep in mind when you submit your pull request, you'll need to sign the CLA via the click-through using CLA-Assistant. You only have to sign the CLA one time per project.
-
-If you have any questions, or to execute our corporate CLA, required if your contribution is on behalf of a company,  please drop us an email at opensource@newrelic.com.
+The C SDK  project is read-only and available for cloning only. We encourage you to experiment with it in your fork however please keep in mind that there is neither a maintainer team nor support.
 
 **A note about vulnerabilities**
 
@@ -106,7 +90,7 @@ If you believe you have found a security vulnerability in this project or any of
 
 If you would like to contribute to this project, review [these guidelines](./CONTRIBUTING.md).
 
-To [all contributors](https://github.com/newrelic/c-sdk/graphs/contributors), we thank you!  Without your contribution, this project would not be what it is today.  We also host a community project page dedicated to [New Relic C SDK](https://opensource.newrelic.com/projects/newrelic/c-sdk).
+To [all contributors](https://github.com/newrelic/c-sdk/graphs/contributors), we thank you!  Without your contribution, this project would not be what it is today.  
 
 ## License
 The New Relic C SDK is licensed under the [Apache 2.0](http://apache.org/licenses/LICENSE-2.0.txt) License.
@@ -115,3 +99,13 @@ The C SDK also uses source code from third party libraries. Full details on
 which libraries are used and the terms under which they are licensed can be
 found in the 
 [third party notices document](https://github.com/newrelic/c-sdk/tree/master/THIRD_PARTY_NOTICES.md).
+
+## Resources
+
+* [New Relic Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): Comprehensive guidance for using our platform
+* [New Relic C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html)
+* [New Relic C SDK Guide](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md)
+* [New Relic C SDK distributed tracing example](https://github.com/newrelic/c-dt-example)
+* [New Relic Developer](https://developer.newrelic.com/): Resources for building a custom observability applications
+* [New Relic University](https://learn.newrelic.com/): A range of online training for New Relic users of every level
+* Use your preferred search engine to find other New Relic resources.

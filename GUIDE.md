@@ -2,6 +2,9 @@
 
 This is the New Relic C SDK! If your application does not use other New Relic APM agent languages, you can use the C SDK to take advantage of New Relic's monitoring capabilities and features to instrument a wide range of applications.
 
+## Archival Notice ##
+As of June 30 2022 we are archiving the C-SDK project. Please explore the [option to use OpenTelemetry](https://docs.newrelic.com/docs/apm/agents/c-sdk/get-started/otel_cpp_example/) as an alternative to send C++ telemetry data to New Relic. For more details, see our [Explorers Hub announcement](https://discuss.newrelic.com/t/q1-bulk-eol-announcement-fy23/181744).
+
 ## Table of Contents
 1. [Requirements](#requirements)
 1. [Getting Started](#getting-started)
