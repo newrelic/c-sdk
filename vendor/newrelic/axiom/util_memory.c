@@ -90,8 +90,7 @@ void* NRMALLOCSZ(2) nr_realloc(void* oldptr, size_t newsize) {
 
   ret = (realloc)(oldptr, newsize);
   if (nrunlikely(0 == ret)) {
-    nrl_error(NRL_MEMORY, "failed to reallocate %p for %zu bytes", oldptr,
-              newsize);
+    nrl_error(NRL_MEMORY, "failed to reallocate %zu bytes", newsize);
     exit(3);
   }
 
