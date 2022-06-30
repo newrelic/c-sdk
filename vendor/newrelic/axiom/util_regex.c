@@ -328,7 +328,7 @@ void nr_regex_add_quoted_to_buffer(nrbuf_t* buf,
       case ':':
       case '-':
         nr_buffer_add(buf, NR_PSTR("\\"));
-        /* FALLTHROUGH */
+        FALLTHROUGH /* FALLTHROUGH */
 
       default:
         nr_buffer_add(buf, &str[i], 1);

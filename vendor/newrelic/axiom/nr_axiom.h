@@ -80,6 +80,21 @@ NRINLINE void* nr_remove_const(const void* ptr) {
 
 #endif /* } */
 
+
+#if defined(__clang__)
+#if __has_attribute(fallthrough)
+#define FALLTHROUGH __attribute__((fallthrough));
+#else
+#define FALLTHROUGH
+#endif
+#else
+#if defined(__GNUC__) && __GNUC__ >= 7
+#define FALLTHROUGH __attribute__((fallthrough));
+#else
+#define FALLTHROUGH
+#endif /* __GNUC__ >= 7 */
+#endif
+
 /*
  * The macro nr_clang_assert is redefined to assert iff we are compiling using
  * the clang static analyzer scan-build.  scan-build is sensitive to
