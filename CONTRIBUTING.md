@@ -8,9 +8,7 @@ As of June 30 2022 we are archiving the C-SDK project. Please explore the [optio
 ## Best Practices for Modifying Project Forks
 
 1. Read [this contributing file](CONTRIBUTING.md). (Good job!)
-1. Read our [code of conduct](CODE_OF_CONDUCT.md).
-1. Submit a [pull request](#pull-request-guidelines) or [issue](#filing-issues--bug-reports). For pull requests, please also:
-    1. Ensure the [test suite passes](#testing-guidelines).
+2. Ensure the [test suite passes](#testing-guidelines).
 
 ## Filing Issues & Bug Reports
 New Relic is committed to the security of our customers and their data. We believe 

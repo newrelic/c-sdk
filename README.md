@@ -80,7 +80,7 @@ For more information, review [New Relic’s General Data Privacy Notice](https:/
 
 ## Contribute
 
-We encourage your experiments to improve the C SDK in your personal forks.
+The C SDK  project is read-only and available for cloning only. We encourage you to experiment with it in your fork however please keep in mind that there is neither a maintainer team nor support.
 
 **A note about vulnerabilities**
 
@@ -99,3 +99,13 @@ The C SDK also uses source code from third party libraries. Full details on
 which libraries are used and the terms under which they are licensed can be
 found in the 
 [third party notices document](https://github.com/newrelic/c-sdk/tree/master/THIRD_PARTY_NOTICES.md).
+
+## Resources
+
+* [New Relic Documentation](https://docs.newrelic.com/docs/c-sdk-table-contents): Comprehensive guidance for using our platform
+* [New Relic C SDK documentation on GitHub](https://newrelic.github.io/c-sdk/index.html)
+* [New Relic C SDK Guide](https://github.com/newrelic/c-sdk/blob/master/GUIDE.md)
+* [New Relic C SDK distributed tracing example](https://github.com/newrelic/c-dt-example)
+* [New Relic Developer](https://developer.newrelic.com/): Resources for building a custom observability applications
+* [New Relic University](https://learn.newrelic.com/): A range of online training for New Relic users of every level
+* Use your preferred search engine to find other New Relic resources.
