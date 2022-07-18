@@ -182,3 +182,70 @@ bool newrelic_set_transaction_name(newrelic_txn_t* transaction,
   nrl_error(NRL_API, "unable to name transaction");
   return false;
 }
+
+bool newrelic_set_transaction_uri(newrelic_txn_t* transaction,
+                                  const char* uri) {
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to set uri on NULL transaction");
+    return false;
+  }
+
+  if (NULL == uri) {
+    nrl_error(NRL_API, "uri cannot be NULL");
+    return false;
+  }
+
+  nr_txn_set_request_uri(transaction->txn, uri);
+  nrl_debug(NRL_API, "uri set to: \"%s\"", uri);
+  return true;
+}
+
+bool newrelic_set_request_referer(newrelic_txn_t* transaction,
+                                  const char* request_referer) {
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to set referer on NULL transaction");
+    return false;
+  }
+
+  if (NULL == request_referer) {
+    nrl_error(NRL_API, "request_referer cannot be NULL");
+    return false;
+  }
+
+  nr_txn_set_request_referer(transaction->txn, request_referer);
+  nrl_debug(NRL_API, "referer set to: \"%s\"", request_referer);
+  return true;
+}
+
+bool newrelic_set_request_content_length(newrelic_txn_t* transaction,
+                                         const char* content_length) {
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to set content length on NULL transaction");
+    return false;
+  }
+
+  if (NULL == content_length) {
+    nrl_error(NRL_API, "content_length cannot be NULL");
+    return false;
+  }
+
+  nr_txn_set_request_content_length(transaction->txn, content_length);
+  nrl_debug(NRL_API, "content_length set to: \"%s\"", content_length);
+  return true;
+}
+
+bool newrelic_set_http_status(newrelic_txn_t* transaction, int http_code) {
+  if (NULL == transaction) {
+    nrl_error(NRL_API, "unable to set http_code on NULL transactin");
+    return false;
+  }
+
+  if (0 == http_code) {
+    nrl_error(NRL_API, "status code cannot be 0");
+    return false;
+  }
+
+  nr_txn_set_http_status(transaction->txn, http_code);
+  nrl_debug(NRL_API, "http_code set to: \"%d\"", http_code);
+  return true;
+}

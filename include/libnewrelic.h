@@ -1249,6 +1249,60 @@ bool newrelic_set_transaction_name(newrelic_txn_t* transaction,
                                    const char* transaction_name);
 
 /**
+ * @brief Set transaction uri
+ *
+ * Given an active transaction and a uri, this function sets the transaction
+ * uri to the given uri
+ *
+ * @param [in] transaction An active transaction
+ * @param [in] uri         Uri for the transaction
+ *
+ * @return true on success
+ */
+bool newrelic_set_transaction_uri(newrelic_txn_t* transaction,
+                                  const char* transaction_uri);
+
+/**
+ * @brief Set request referer
+ *
+ * Given an active transaction and a referer, this function sets the transaction
+ * referer to the given request referer
+ *
+ * @param [in] transaction An active transaction
+ * @param [in] referer     Request referer
+ *
+ * @return true on success
+ */
+bool newrelic_set_request_referer(newrelic_txn_t* transaction,
+                                  const char* request_referer);
+
+/**
+ * @brief Set request content length
+ *
+ * Given an active transaction and a content length, this function sets the
+ * transaction request's content length to the given content_length
+ *
+ * @param [in] transaction    An active transaction
+ * @param [in] content_length Request content length
+ *
+ * @return true on success
+ */
+bool newrelic_set_request_content_length(newrelic_txn_t* transaction,
+                                         const char* content_length);
+
+/**
+ * @brief Set http status
+ *
+ * Given an active transaction and a http status code, this function sets the
+ * transaction's status code to the given status code
+ *
+ * @param [in] transaction    An active transaction
+ * @param [in] code           HTTP Status Code
+ *
+ * @return true on success
+ */
+bool newrelic_set_http_status(newrelic_txn_t* transaction, int http_code);
+/**
  * A list of examples for Doxygen to cross-reference. If a function in
  * libnewrelic.h appears in one of these examples, the example source
  * file appears under the "Examples" header.
